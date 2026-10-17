@@ -576,7 +576,8 @@ namespace EntityQueryBuilder
 			&& conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1)
 		{
 			cur_condition = &(conditions.back());
-			cur_condition->entityIdToExclude = cur_condition->existLabels[0];
+			cur_condition->distanceQuery = std::make_unique<EntityQueryDistanceState>();
+			cur_condition->distanceQuery->entityIdToExclude = cur_condition->existLabels[0];
 			cur_condition->existLabels.clear();
 		}
 		else
@@ -585,19 +586,21 @@ namespace EntityQueryBuilder
 			conditions.emplace_back();
 			cur_condition = &(conditions.back());
 
-			cur_condition->entityIdToExclude = string_intern_pool.NOT_A_STRING_ID;
+			cur_condition->distanceQuery = std::make_unique<EntityQueryDistanceState>();
 		}
+
+		auto &distance_query = *cur_condition->distanceQuery;
 
 		//set query condition type
 		cur_condition->queryType = condition_type;
-		cur_condition->useConcurrency = cn->GetConcurrency();
-		cur_condition->interpreter = calling_interpreter;
+		distance_query.useConcurrency = cn->GetConcurrency();
+		distance_query.interpreter = calling_interpreter;
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
-		cur_condition->minToRetrieve = std::numeric_limits<size_t>::max();
-		cur_condition->numToRetrieveMinIncrementalProbability = 0.0;
-		cur_condition->extraToRetrieve = 0;
+		distance_query.minToRetrieve = std::numeric_limits<size_t>::max();
+		distance_query.numToRetrieveMinIncrementalProbability = 0.0;
+		distance_query.extraToRetrieve = 0;
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
@@ -615,14 +618,14 @@ namespace EntityQueryBuilder
 				if(num_params >= 1)
 				{
 					double min_inc_prob = EvaluableNode::ToNumber(top_k_ocn[0], 0.0);
-					cur_condition->numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
+					distance_query.numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
 
 					if(num_params >= 2)
 					{
 						double min_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[1], std::numeric_limits<double>::infinity());
 						min_to_retrieve = std::max(0.0, min_to_retrieve);
 						if(min_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
-							cur_condition->minToRetrieve = static_cast<size_t>(min_to_retrieve);
+							distance_query.minToRetrieve = static_cast<size_t>(min_to_retrieve);
 
 						if(num_params >= 3)
 						{
@@ -636,7 +639,7 @@ namespace EntityQueryBuilder
 								double extra_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[3], 0.0);
 								extra_to_retrieve = std::max(0.0, extra_to_retrieve);
 								if(extra_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
-									cur_condition->extraToRetrieve = static_cast<size_t>(extra_to_retrieve);
+									distance_query.extraToRetrieve = static_cast<size_t>(extra_to_retrieve);
 							}
 						}
 					}
@@ -654,18 +657,18 @@ namespace EntityQueryBuilder
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
 			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesReference();
-			cur_condition->positionLabels.reserve(pos_labels_ocn.size());
+			distance_query.positionLabels.reserve(pos_labels_ocn.size());
 			for(auto &pl : pos_labels_ocn)
 			{
 				auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(pl);
 				if(valid && Entity::IsLabelValidAndPublic(label_sid))
-					cur_condition->positionLabels.push_back(label_sid);
+					distance_query.positionLabels.push_back(label_sid);
 				else
 					cur_condition->queryType = ENT_NULL;
 			}
 		}
 
-		cur_condition->populateOmittedFeatureValues = false;
+		distance_query.populateOmittedFeatureValues = false;
 
 		//select based on type for position or entities
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
@@ -695,46 +698,46 @@ namespace EntityQueryBuilder
 				cur_condition->queryType = ENT_NULL;
 				return;
 			}
-			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
+			distance_query.positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
 		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			EvaluableNode *cluster_size = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
-			cur_condition->minClusterWeight = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
+			distance_query.minClusterWeight = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
 		}
 		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
 			EvaluableNode *position = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
-			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
+			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == distance_query.positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
 					cur_condition->valuesToCompare);
 			}
 			else if(position != nullptr && position->GetType() == ENT_STRING)
 			{
-				cur_condition->entityIdToExclude = position->GetStringIDReference();
+				distance_query.entityIdToExclude = position->GetStringIDReference();
 				//these will be set later under lock
 				cur_condition->valuesToCompare.clear();
-				cur_condition->populateOmittedFeatureValues = true;
+				distance_query.populateOmittedFeatureValues = true;
 			}
 			else // no positions given, default to nulls for each label
 			{
-				cur_condition->valuesToCompare.reserve(cur_condition->positionLabels.size());
-				for(size_t i = 0; i < cur_condition->positionLabels.size(); i++)
+				cur_condition->valuesToCompare.reserve(distance_query.positionLabels.size());
+				for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
 					cur_condition->valuesToCompare.push_back(EvaluableNodeImmediateValueWithType());
 			}
 		}
 
 		//set minkowski parameter; default to 1.0 for L1 distance
-		cur_condition->distEvaluator.pValue = 1.0;
+		distance_query.distEvaluator.pValue = 1.0;
 		if(ocn.size() > MINKOWSKI_PARAMETER)
 		{
-			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
+			distance_query.distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
 
 			//make sure valid value, if not, fall back to 2
-			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
-				cur_condition->distEvaluator.pValue = 1.0;
+			if(FastIsNaN(distance_query.distEvaluator.pValue) || distance_query.distEvaluator.pValue < 0)
+				distance_query.distEvaluator.pValue = 1.0;
 		}
 
 		EvaluableNode *weights_node = nullptr;
@@ -755,9 +758,9 @@ namespace EntityQueryBuilder
 
 		//value transforms for whatever is measured as "distance"
 		//need to populate distance transform BEFORE populating feature attributes
-		cur_condition->distanceWeightExponent = 1.0;
-		cur_condition->distEvaluator.computeSurprisal = false;
-		cur_condition->distEvaluator.transformSurprisalToProb = false;
+		distance_query.distanceWeightExponent = 1.0;
+		distance_query.distEvaluator.computeSurprisal = false;
+		distance_query.distEvaluator.transformSurprisalToProb = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
@@ -766,23 +769,23 @@ namespace EntityQueryBuilder
 				if(dwe_param->GetType() == ENT_STRING
 					&& dwe_param->GetStringIDReference() == GetStringIdFromBuiltInStringId(ENBISI_surprisal_to_prob))
 				{
-					cur_condition->distEvaluator.computeSurprisal = true;
-					cur_condition->distEvaluator.transformSurprisalToProb = true;
+					distance_query.distEvaluator.computeSurprisal = true;
+					distance_query.distEvaluator.transformSurprisalToProb = true;
 				}
 				else if(dwe_param->GetType() == ENT_STRING
 					&& dwe_param->GetStringIDReference() == GetStringIdFromBuiltInStringId(ENBISI_surprisal))
 				{
-					cur_condition->distEvaluator.computeSurprisal = true;
+					distance_query.distEvaluator.computeSurprisal = true;
 				}
 				else //try to convert to number
 				{
-					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
+					distance_query.distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 				}
 			}
 		}
 
-		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
-			cur_condition->positionLabels.size(), cur_condition->positionLabels,
+		PopulateDistanceFeatureParameters(distance_query.distEvaluator,
+			distance_query.positionLabels.size(), distance_query.positionLabels,
 			weights_node, weights_selection_features_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
@@ -803,26 +806,26 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		cur_condition->distEvaluator.highAccuracyDistances = false;
-		cur_condition->distEvaluator.recomputeAccurateDistances = true;
+		distance_query.distEvaluator.highAccuracyDistances = false;
+		distance_query.distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			auto np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]).second;
 			if(np_sid == GetStringIdFromBuiltInStringId(ENBISI_precise))
 			{
-				cur_condition->distEvaluator.highAccuracyDistances = true;
-				cur_condition->distEvaluator.recomputeAccurateDistances = false;
+				distance_query.distEvaluator.highAccuracyDistances = true;
+				distance_query.distEvaluator.recomputeAccurateDistances = false;
 			}
 			else if(np_sid == GetStringIdFromBuiltInStringId(ENBISI_fast))
 			{
-				cur_condition->distEvaluator.highAccuracyDistances = false;
-				cur_condition->distEvaluator.recomputeAccurateDistances = false;
+				distance_query.distEvaluator.highAccuracyDistances = false;
+				distance_query.distEvaluator.recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
 
-		cur_condition->returnSortedList = false;
-		cur_condition->additionalSortedListLabels.clear();
+		distance_query.returnSortedList = false;
+		distance_query.additionalSortedListLabels.clear();
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
@@ -833,12 +836,12 @@ namespace EntityQueryBuilder
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
-				cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
+				distance_query.returnSortedList = EvaluableNode::ToBool(list_param);
 				if(!EvaluableNode::IsNull(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
 					{
-						cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+						distance_query.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 					}
 					else
 					{
@@ -846,7 +849,7 @@ namespace EntityQueryBuilder
 						{
 							auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 							if(valid) [[likely]]
-								cur_condition->additionalSortedListLabels.push_back(sid);
+								distance_query.additionalSortedListLabels.push_back(sid);
 						}
 					}
 				}
@@ -856,21 +859,21 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
-			cur_condition->convictionOfRemoval = false;
+			distance_query.convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
-				cur_condition->convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
+				distance_query.convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
 			if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
-					cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
+					distance_query.returnSortedList = EvaluableNode::ToBool(list_param);
 					if(!EvaluableNode::IsNull(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
 						{
-							cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+							distance_query.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 						}
 						else
 						{
@@ -878,7 +881,7 @@ namespace EntityQueryBuilder
 							{
 								auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 								if(valid) [[likely]]
-									cur_condition->additionalSortedListLabels.push_back(sid);
+									distance_query.additionalSortedListLabels.push_back(sid);
 							}
 						}
 					}
@@ -1199,9 +1202,9 @@ namespace EntityQueryBuilder
 		{
 			cur_condition->singleLabel = label_sid;
 
-			cur_condition->distEvaluator.pValue = 1;
+			cur_condition->pValue = 1;
 			if(ocn.size() >= 2)
-				cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[1]);
+				cur_condition->pValue = EvaluableNode::ToNumber(ocn[1]);
 
 			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 			if(ocn.size() >= 3)

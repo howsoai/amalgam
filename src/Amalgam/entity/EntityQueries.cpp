@@ -168,10 +168,12 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
-		std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
-		for(size_t i = 0; i < positionLabels.size(); i++)
+		auto &distance_query = *distanceQuery;
+
+		std::vector<EvaluableNodeImmediateValueWithType> position(distance_query.positionLabels.size());
+		for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
 		{
-			auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+			auto [value, found] = e->GetValueAtLabelAsImmediateValue(distance_query.positionLabels[i]);
 			position[i] = value;
 			if(position[i].nodeType == ENIVT_NOT_EXIST)
 				return false;
@@ -185,8 +187,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				radius = value;
 		}
 
-		double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare,
-			false, distEvaluator.highAccuracyDistances);
+		double distance = distance_query.distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare,
+			false, distance_query.distEvaluator.highAccuracyDistances);
 		if(distance - radius > maxDistance)
 			return false;
 
@@ -219,14 +221,16 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	if(e == nullptr)
 		return std::numeric_limits<double>::quiet_NaN();
 
+	auto &distance_query = *distanceQuery;
+
 	//make sure not excluding this entity
-	if(e->GetIdStringId() == entityIdToExclude)
+	if(e->GetIdStringId() == distance_query.entityIdToExclude)
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
-	for(size_t i = 0; i < positionLabels.size(); i++)
+	std::vector<EvaluableNodeImmediateValueWithType> position(distance_query.positionLabels.size());
+	for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
 	{
-		auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+		auto [value, found] = e->GetValueAtLabelAsImmediateValue(distance_query.positionLabels[i]);
 		position[i] = value;
 		if(position[i].nodeType == ENIVT_NOT_EXIST)
 			return std::numeric_limits<double>::quiet_NaN();
@@ -240,7 +244,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 			radius = value;
 	}
 
-	double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, false, high_accuracy);
+	double distance = distance_query.distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, false, high_accuracy);
 	return distance - radius;
 }
 
@@ -555,7 +559,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
 			double generalized_mean = GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, pValue, center,
 				calculateMoment, absoluteValue);
 			return EvaluableNodeReference(enm->AllocNode(generalized_mean), true);
 		}
@@ -612,21 +616,23 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	{
-		if(distEvaluator.populateOmittedFeatureValues)
+		auto &distance_query = *distanceQuery;
+
+		if(distance_query.distEvaluator.populateOmittedFeatureValues)
 		{
 			//populate values from the comparison entity
-			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
-			valuesToCompare.resize(positionLabels.size());
-			for(size_t i = 0; i < positionLabels.size(); i++)
+			Entity *comparison_entity = container->GetContainedEntity(distance_query.entityIdToExclude);
+			valuesToCompare.resize(distance_query.positionLabels.size());
+			for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
 			{
-				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(distance_query.positionLabels[i]);
 				valuesToCompare[i] = value;
 			}
 		}
 
 		size_t num_to_keep = std::min(maxToRetrieve, matching_entities.size());
 
-		distEvaluator.InitializeParametersAndFeatureParams();
+		distance_query.distEvaluator.InitializeParametersAndFeatureParams();
 
 		//break ties by each entity's index in its container
 		struct EntityReferenceToIndex
@@ -641,7 +647,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>, double, EntityReferenceToIndex> nearest_entities(randomStream);
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{
-			double value = GetConditionDistanceMeasure(matching_entities[i], distEvaluator.highAccuracyDistances);
+			double value = GetConditionDistanceMeasure(matching_entities[i], distance_query.distEvaluator.highAccuracyDistances);
 			if(FastIsNaN(value))
 				continue;
 
@@ -670,7 +676,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		if(!distEvaluator.highAccuracyDistances && distEvaluator.recomputeAccurateDistances)
+		if(!distance_query.distEvaluator.highAccuracyDistances && distance_query.distEvaluator.recomputeAccurateDistances)
 		{
 			//recompute distance accurately for each found entity result
 			for(auto &it : entity_values)
@@ -687,32 +693,34 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			};
 
 		//transform distances as appropriate
-		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
-			distEvaluator.transformSurprisalToProb, distanceWeightExponent,
-			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
+		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distance_query.distEvaluator.computeSurprisal,
+			distance_query.distEvaluator.transformSurprisalToProb, distance_query.distanceWeightExponent,
+			distance_query.minToRetrieve, maxToRetrieve, distance_query.numToRetrieveMinIncrementalProbability, distance_query.extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		distance_transform.TransformDistances(entity_values, returnSortedList);
+		distance_transform.TransformDistances(entity_values, distance_query.returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
-			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
+			enm, distance_query.returnSortedList, distance_query.additionalSortedListLabels, [](auto entity) { return entity;  });
 	}
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
-		if(distEvaluator.populateOmittedFeatureValues)
+		auto &distance_query = *distanceQuery;
+
+		if(distance_query.distEvaluator.populateOmittedFeatureValues)
 		{
 			//populate values from the comparison entity
-			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
-			valuesToCompare.resize(positionLabels.size());
-			for(size_t i = 0; i < positionLabels.size(); i++)
+			Entity *comparison_entity = container->GetContainedEntity(distance_query.entityIdToExclude);
+			valuesToCompare.resize(distance_query.positionLabels.size());
+			for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
 			{
-				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(distance_query.positionLabels[i]);
 				valuesToCompare[i] = value;
 			}
 		}
 
-		distEvaluator.InitializeParametersAndFeatureParams();
+		distance_query.distEvaluator.InitializeParametersAndFeatureParams();
 		//find those that match
 		std::erase_if(matching_entities,
 			[this](Entity *entity) { return !DoesEntityMatchCondition(entity); });
@@ -723,7 +731,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		//compute distances
 		//Note that this recalculates the distance.  Since this is a small number of cases, it shouldn't be a big performance impact -- for larger queries, it will use faster methods
 		// if this becomes a performance issue, then DoesEntityMatchCondition can be refactored to optionally return the values it computed
-		bool high_accuracy = (distEvaluator.highAccuracyDistances || distEvaluator.recomputeAccurateDistances);
+		bool high_accuracy = (distance_query.distEvaluator.highAccuracyDistances || distance_query.distEvaluator.recomputeAccurateDistances);
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());
 		for(size_t i = 0; i < matching_entities.size(); i++)
@@ -741,15 +749,15 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			};
 
 		//transform distances as appropriate
-		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
-			distEvaluator.transformSurprisalToProb, distanceWeightExponent,
-			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
+		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distance_query.distEvaluator.computeSurprisal,
+			distance_query.distEvaluator.transformSurprisalToProb, distance_query.distanceWeightExponent,
+			distance_query.minToRetrieve, maxToRetrieve, distance_query.numToRetrieveMinIncrementalProbability, distance_query.extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		distance_transform.TransformDistances(entity_values, returnSortedList);
+		distance_transform.TransformDistances(entity_values, distance_query.returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
-			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
+			enm, distance_query.returnSortedList, distance_query.additionalSortedListLabels, [](auto entity) { return entity;  });
 	}
 
 	default:

@@ -7,7 +7,7 @@
 #include <array>
 #include <cstring>
 
-RandomStream::RandomStream(const std::string initial_state)
+RandomStream::RandomStream(const std::string initial_state) noexcept
 {
 	increment = 0;
 	state = 0;

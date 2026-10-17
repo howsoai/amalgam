@@ -30,16 +30,16 @@ template<typename EntityType = Entity>
 class EntityReference
 {
 public:
-	constexpr EntityReference()
+	constexpr EntityReference() noexcept
 		: entity(nullptr)
 	{}
 
-	constexpr EntityReference(EntityType *e)
+	constexpr EntityReference(EntityType *e) noexcept
 		: entity(e)
 	{}
 
 	//allow to use as an Entity *
-	constexpr operator EntityType *()
+	constexpr operator EntityType *() noexcept
 	{
 		return entity;
 	}
@@ -79,10 +79,12 @@ template<typename LockType, typename EntityType = Entity>
 class EntityReferenceWithLock : public EntityReference<EntityType>
 {
 public:
-	inline EntityReferenceWithLock() : EntityReference<EntityType>()
+	inline EntityReferenceWithLock() noexcept
+		: EntityReference<EntityType>()
 	{}
 
-	inline EntityReferenceWithLock(EntityType *e) : EntityReference<EntityType>(e)
+	inline EntityReferenceWithLock(EntityType *e) noexcept
+		: EntityReference<EntityType>(e)
 	{
 		if(e != nullptr)
 			lock = e->template CreateEntityLock<LockType>();

@@ -177,31 +177,31 @@ public:
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue
 {
-	__forceinline constexpr EvaluableNodeImmediateValue()
+	__forceinline constexpr EvaluableNodeImmediateValue() noexcept
 		: code(nullptr)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(bool bool_value)
+	__forceinline constexpr EvaluableNodeImmediateValue(bool bool_value) noexcept
 		: boolValue(bool_value)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(double _number)
+	__forceinline constexpr EvaluableNodeImmediateValue(double _number) noexcept
 		: number(_number)
 	{}
 
-	__forceinline EvaluableNodeImmediateValue(StringInternPool::StringID string_id)
+	__forceinline EvaluableNodeImmediateValue(StringInternPool::StringID string_id) noexcept
 		: stringID(string_id)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(EvaluableNode *_code)
+	__forceinline constexpr EvaluableNodeImmediateValue(EvaluableNode *_code) noexcept
 		: code(_code)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv)
+	__forceinline constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv) noexcept
 		: code(eniv.code)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(size_t indirection_index)
+	__forceinline constexpr EvaluableNodeImmediateValue(size_t indirection_index) noexcept
 		: indirectionIndex(indirection_index)
 	{}
 
@@ -354,16 +354,16 @@ union EvaluableNodeImmediateValue
 class EvaluableNodeImmediateValueWithType
 {
 public:
-	__forceinline constexpr EvaluableNodeImmediateValueWithType()
+	__forceinline constexpr EvaluableNodeImmediateValueWithType() noexcept
 		: nodeValue(static_cast<EvaluableNode *>(nullptr)), nodeType(ENIVT_NULL)
 	{}
 
 	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
-		EvaluableNodeImmediateValueType node_type)
+		EvaluableNodeImmediateValueType node_type) noexcept
 		: nodeValue(node_value), nodeType(node_type)
 	{}
 
-	__forceinline EvaluableNodeImmediateValueWithType(bool value)
+	__forceinline EvaluableNodeImmediateValueWithType(bool value) noexcept
 	{
 		if(value)
 			nodeValue.boolValue = true;
@@ -372,7 +372,7 @@ public:
 		nodeType = ENIVT_BOOL;
 	}
 
-	__forceinline EvaluableNodeImmediateValueWithType(double number)
+	__forceinline EvaluableNodeImmediateValueWithType(double number) noexcept
 	{
 		if(FastIsNaN(number))
 			nodeType = ENIVT_NULL;
@@ -383,7 +383,7 @@ public:
 		}
 	}
 
-	__forceinline EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id)
+	__forceinline EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id) noexcept
 	{
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 			nodeType = ENIVT_NULL;
@@ -394,15 +394,15 @@ public:
 		}
 	}
 
-	constexpr EvaluableNodeImmediateValueWithType(EvaluableNode *code)
+	constexpr EvaluableNodeImmediateValueWithType(EvaluableNode *code) noexcept
 		: nodeValue(code), nodeType(ENIVT_CODE)
 	{}
 
-	constexpr EvaluableNodeImmediateValueWithType(const EvaluableNodeImmediateValueWithType &enimvwt)
+	constexpr EvaluableNodeImmediateValueWithType(const EvaluableNodeImmediateValueWithType &enimvwt) noexcept
 		: nodeValue(enimvwt.nodeValue), nodeType(enimvwt.nodeType)
 	{}
 
-	__forceinline EvaluableNodeImmediateValueWithType &operator =(const EvaluableNodeImmediateValueWithType &enimvwt)
+	__forceinline EvaluableNodeImmediateValueWithType &operator =(const EvaluableNodeImmediateValueWithType &enimvwt) noexcept
 	{
 		nodeValue = enimvwt.nodeValue;
 		nodeType = enimvwt.nodeType;
@@ -470,48 +470,48 @@ inline void CopyOrderedChildNodesToImmediateValuesAndTypes(EvaluableNode::Ordere
 class EvaluableNodeReference
 {
 public:
-	constexpr EvaluableNodeReference()
+	constexpr EvaluableNodeReference() noexcept
 		: value(), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
 	//don't allow an EvaluableNode pointer without uniqueness flags
 	constexpr EvaluableNodeReference(EvaluableNode *_reference) = delete;
 
-	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
+	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique) noexcept
 		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(_unique)
 	{}
 
-	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique, bool top_node_unique)
+	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique, bool top_node_unique) noexcept
 		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(top_node_unique)
 	{}
 
-	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
+	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr) noexcept
 		: value(inr.value), unique(inr.unique), uniqueUnreferencedTopNode(inr.uniqueUnreferencedTopNode)
 	{}
 
-	__forceinline EvaluableNodeReference(bool value)
+	__forceinline EvaluableNodeReference(bool value) noexcept
 		: value(value), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
-	__forceinline EvaluableNodeReference(double value)
+	__forceinline EvaluableNodeReference(double value) noexcept
 		: value(value), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
 	//if reference_handoff is true, it will assume ownership rather than creating a new reference
-	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false)
+	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false) noexcept
 		: value(reference_handoff ? string_id : string_intern_pool.CreateStringReference(string_id)),
 		unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
-	__forceinline EvaluableNodeReference(const std::string &str)
+	__forceinline EvaluableNodeReference(const std::string &str) noexcept
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
-	__forceinline EvaluableNodeReference(std::string_view str)
+	__forceinline EvaluableNodeReference(std::string_view str) noexcept
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
-	__forceinline EvaluableNodeReference(EvaluableNodeImmediateValueWithType enivwt, bool _unique)
+	__forceinline EvaluableNodeReference(EvaluableNodeImmediateValueWithType enivwt, bool _unique) noexcept
 		: value(enivwt), unique(_unique), uniqueUnreferencedTopNode(_unique)
 	{}
 

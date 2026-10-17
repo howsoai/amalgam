@@ -39,7 +39,7 @@ public:
 	inline VectorMap(const VectorMap &other) = default;
 	inline VectorMap(VectorMap &&other) noexcept = default;
 
-	inline VectorMap(std::initializer_list<value_type> init)
+	inline VectorMap(std::initializer_list<value_type> init) noexcept
 	{
 		insert(init);
 	}

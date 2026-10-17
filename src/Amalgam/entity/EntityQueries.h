@@ -45,7 +45,7 @@ public:
 	struct LabelBetweenValues
 	{
 		LabelBetweenValues(StringInternPool::StringID _label, EvaluableNodeImmediateValueType value_type,
-			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value)
+			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value) noexcept
 			: label(_label), valueType(value_type), lowValue(low_value), highValue(high_value)
 		{}
 

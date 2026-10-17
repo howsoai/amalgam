@@ -19,14 +19,14 @@
 
 //On some platforms, std::isnan creates a costly function call.  This is correct and at least as fast or faster.
 template<typename T>
-constexpr bool FastIsNaN(const T n)
+constexpr bool FastIsNaN(const T n) noexcept
 {
 	return n != n;
 }
 
 //returns true if both are equal, also counting both being NaN
 template<typename T>
-constexpr bool EqualIncludingNaN(const T a, const T b)
+constexpr bool EqualIncludingNaN(const T a, const T b) noexcept
 {
 	return (a == b) || (FastIsNaN(a) && FastIsNaN(b));
 }
@@ -35,7 +35,7 @@ constexpr bool EqualIncludingNaN(const T a, const T b)
 class DoubleNanHashComparator
 {
 public:
-	constexpr bool operator()(const double a, double b) const
+	constexpr bool operator()(const double a, double b) const noexcept
 	{
 		return EqualIncludingNaN(a, b);
 	}

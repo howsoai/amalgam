@@ -10,11 +10,11 @@ class MergeMetricResultsBase
 {
 public:
 	//starts off with an exact match of nothing
-	inline MergeMetricResultsBase()
+	inline MergeMetricResultsBase() noexcept
 		: commonality(0.0), mustMatch(false), exactMatch(true)
 	{}
 
-	inline MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
+	inline MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true) noexcept
 		: commonality(_similarity), mustMatch(must_match), exactMatch(exact_match)
 	{}
 
@@ -84,7 +84,7 @@ public:
 	//starts off with an exact match of nothing
 	//note that if ElementType is a pointer or has a nondefault constructor,
 	//C++ initializes to 0 or nullptr
-	inline MergeMetricResults()
+	inline MergeMetricResults() noexcept
 		: MergeMetricResultsBase(), elementA(), elementB()
 	{}
 

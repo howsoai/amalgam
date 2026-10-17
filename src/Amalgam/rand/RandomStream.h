@@ -17,13 +17,13 @@
 class RandomStream
 {
 public:
-	constexpr RandomStream()
+	constexpr RandomStream() noexcept
 		: increment(0), state(0)
 	{}
 
-	RandomStream(const std::string initial_state);
+	RandomStream(const std::string initial_state) noexcept;
 
-	constexpr RandomStream(const RandomStream &stream)
+	constexpr RandomStream(const RandomStream &stream) noexcept
 		: increment(stream.increment), state(stream.state)
 	{}
 

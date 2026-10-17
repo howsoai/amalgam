@@ -23,7 +23,8 @@ public:
 
 	RandomStream(const std::string initial_state);
 
-	constexpr RandomStream(const RandomStream &stream)
+	//Keep copies nonthrowing so vector growth can move containing query conditions.
+	constexpr RandomStream(const RandomStream &stream) noexcept
 		: increment(stream.increment), state(stream.state)
 	{}
 

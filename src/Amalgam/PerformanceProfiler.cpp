@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <limits>
 
 //if true, then will record profiling data
 bool PerformanceProfiler::_profiler_enabled;
@@ -274,10 +276,10 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	for(size_t i = 0; i < max_print_count && i < most_total_memory_exclusive.size(); i++)
 	{
 		//only write out those that had a net decrease
-		double mem_delta = most_total_memory_exclusive[most_total_memory_exclusive.size() - 1 - i].second;
+		const auto &[operation_type, mem_delta] = most_total_memory_exclusive[most_total_memory_exclusive.size() - 1 - i];
 		if(mem_delta >= 0)
 			break;
-		out_dest << most_total_memory_exclusive[i].first << ": " << mem_delta << std::endl;
+		out_dest << operation_type << ": " << mem_delta << std::endl;
 	}
 	out_dest << std::endl;
 
@@ -286,10 +288,10 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	for(size_t i = 0; i < max_print_count && i < most_ave_memory_exclusive.size(); i++)
 	{
 		//only write out those that had a net decrease
-		double mem_delta = most_ave_memory_exclusive[most_total_memory_exclusive.size() - 1 - i].second;
+		const auto &[operation_type, mem_delta] = most_ave_memory_exclusive[most_ave_memory_exclusive.size() - 1 - i];
 		if(mem_delta >= 0)
 			break;
-		out_dest << most_total_memory_exclusive[i].first << ": " << mem_delta << std::endl;
+		out_dest << operation_type << ": " << mem_delta << std::endl;
 	}
 	out_dest << std::endl;
 

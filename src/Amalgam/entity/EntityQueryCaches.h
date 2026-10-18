@@ -12,12 +12,17 @@
 #include <StringInternPool.h>
 
 //system headers:
+#include <span>
+#include <variant>
 #include <vector>
 
 //forward declarations:
 class Entity;
 class EntityQueryCondition;
 class EntityReadReference;
+
+//Basic filters borrow rooted query nodes; other queries own their prepared state in-place.
+using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition>;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches
@@ -125,6 +130,9 @@ public:
 	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
 		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
+	void GetMatchingEntities(std::span<const EntityQuery> queries,
+		BitArrayIntegerSet &matching_entities, bool is_first);
+
 	//like GetMatchingEntities, but returns a string id
 	EvaluableNode *ComputeValueFromMatchingEntities(EntityQueryCondition *cond,
 		BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
@@ -143,13 +151,13 @@ public:
 	// if return_query_value is true, then returns whatever the appropriate structure is for the query type for the final query
 	// if immediate_result is true, will return an immediate value as the result
 	static EvaluableNodeReference GetEntitiesMatchingQuery(EntityReadReference &container,
-		std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
+		std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
 		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container,
-		std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
+		std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
 		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//the container this is a cache for

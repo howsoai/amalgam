@@ -7,8 +7,9 @@
 
 //system headers:
 #include <limits>
-#include <memory>
+#include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 //forward declarations:
@@ -17,11 +18,31 @@ class Entity;
 //if set to false, will not allow use of the SBF datastore
 extern bool _enable_SBF_datastore;
 
-//State constructed only for distance queries. Its address stays stable when conditions move,
-//including while KnnCache borrows the evaluator and position labels during execution.
-class EntityQueryDistanceState
+class EntityQueryCondition
 {
 public:
+	EntityQueryCondition() = default;
+	EntityQueryCondition(EntityQueryCondition &&) noexcept = default;
+	EntityQueryCondition &operator=(EntityQueryCondition &&) noexcept = default;
+	EntityQueryCondition(const EntityQueryCondition &) = delete;
+	EntityQueryCondition &operator=(const EntityQueryCondition &) = delete;
+
+	//returns true if the entity matches the condition
+	bool DoesEntityMatchCondition(Entity *e);
+
+	//computes the distance measure of the condition
+	// returns NaN if invalid
+	double GetConditionDistanceMeasure(Entity *e, bool high_accuracy);
+
+	EvaluableNodeReference GetMatchingEntities(Entity *container, std::vector<Entity *> &matching_entities,
+		bool from_all_entities, EvaluableNodeManager *enm);
+
+	EvaluableNodeType queryType = ENT_NULL;
+
+	//Only non-string filter labels need preparation: retain their conversion in singleLabel.
+	//The node itself is still borrowed from the interpreter's rooted condition nodes.
+	EvaluableNode *filterNode = nullptr;
+
 	//the labels that comprise each dimension of the position
 	std::vector<StringInternPool::StringID> positionLabels;
 
@@ -74,56 +95,11 @@ public:
 
 	//if true, use concurrency if applicable
 	bool useConcurrency = false;
-};
 
-class EntityQueryCondition
-{
-public:
-	EntityQueryCondition() = default;
-	EntityQueryCondition(EntityQueryCondition &&) noexcept = default;
-	EntityQueryCondition &operator=(EntityQueryCondition &&) noexcept = default;
-	EntityQueryCondition(const EntityQueryCondition &) = delete;
-	EntityQueryCondition &operator=(const EntityQueryCondition &) = delete;
-
-	//returns true if the entity matches the condition
-	bool DoesEntityMatchCondition(Entity *e);
-
-	//computes the distance measure of the condition
-	// returns NaN if invalid
-	double GetConditionDistanceMeasure(Entity *e, bool high_accuracy);
-
-	EvaluableNodeReference GetMatchingEntities(Entity *container, std::vector<Entity *> &matching_entities,
-		bool from_all_entities, EvaluableNodeManager *enm);
-
-	EvaluableNodeType queryType = ENT_NULL;
-
-	//Basic queries leave this null. Unique ownership prevents prepared state from being
-	//copied or shared between queries and avoids constructing it for basic queries.
-	std::unique_ptr<EntityQueryDistanceState> distanceQuery = nullptr;
-
-	//label vector used for existence queries
-	//**also aliased and used for the list of entity IDs to compute conviction for when type is ENT_QUERY_ENTITY_CONVICTIONS
+	//entity IDs for coerced ID filters or distance statistics
 	std::vector<StringInternPool::StringID> existLabels;
 
-	//pairs of ids and values
-	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValueWithType>> singleLabels;
-
-	//an id and pairs of values
-	struct LabelBetweenValues
-	{
-		LabelBetweenValues(StringInternPool::StringID _label, EvaluableNodeImmediateValueType value_type,
-			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value) noexcept
-			: label(_label), valueType(value_type), lowValue(low_value), highValue(high_value)
-		{}
-
-		StringInternPool::StringID label;
-		EvaluableNodeImmediateValueType valueType;
-		EvaluableNodeImmediateValue lowValue;
-		EvaluableNodeImmediateValue highValue;
-	};
-	std::vector<LabelBetweenValues> labelBetweenValues;
-
-	//values for among/not_among, or the position for a distance query
+	//the position for a distance query
 	std::vector<EvaluableNodeImmediateValueWithType> valuesToCompare;
 
 	//a single standalone label in the query
@@ -165,3 +141,70 @@ public:
 	bool calculateMoment = false;
 	bool absoluteValue = false;
 };
+
+namespace EntityQueries
+{
+	inline EvaluableNodeType GetQueryType(const EntityQuery &query)
+	{
+		if(auto node = std::get_if<EvaluableNode *>(&query))
+			return *node == nullptr ? ENT_NULL : (*node)->GetType();
+		return std::get<EntityQueryCondition>(query).queryType;
+	}
+
+	inline EvaluableNode *GetFilterNode(const EntityQuery &query)
+	{
+		if(auto node = std::get_if<EvaluableNode *>(&query))
+			return *node;
+		return std::get<EntityQueryCondition>(query).filterNode;
+	}
+
+	inline StringInternPool::StringID GetFilterLabel(const EntityQuery &query)
+	{
+		if(auto prepared = std::get_if<EntityQueryCondition>(&query))
+			return prepared->singleLabel;
+		auto node = std::get<EvaluableNode *>(query);
+		if(node == nullptr || node->GetOrderedChildNodes().empty())
+			return StringInternPool::NOT_A_STRING_ID;
+		auto label = node->GetOrderedChildNodes()[0];
+		return label != nullptr && label->GetType() == ENT_STRING ? label->GetStringIDReference() : StringInternPool::NOT_A_STRING_ID;
+	}
+
+	//Converts range endpoints once per filter, outside the entity loop.
+	std::tuple<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>
+		GetQueryRange(EvaluableNode *query);
+
+	void FilterEntities(EvaluableNode *query, StringInternPool::StringID label, Entity *container,
+		std::vector<Entity *> &matching_entities, bool is_first);
+
+	//Existence filters were historically grouped; preserve their combined return labels.
+	template<typename Function>
+	void ForEachQueryLabel(const std::vector<EntityQuery> &queries, size_t query_index, Function function)
+	{
+		auto type = GetQueryType(queries[query_index]);
+		if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
+		{
+			size_t first = query_index;
+			while(first > 0 && GetQueryType(queries[first - 1]) == type)
+				--first;
+			for(size_t i = first; i <= query_index; i++)
+				function(GetFilterLabel(queries[i]));
+		}
+		else if((type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+			&& std::holds_alternative<EvaluableNode *>(queries[query_index]))
+		{
+			auto &ocn = std::get<EvaluableNode *>(queries[query_index])->GetOrderedChildNodes();
+			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
+				for(auto node : ocn[0]->GetOrderedChildNodesReference())
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(node);
+					if(valid)
+						function(id);
+				}
+		}
+		else if(auto prepared = std::get_if<EntityQueryCondition>(&queries[query_index]))
+		{
+			for(auto id : prepared->existLabels)
+				function(id);
+		}
+	}
+}

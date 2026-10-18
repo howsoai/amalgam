@@ -559,7 +559,7 @@ namespace EntityQueryBuilder
 
 	//interpret evaluable node as a distance query
 	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,
-		std::vector<EntityQueryCondition> &conditions, RandomStream &rs,
+		std::vector<EntityQuery> &conditions, RandomStream &rs,
 		Interpreter *calling_interpreter)
 	{
 		//cache ordered child nodes so don't need to keep fetching
@@ -569,38 +569,36 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
-		EntityQueryCondition *cur_condition = nullptr;
+		//Fold a single preceding exclusion into the distance query, as before.
+		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
+		bool reuse_exclusion = false;
 		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
-			&& conditions.size() > 0
-			&& conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1)
+			&& !conditions.empty() && EntityQueries::GetQueryType(conditions.back()) == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
-			cur_condition = &(conditions.back());
-			cur_condition->distanceQuery = std::make_unique<EntityQueryDistanceState>();
-			cur_condition->distanceQuery->entityIdToExclude = cur_condition->existLabels[0];
-			cur_condition->existLabels.clear();
+			size_t num_ids = 0;
+			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1,
+				[&](auto id) { excluded_id = id; ++num_ids; });
+			reuse_exclusion = (num_ids == 1);
 		}
+
+		if(reuse_exclusion)
+			conditions.back().emplace<EntityQueryCondition>();
 		else
-		{
-			//create a new condition for distance
-			conditions.emplace_back();
-			cur_condition = &(conditions.back());
-
-			cur_condition->distanceQuery = std::make_unique<EntityQueryDistanceState>();
-		}
-
-		auto &distance_query = *cur_condition->distanceQuery;
+			conditions.emplace_back(std::in_place_type<EntityQueryCondition>);
+		auto cur_condition = &std::get<EntityQueryCondition>(conditions.back());
+		if(reuse_exclusion)
+			cur_condition->entityIdToExclude = excluded_id;
 
 		//set query condition type
 		cur_condition->queryType = condition_type;
-		distance_query.useConcurrency = cn->GetConcurrency();
-		distance_query.interpreter = calling_interpreter;
+		cur_condition->useConcurrency = cn->GetConcurrency();
+		cur_condition->interpreter = calling_interpreter;
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
-		distance_query.minToRetrieve = std::numeric_limits<size_t>::max();
-		distance_query.numToRetrieveMinIncrementalProbability = 0.0;
-		distance_query.extraToRetrieve = 0;
+		cur_condition->minToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition->numToRetrieveMinIncrementalProbability = 0.0;
+		cur_condition->extraToRetrieve = 0;
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
@@ -618,14 +616,14 @@ namespace EntityQueryBuilder
 				if(num_params >= 1)
 				{
 					double min_inc_prob = EvaluableNode::ToNumber(top_k_ocn[0], 0.0);
-					distance_query.numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
+					cur_condition->numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
 
 					if(num_params >= 2)
 					{
 						double min_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[1], std::numeric_limits<double>::infinity());
 						min_to_retrieve = std::max(0.0, min_to_retrieve);
 						if(min_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
-							distance_query.minToRetrieve = static_cast<size_t>(min_to_retrieve);
+							cur_condition->minToRetrieve = static_cast<size_t>(min_to_retrieve);
 
 						if(num_params >= 3)
 						{
@@ -639,7 +637,7 @@ namespace EntityQueryBuilder
 								double extra_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[3], 0.0);
 								extra_to_retrieve = std::max(0.0, extra_to_retrieve);
 								if(extra_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
-									distance_query.extraToRetrieve = static_cast<size_t>(extra_to_retrieve);
+									cur_condition->extraToRetrieve = static_cast<size_t>(extra_to_retrieve);
 							}
 						}
 					}
@@ -657,18 +655,18 @@ namespace EntityQueryBuilder
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
 			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesReference();
-			distance_query.positionLabels.reserve(pos_labels_ocn.size());
+			cur_condition->positionLabels.reserve(pos_labels_ocn.size());
 			for(auto &pl : pos_labels_ocn)
 			{
 				auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(pl);
 				if(valid && Entity::IsLabelValidAndPublic(label_sid))
-					distance_query.positionLabels.push_back(label_sid);
+					cur_condition->positionLabels.push_back(label_sid);
 				else
 					cur_condition->queryType = ENT_NULL;
 			}
 		}
 
-		distance_query.populateOmittedFeatureValues = false;
+		cur_condition->populateOmittedFeatureValues = false;
 
 		//select based on type for position or entities
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
@@ -698,46 +696,46 @@ namespace EntityQueryBuilder
 				cur_condition->queryType = ENT_NULL;
 				return;
 			}
-			distance_query.positionsToCompare = &positions->GetOrderedChildNodesReference();
+			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
 		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			EvaluableNode *cluster_size = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
-			distance_query.minClusterWeight = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
+			cur_condition->minClusterWeight = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
 		}
 		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
 			EvaluableNode *position = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
-			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == distance_query.positionLabels.size()))
+			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
 					cur_condition->valuesToCompare);
 			}
 			else if(position != nullptr && position->GetType() == ENT_STRING)
 			{
-				distance_query.entityIdToExclude = position->GetStringIDReference();
+				cur_condition->entityIdToExclude = position->GetStringIDReference();
 				//these will be set later under lock
 				cur_condition->valuesToCompare.clear();
-				distance_query.populateOmittedFeatureValues = true;
+				cur_condition->populateOmittedFeatureValues = true;
 			}
 			else // no positions given, default to nulls for each label
 			{
-				cur_condition->valuesToCompare.reserve(distance_query.positionLabels.size());
-				for(size_t i = 0; i < distance_query.positionLabels.size(); i++)
+				cur_condition->valuesToCompare.reserve(cur_condition->positionLabels.size());
+				for(size_t i = 0; i < cur_condition->positionLabels.size(); i++)
 					cur_condition->valuesToCompare.push_back(EvaluableNodeImmediateValueWithType());
 			}
 		}
 
 		//set minkowski parameter; default to 1.0 for L1 distance
-		distance_query.distEvaluator.pValue = 1.0;
+		cur_condition->distEvaluator.pValue = 1.0;
 		if(ocn.size() > MINKOWSKI_PARAMETER)
 		{
-			distance_query.distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
+			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
 
 			//make sure valid value, if not, fall back to 2
-			if(FastIsNaN(distance_query.distEvaluator.pValue) || distance_query.distEvaluator.pValue < 0)
-				distance_query.distEvaluator.pValue = 1.0;
+			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
+				cur_condition->distEvaluator.pValue = 1.0;
 		}
 
 		EvaluableNode *weights_node = nullptr;
@@ -758,9 +756,9 @@ namespace EntityQueryBuilder
 
 		//value transforms for whatever is measured as "distance"
 		//need to populate distance transform BEFORE populating feature attributes
-		distance_query.distanceWeightExponent = 1.0;
-		distance_query.distEvaluator.computeSurprisal = false;
-		distance_query.distEvaluator.transformSurprisalToProb = false;
+		cur_condition->distanceWeightExponent = 1.0;
+		cur_condition->distEvaluator.computeSurprisal = false;
+		cur_condition->distEvaluator.transformSurprisalToProb = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
@@ -769,23 +767,23 @@ namespace EntityQueryBuilder
 				if(dwe_param->GetType() == ENT_STRING
 					&& dwe_param->GetStringIDReference() == GetStringIdFromBuiltInStringId(ENBISI_surprisal_to_prob))
 				{
-					distance_query.distEvaluator.computeSurprisal = true;
-					distance_query.distEvaluator.transformSurprisalToProb = true;
+					cur_condition->distEvaluator.computeSurprisal = true;
+					cur_condition->distEvaluator.transformSurprisalToProb = true;
 				}
 				else if(dwe_param->GetType() == ENT_STRING
 					&& dwe_param->GetStringIDReference() == GetStringIdFromBuiltInStringId(ENBISI_surprisal))
 				{
-					distance_query.distEvaluator.computeSurprisal = true;
+					cur_condition->distEvaluator.computeSurprisal = true;
 				}
 				else //try to convert to number
 				{
-					distance_query.distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
+					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 				}
 			}
 		}
 
-		PopulateDistanceFeatureParameters(distance_query.distEvaluator,
-			distance_query.positionLabels.size(), distance_query.positionLabels,
+		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
+			cur_condition->positionLabels.size(), cur_condition->positionLabels,
 			weights_node, weights_selection_features_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
@@ -806,26 +804,26 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		distance_query.distEvaluator.highAccuracyDistances = false;
-		distance_query.distEvaluator.recomputeAccurateDistances = true;
+		cur_condition->distEvaluator.highAccuracyDistances = false;
+		cur_condition->distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			auto np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]).second;
 			if(np_sid == GetStringIdFromBuiltInStringId(ENBISI_precise))
 			{
-				distance_query.distEvaluator.highAccuracyDistances = true;
-				distance_query.distEvaluator.recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = true;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			else if(np_sid == GetStringIdFromBuiltInStringId(ENBISI_fast))
 			{
-				distance_query.distEvaluator.highAccuracyDistances = false;
-				distance_query.distEvaluator.recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = false;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
 
-		distance_query.returnSortedList = false;
-		distance_query.additionalSortedListLabels.clear();
+		cur_condition->returnSortedList = false;
+		cur_condition->additionalSortedListLabels.clear();
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
@@ -836,12 +834,12 @@ namespace EntityQueryBuilder
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
-				distance_query.returnSortedList = EvaluableNode::ToBool(list_param);
+				cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 				if(!EvaluableNode::IsNull(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
 					{
-						distance_query.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+						cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 					}
 					else
 					{
@@ -849,7 +847,7 @@ namespace EntityQueryBuilder
 						{
 							auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 							if(valid) [[likely]]
-								distance_query.additionalSortedListLabels.push_back(sid);
+								cur_condition->additionalSortedListLabels.push_back(sid);
 						}
 					}
 				}
@@ -859,21 +857,21 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
-			distance_query.convictionOfRemoval = false;
+			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
-				distance_query.convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
+				cur_condition->convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
 			if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
-					distance_query.returnSortedList = EvaluableNode::ToBool(list_param);
+					cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 					if(!EvaluableNode::IsNull(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
 						{
-							distance_query.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+							cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 						}
 						else
 						{
@@ -881,7 +879,7 @@ namespace EntityQueryBuilder
 							{
 								auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 								if(valid) [[likely]]
-									distance_query.additionalSortedListLabels.push_back(sid);
+									cur_condition->additionalSortedListLabels.push_back(sid);
 							}
 						}
 					}
@@ -892,7 +890,7 @@ namespace EntityQueryBuilder
 
 	//builds a query condition from cn
 	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type,
-		std::vector<EntityQueryCondition> &conditions, RandomStream &rs)
+		std::vector<EntityQuery> &conditions, RandomStream &rs)
 	{
 		auto &ocn = cn->GetOrderedChildNodes();
 
@@ -923,46 +921,6 @@ namespace EntityQueryBuilder
 		default:;
 		}
 
-		//next, determine if a a new condition should be made, or reuse the current one
-		bool requires_new_condition = true; //if true, create a new condition rather than using current_condition
-		switch(type)
-		{
-		case ENT_QUERY_NOT_EXISTS:
-		case ENT_QUERY_EXISTS:
-		case ENT_QUERY_NOT_EQUALS:
-		case ENT_QUERY_EQUALS:
-		case ENT_QUERY_NOT_BETWEEN:
-			requires_new_condition = (conditions.size() == 0 || conditions.back().queryType != type);
-			break;
-
-		case ENT_QUERY_BETWEEN:
-		case ENT_QUERY_GREATER_OR_EQUAL_TO:
-		case ENT_QUERY_LESS_OR_EQUAL_TO:
-		{
-			//these three are equivalent
-			if(conditions.size() > 0)
-			{
-				EvaluableNodeType prev_type = conditions.back().queryType;
-				if(prev_type == ENT_QUERY_BETWEEN || prev_type == ENT_QUERY_GREATER_OR_EQUAL_TO || prev_type == ENT_QUERY_LESS_OR_EQUAL_TO)
-					requires_new_condition = false;
-			}
-			break;
-		}
-
-		default:;
-		}
-
-		//create a new condition if needed
-		if(requires_new_condition)
-		{
-			//create new condition
-			conditions.emplace_back();
-			conditions.back().queryType = type;
-		}
-
-		auto cur_condition = &(conditions.back());
-		cur_condition->singleLabel = 0;
-
 		//get label sid and return if label is invalid
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
 		if(type == ENT_QUERY_NOT_EXISTS
@@ -990,10 +948,52 @@ namespace EntityQueryBuilder
 
 			if(!Entity::IsLabelValidAndPublic(label_sid)) [[unlikely]]
 			{
-				cur_condition->queryType = ENT_NULL;
+				conditions.emplace_back(static_cast<EvaluableNode *>(nullptr));
 				return;
 			}
 		}
+
+		//These filters consume the rooted query node directly in both execution paths.
+		switch(type)
+		{
+		case ENT_QUERY_EXISTS:
+		case ENT_QUERY_NOT_EXISTS:
+		case ENT_QUERY_EQUALS:
+		case ENT_QUERY_NOT_EQUALS:
+		case ENT_QUERY_BETWEEN:
+		case ENT_QUERY_NOT_BETWEEN:
+		case ENT_QUERY_LESS_OR_EQUAL_TO:
+		case ENT_QUERY_GREATER_OR_EQUAL_TO:
+		case ENT_QUERY_AMONG:
+		case ENT_QUERY_NOT_AMONG:
+			if(ocn[0]->GetType() == ENT_STRING)
+				conditions.emplace_back(cn);
+			else
+			{
+				conditions.emplace_back(std::in_place_type<EntityQueryCondition>);
+				auto &condition = std::get<EntityQueryCondition>(conditions.back());
+				condition.queryType = type;
+				condition.filterNode = cn;
+				condition.singleLabel = label_sid;
+			}
+			return;
+
+		case ENT_QUERY_IN_ENTITY_LIST:
+		case ENT_QUERY_NOT_IN_ENTITY_LIST:
+			//Coercing an ID can allocate; prepare those lists once, as before.
+			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
+				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesReference()), end(ocn[0]->GetOrderedChildNodesReference()),
+					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))
+				break;
+			conditions.emplace_back(cn);
+			return;
+		default:;
+		}
+
+		conditions.emplace_back(std::in_place_type<EntityQueryCondition>);
+		auto cur_condition = &std::get<EntityQueryCondition>(conditions.back());
+		cur_condition->queryType = type;
+		cur_condition->singleLabel = 0;
 
 		//actually populate the condition parameters from the evaluable nodes
 		switch(type)
@@ -1045,46 +1045,6 @@ namespace EntityQueryBuilder
 			}
 			break;
 		}
-		case ENT_QUERY_BETWEEN:
-		case ENT_QUERY_NOT_BETWEEN:
-		{
-			//number of parameters checked above
-			EvaluableNode *low_value = ocn[1];
-			EvaluableNode *high_value = ocn[2];
-
-			//since types need to match, force both to the same type
-			if(EvaluableNode::IsNumericOrNull(low_value) || EvaluableNode::IsNumericOrNull(high_value))
-				cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
-					EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value));
-			else
-				cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-					EvaluableNode::ToStringIDIfExists(low_value).second,
-					EvaluableNode::ToStringIDIfExists(high_value).second);
-			break;
-		}
-
-		case ENT_QUERY_AMONG:
-		case ENT_QUERY_NOT_AMONG:
-		{
-			cur_condition->singleLabel = label_sid;
-
-			EvaluableNode *value_list = ocn[1];
-			if(EvaluableNode::IsOrderedArray(value_list))
-				CopyOrderedChildNodesToImmediateValuesAndTypes(value_list->GetOrderedChildNodesReference(),
-					cur_condition->valuesToCompare);
-			break;
-		}
-
-		case ENT_QUERY_NOT_EXISTS:
-		case ENT_QUERY_EXISTS:
-		{
-			//get label and append it if it is valid (otherwise don't match on anything)
-			if(ocn.size() >= 1)
-				cur_condition->existLabels.push_back(label_sid);
-
-			break;
-		}
-
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
@@ -1103,45 +1063,6 @@ namespace EntityQueryBuilder
 			else
 				cur_condition->singleLabelType = ENIVT_STRING_ID;
 
-			break;
-		}
-
-		case ENT_QUERY_LESS_OR_EQUAL_TO:
-		case ENT_QUERY_GREATER_OR_EQUAL_TO:
-		{
-			//these query types will be transformed into a between query, including the appropriate infinite
-
-			//number of parameters checked above
-			EvaluableNode *compare_value = ocn[1];
-
-			if(EvaluableNode::IsNumericOrNull(compare_value))
-			{
-				if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
-						-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value));
-				else
-					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
-						EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity());
-			}
-			else
-			{
-				if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-						string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value).second);
-				else
-					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-						EvaluableNode::ToStringIDIfExists(compare_value).second, string_intern_pool.NOT_A_STRING_ID);
-			}
-
-			cur_condition->queryType = ENT_QUERY_BETWEEN;
-			break;
-		}
-
-		case ENT_QUERY_NOT_EQUALS:
-		case ENT_QUERY_EQUALS:
-		{
-			auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
-			cur_condition->singleLabels.emplace_back(std::make_pair(label_sid, value));
 			break;
 		}
 

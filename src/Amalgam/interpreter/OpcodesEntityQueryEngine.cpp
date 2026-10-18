@@ -160,7 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
-		static std::vector<EntityQueryCondition> conditions;
+		static std::vector<EntityQuery> conditions;
 
 	conditions.clear();
 	for(auto &cond_node : condition_nodes)
@@ -224,6 +224,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		return result;
 	}
 
+	//Construction is complete before execution borrows any in-place distance state.
+	//The condition nodes remain rooted above until all query work has completed.
 	//perform query
 	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity,
 		conditions, evaluableNodeManager, return_query_value, immediate_result);

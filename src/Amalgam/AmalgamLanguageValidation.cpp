@@ -15,6 +15,40 @@ MakeAmalgamUnitTests(Ts... elems)
 }
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+//String-label filters use the borrowed EvaluableNode * alternative of EntityQuery.
+//Exercise their handoff to the prepared ENT_QUERY_SUM through the interpreter.
+AmalgamExample{ R"&((seq
+	(create_entities
+		"a" {group "keep" x 3 weight 2}
+		"b" {group "keep" x 7 weight 3}
+		"c" {group "drop" x 5 weight 11}
+		"d" {group "keep" x 100 weight 13}
+	)
+	[
+		;Each filter must exclude a different distractor before summing.
+		(compute_on_contained_entities
+			(query_equals "group" "keep")
+			(query_between "x" 3 7)
+			(query_sum "x")
+		)
+		;Also exercise a list of runtime query nodes and the warmed cache.
+		(compute_on_contained_entities [
+			(query_equals "group" "keep")
+			(query_between "x" 3 7)
+			(query_sum "x" "weight")
+		])
+		(compute_on_contained_entities
+			(query_equals "group" "missing")
+			(query_sum "x")
+		)
+		;An empty match must not leave stale state in the next query.
+		(compute_on_contained_entities
+			(query_equals "group" "keep")
+			(query_between "x" 3 7)
+			(query_sum "x")
+		)
+	]
+))&", R"([10 27 0 10])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "a" (assoc "x" 1))
 	(create_entities "b" (assoc "x" 2))

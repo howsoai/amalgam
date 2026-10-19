@@ -110,30 +110,11 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	case ENT_QUERY_SAMPLE:
 	case ENT_QUERY_MIN:
 	case ENT_QUERY_MAX:
-	case ENT_QUERY_MIN_DIFFERENCE:
-	case ENT_QUERY_MAX_DIFFERENCE:
 	{
 		if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
 		{
 			if(!DoesHaveLabel(cond->singleLabel))
 				labels_to_add.push_back(cond->singleLabel);
-		}
-
-		break;
-	}
-
-	case ENT_QUERY_MODE:
-	case ENT_QUERY_QUANTILE:
-	case ENT_QUERY_GENERALIZED_MEAN:
-	case ENT_QUERY_VALUE_MASSES:
-	{
-		if(!DoesHaveLabel(cond->singleLabel))
-			labels_to_add.push_back(cond->singleLabel);
-
-		if(cond->weightLabel != StringInternPool::NOT_A_STRING_ID)
-		{
-			if(!DoesHaveLabel(cond->weightLabel))
-				labels_to_add.push_back(cond->weightLabel);
 		}
 
 		break;
@@ -205,25 +186,37 @@ static double ComputeFromMatchingNumbers(SeparableBoxFilterDataStore &sbfds,
 	return compute_from(matching_entities);
 }
 
-double EntityQueryCaches::ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
-	BitArrayIntegerSet &matching_entities, bool is_first)
-{
 #if defined(MULTITHREAD_SUPPORT)
-	Concurrency::ReadLock lock(mutex);
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQueryAggregate &query, Concurrency::ReadLock &lock)
+#else
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQueryAggregate &query)
 #endif
+{
 	std::vector<StringInternPool::StringID> labels_to_add;
-	if(!DoesHaveLabel(value_label))
-		labels_to_add.push_back(value_label);
-	if(weight_label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(weight_label))
-		labels_to_add.push_back(weight_label);
+	if(!DoesHaveLabel(query.valueLabel))
+		labels_to_add.push_back(query.valueLabel);
+	if(query.weightLabel != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(query.weightLabel))
+		labels_to_add.push_back(query.weightLabel);
 #if defined(MULTITHREAD_SUPPORT)
 	EnsureLabelsAreCached(labels_to_add, lock);
 #else
 	EnsureLabelsAreCached(labels_to_add);
 #endif
-	return ComputeFromMatchingNumbers(sbfds, value_label, weight_label, matching_entities, is_first,
-		[](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
-			return EntityQueriesStatistics::Sum(first, last, get_value, has_weight, get_weight);
+}
+
+double EntityQueryCaches::ComputeNumericAggregate(const EntityQueryAggregate &query,
+	BitArrayIntegerSet &matching_entities, bool is_first)
+{
+#if defined(MULTITHREAD_SUPPORT)
+	Concurrency::ReadLock lock(mutex);
+	EnsureLabelsAreCached(query, lock);
+#else
+	EnsureLabelsAreCached(query);
+#endif
+	return ComputeFromMatchingNumbers(sbfds, query.valueLabel, query.weightLabel, matching_entities, is_first,
+		[&query](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
+			return EntityQueries::ComputeNumericAggregate(query, first, last, get_value, has_weight, get_weight,
+				buffers.doubleVector, &buffers.pairDoubleVector);
 		});
 }
 
@@ -516,40 +509,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		break;
 	}
 
-	case ENT_QUERY_QUANTILE:
-	case ENT_QUERY_GENERALIZED_MEAN:
-	case ENT_QUERY_MIN_DIFFERENCE:
-	case ENT_QUERY_MAX_DIFFERENCE:
-	{
-		double result = ComputeFromMatchingNumbers(sbfds, cond->singleLabel, cond->weightLabel, matching_entities, is_first,
-			[&](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
-				switch(cond->queryType)
-				{
-				case ENT_QUERY_QUANTILE:
-					return Quantile(first, last, get_value,
-						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
-
-				case ENT_QUERY_GENERALIZED_MEAN:
-					return GeneralizedMean(first, last, get_value,
-						has_weight, get_weight, cond->pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
-
-				case ENT_QUERY_MIN_DIFFERENCE:
-					return EntityQueriesStatistics::ExtremeDifference(first, last, get_value, true,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-
-				case ENT_QUERY_MAX_DIFFERENCE:
-					return EntityQueriesStatistics::ExtremeDifference(first, last, get_value, false,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-
-				default:
-					return 0.0;
-				}
-			});
-
-		compute_results.emplace_back(result, 0);
-		return;
-	}
-
 	default:  // Other Enum value not handled
 	{
 		break;
@@ -557,103 +516,83 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 	}
 }
 
-EvaluableNode *EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
+EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQueryAggregate &query, BitArrayIntegerSet &matching_entities,
 	EvaluableNodeManager *enm, bool is_first)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(cond, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelsAreCached(cond);
+	EnsureLabelsAreCached(query);
 #endif
 
-	switch(cond->queryType)
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(query.valueLabel);
+	if(column_index == std::numeric_limits<size_t>::max())
+		return EvaluableNodeReference::Null();
+
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(query.weightLabel);
+	bool has_weight = false;
+	if(weight_column_index != std::numeric_limits<size_t>::max())
+		has_weight = true;
+	else //just use a valid column
+		weight_column_index = 0;
+
+	if(is_first)
 	{
-	case ENT_QUERY_MODE:
+		auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<size_t>(column_index);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
+		auto [found, compute_result] = ModeString<size_t>(0, sbfds.GetNumInsertedEntities(), get_key_string_value, has_weight, get_weight);
+		if(!found)
+			return EvaluableNodeReference::Null();
+		return Parser::ParseFromKeyString(compute_result, enm);
+	}
+	else
 	{
-		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
-		if(column_index == std::numeric_limits<size_t>::max())
-			return nullptr;
-
-		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-		bool has_weight = false;
-		if(weight_column_index != std::numeric_limits<size_t>::max())
-			has_weight = true;
-		else //just use a valid column
-			weight_column_index = 0;
-
-		if(is_first)
-		{
-			auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<size_t>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
-			auto [found, compute_result] = ModeString<size_t>(0, sbfds.GetNumInsertedEntities(), get_key_string_value, has_weight, get_weight);
-			if(!found)
-				return nullptr;
-			return Parser::ParseFromKeyString(compute_result, enm);
-		}
-		else
-		{
-			auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
-			auto [found, compute_result] = ModeString(matching_entities.begin(), matching_entities.end(), get_key_string_value, has_weight, get_weight);
-			if(!found)
-				return nullptr;
-			return Parser::ParseFromKeyString(compute_result, enm);
-		}
+		auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
+		auto [found, compute_result] = ModeString(matching_entities.begin(), matching_entities.end(), get_key_string_value, has_weight, get_weight);
+		if(!found)
+			return EvaluableNodeReference::Null();
+		return Parser::ParseFromKeyString(compute_result, enm);
 	}
-	default:
-		break;
-	}
-
-	return nullptr;
 }
 
-void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
-	OrderedHashMap<StringInternPool::StringID, double> &compute_results, bool is_first)
+OrderedHashMap<StringInternPool::StringID, double> EntityQueryCaches::ComputeValueMasses(const EntityQueryAggregate &query,
+	BitArrayIntegerSet &matching_entities, bool is_first)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(cond, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelsAreCached(cond);
+	EnsureLabelsAreCached(query);
 #endif
 
-	switch(cond->queryType)
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(query.valueLabel);
+	if(column_index == std::numeric_limits<size_t>::max())
+		return {};
+
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(query.weightLabel);
+	bool has_weight = false;
+	if(weight_column_index != std::numeric_limits<size_t>::max())
+		has_weight = true;
+	else //just use a valid column
+		weight_column_index = 0;
+
+	size_t num_unique_values = sbfds.GetNumUniqueValuesForColumn(column_index, ENIVT_STRING_ID);
+
+	if(is_first)
 	{
-	case ENT_QUERY_VALUE_MASSES:
-	{
-		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
-		if(column_index == std::numeric_limits<size_t>::max())
-			return;
-
-		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-		bool has_weight = false;
-		if(weight_column_index != std::numeric_limits<size_t>::max())
-			has_weight = true;
-		else //just use a valid column
-			weight_column_index = 0;
-
-		size_t num_unique_values = sbfds.GetNumUniqueValuesForColumn(column_index, ENIVT_STRING_ID);
-
-		if(is_first)
-		{
-			auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<size_t>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
-			compute_results = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, sbfds.GetNumInsertedEntities(),
-				num_unique_values, get_value, has_weight, get_weight);
-		}
-		else
-		{
-			auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
-			compute_results = EntityQueriesStatistics::ValueMassesStringId(matching_entities.begin(), matching_entities.end(),
-				num_unique_values, get_value, has_weight, get_weight);
-		}
-
-		return;
+		auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<size_t>(column_index);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
+		return EntityQueriesStatistics::ValueMassesStringId<size_t>(0, sbfds.GetNumInsertedEntities(),
+			num_unique_values, get_value, has_weight, get_weight);
 	}
-	default:
-		break;
+	else
+	{
+		auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
+		return EntityQueriesStatistics::ValueMassesStringId(matching_entities.begin(), matching_entities.end(),
+			num_unique_values, get_value, has_weight, get_weight);
 	}
 }
 
@@ -758,11 +697,17 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 
 		//Cached aggregates return immediately, even for contained_entities or a non-final query.
-		if(EntityQueries::GetQueryType(query) == ENT_QUERY_SUM)
+		if(auto aggregate = std::get_if<EntityQueryAggregate>(&query))
 		{
-			auto &sum = std::get<EntityQuerySum>(query);
+			if(aggregate->queryType == ENT_QUERY_MODE)
+				return entity_caches->ComputeMode(*aggregate, matching_ents, enm, is_first);
+			if(aggregate->queryType == ENT_QUERY_VALUE_MASSES)
+			{
+				auto value_weights = entity_caches->ComputeValueMasses(*aggregate, matching_ents, is_first);
+				return EntityQueries::ValueMassesToResult(value_weights, enm, immediate_result);
+			}
 			return enm->AllocIfNotImmediate(
-				entity_caches->ComputeSum(sum.valueLabel, sum.weightLabel, matching_ents, is_first), immediate_result);
+				entity_caches->ComputeNumericAggregate(*aggregate, matching_ents, is_first), immediate_result);
 		}
 
 		if(EntityQueries::GetFilterNode(query) != nullptr)
@@ -872,10 +817,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			break;
 		}
 
-		case ENT_QUERY_QUANTILE:
-		case ENT_QUERY_GENERALIZED_MEAN:
-		case ENT_QUERY_MIN_DIFFERENCE:
-		case ENT_QUERY_MAX_DIFFERENCE:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 		{
 			entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
@@ -884,31 +825,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
 			else
 				return EvaluableNodeReference::Null();
-		}
-
-		case ENT_QUERY_MODE:
-			return EvaluableNodeReference(entity_caches->ComputeValueFromMatchingEntities(&cond, matching_ents, enm, is_first), true);
-
-		case ENT_QUERY_VALUE_MASSES:
-		{
-			OrderedHashMap<StringInternPool::StringID, double> value_weights;
-			entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
-
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
-			{
-				double num_results = static_cast<double>(value_weights.size());
-				for(auto &[value, weight] : value_weights)
-					string_intern_pool.DestroyStringReference(value);
-				return EvaluableNodeReference(num_results);
-			}
-
-			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-			assoc->ReserveMappedChildNodes(value_weights.size());
-
-			for(auto &[value, weight] : value_weights)
-				assoc->SetMappedChildNodeWithReferenceHandoff(value, enm->AllocNode(weight));
-
-			return EvaluableNodeReference(assoc, true);
 		}
 
 		case ENT_QUERY_SAMPLE:
@@ -1156,16 +1072,24 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		//reset to make sure it doesn't return an outdated list
 		query_return_value = EvaluableNodeReference::Null();
 
-		if(EntityQueries::GetQueryType(conditions[cond_index]) == ENT_QUERY_SUM)
+		if(auto aggregate = std::get_if<EntityQueryAggregate>(&conditions[cond_index]))
 		{
 			if(first_condition)
 				matching_entities = container->GetContainedEntities();
 			//Fallback aggregates only compute in final compute_on_contained_entities position.
 			if(last_condition && return_query_value)
 			{
-				auto &sum = std::get<EntityQuerySum>(conditions[cond_index]);
-				query_return_value = EvaluableNodeReference(enm->AllocNode(
-					EntityQueries::ComputeSum(sum.valueLabel, sum.weightLabel, matching_entities)), true);
+				if(aggregate->queryType == ENT_QUERY_MODE)
+					query_return_value = EntityQueries::ComputeMode(*aggregate, matching_entities, enm);
+				else if(aggregate->queryType == ENT_QUERY_VALUE_MASSES)
+				{
+					auto value_weights = EntityQueries::ComputeValueMasses(*aggregate, matching_entities);
+					//Fallback always constructs the result, including size-only requests.
+					query_return_value = EntityQueries::ValueMassesToResult(value_weights, enm, {});
+				}
+				else
+					query_return_value = EvaluableNodeReference(enm->AllocNode(
+						EntityQueries::ComputeNumericAggregate(*aggregate, matching_entities)), true);
 			}
 			continue;
 		}

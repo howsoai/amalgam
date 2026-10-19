@@ -20,12 +20,57 @@ static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entiti
 	};
 }
 
-double EntityQueries::ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+double EntityQueries::ComputeNumericAggregate(const EntityQueryAggregate &query, const std::vector<Entity *> &matching_entities)
+{
+	std::vector<double> values_buffer;
+	return ComputeNumericAggregate<size_t>(query, 0, matching_entities.size(),
+		GetEntityNumberAccessor<false>(matching_entities, query.valueLabel), query.weightLabel != StringInternPool::NOT_A_STRING_ID,
+		GetEntityNumberAccessor<true>(matching_entities, query.weightLabel), values_buffer, nullptr);
+}
+
+EvaluableNodeReference EntityQueries::ComputeMode(const EntityQueryAggregate &query,
+	const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm)
+{
+	auto get_key_string_value = [&matching_entities, &query](size_t i, std::string &value) {
+		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(query.valueLabel, false, true);
+		value = std::move(ret_val);
+		return found;
+	};
+	auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_key_string_value,
+		query.weightLabel != StringInternPool::NOT_A_STRING_ID, GetEntityNumberAccessor<true>(matching_entities, query.weightLabel));
+	if(!found)
+		return EvaluableNodeReference::Null();
+	return Parser::ParseFromKeyString(mode, enm);
+}
+
+OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMasses(const EntityQueryAggregate &query,
 	const std::vector<Entity *> &matching_entities)
 {
-	return EntityQueriesStatistics::Sum<size_t>(0, matching_entities.size(),
-		GetEntityNumberAccessor<false>(matching_entities, value_label), weight_label != StringInternPool::NOT_A_STRING_ID,
-		GetEntityNumberAccessor<true>(matching_entities, weight_label));
+	auto get_key_string_value = [&matching_entities, &query](size_t i, StringInternPool::StringID &value) {
+		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(query.valueLabel, false, true);
+		value = ret_val;
+		return found;
+	};
+	return EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_key_string_value,
+		query.weightLabel != StringInternPool::NOT_A_STRING_ID, GetEntityNumberAccessor<false>(matching_entities, query.weightLabel));
+}
+
+EvaluableNodeReference EntityQueries::ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
+	EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+	{
+		double num_results = static_cast<double>(value_weights.size());
+		for(auto &[value, weight] : value_weights)
+			string_intern_pool.DestroyStringReference(value);
+		return EvaluableNodeReference(num_results);
+	}
+
+	EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
+	assoc->ReserveMappedChildNodes(value_weights.size());
+	for(auto &[value, weight] : value_weights)
+		assoc->SetMappedChildNodeWithReferenceHandoff(value, enm->AllocNode(weight));
+	return EvaluableNodeReference(assoc, true);
 }
 
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
@@ -51,12 +96,6 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 	case ENT_QUERY_MAX:
 	case ENT_QUERY_MIN:
-	case ENT_QUERY_MODE:
-	case ENT_QUERY_QUANTILE:
-	case ENT_QUERY_GENERALIZED_MEAN:
-	case ENT_QUERY_MIN_DIFFERENCE:
-	case ENT_QUERY_MAX_DIFFERENCE:
-	case ENT_QUERY_VALUE_MASSES:
 		//it does not fail the condition here - needs to be checked elsewhere
 		return true;
 
@@ -350,104 +389,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			matching_entities[i] = entity_values[i].first;
 
 		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_MODE:
-	case ENT_QUERY_QUANTILE:
-	case ENT_QUERY_GENERALIZED_MEAN:
-	case ENT_QUERY_MIN_DIFFERENCE:
-	case ENT_QUERY_MAX_DIFFERENCE:
-	{
-		//not useful unless computing
-		if(enm == nullptr)
-			return EvaluableNodeReference::Null();
-
-		auto get_value = GetEntityNumberAccessor<false>(matching_entities, singleLabel);
-		auto get_weight = GetEntityNumberAccessor<true>(matching_entities, weightLabel);
-
-		switch(queryType)
-		{
-		case ENT_QUERY_MODE:
-		{
-			auto get_key_string_value = [&matching_entities, this]
-			(size_t i, std::string &value)
-				{
-					auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(singleLabel, false, true);
-					value = std::move(ret_val);
-
-					return found;
-				};
-
-			auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_key_string_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-
-			if(!found)
-				return EvaluableNodeReference::Null();
-
-			return Parser::ParseFromKeyString(mode, enm);
-		}
-		case ENT_QUERY_QUANTILE:
-		{
-			double quantile = Quantile<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage);
-			return EvaluableNodeReference(enm->AllocNode(quantile), true);
-		}
-		case ENT_QUERY_GENERALIZED_MEAN:
-		{
-			double generalized_mean = GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, pValue, center,
-				calculateMoment, absoluteValue);
-			return EvaluableNodeReference(enm->AllocNode(generalized_mean), true);
-		}
-		case ENT_QUERY_MIN_DIFFERENCE:
-		case ENT_QUERY_MAX_DIFFERENCE:
-		{
-			std::vector<double> values_buffer;
-			double extreme_value = EntityQueriesStatistics::ExtremeDifference<size_t>(0, matching_entities.size(), get_value,
-				queryType == ENT_QUERY_MIN_DIFFERENCE, maxDistance, includeZeroDifferences, values_buffer);
-			return EvaluableNodeReference(enm->AllocNode(extreme_value), true);
-		}
-		default:
-			break;
-		}
-
-		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_VALUE_MASSES:
-	{
-		//not useful unless computing
-		if(enm == nullptr)
-			return EvaluableNodeReference::Null();
-
-		auto get_key_string_value = [&matching_entities, this]
-		(size_t i, StringInternPool::StringID &value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(singleLabel, false, true);
-				value = ret_val;
-
-				return found;
-			};
-
-		auto get_weight = [&matching_entities, this]
-		(size_t i, double &weight_value)
-			{
-				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-				if(found)
-					weight_value = ret_value;
-				return found;
-			};
-
-		auto value_weights = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_key_string_value,
-			weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-
-		EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-		assoc->ReserveMappedChildNodes(value_weights.size());
-
-		for(auto &[value, weight] : value_weights)
-			assoc->SetMappedChildNodeWithReferenceHandoff(value, enm->AllocNode(weight));
-
-		return EvaluableNodeReference(assoc, true);
 	}
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:

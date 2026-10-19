@@ -953,13 +953,41 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		//SUM retains converted labels; basic filters consume rooted query nodes directly.
+		//Aggregates retain parsed arguments; basic filters consume rooted query nodes directly.
 		switch(type)
 		{
 		case ENT_QUERY_SUM:
-			conditions.emplace_back(EntityQuerySum{label_sid, ocn.size() >= 2
-				? EvaluableNode::ToStringIDIfExists(ocn[1]).second : StringInternPool::NOT_A_STRING_ID});
+		case ENT_QUERY_MODE:
+		case ENT_QUERY_VALUE_MASSES:
+		case ENT_QUERY_QUANTILE:
+		case ENT_QUERY_GENERALIZED_MEAN:
+		case ENT_QUERY_MIN_DIFFERENCE:
+		case ENT_QUERY_MAX_DIFFERENCE:
+		{
+			auto &query = std::get<EntityQueryAggregate>(conditions.emplace_back(EntityQueryAggregate{type, label_sid}));
+			if(type == ENT_QUERY_MIN_DIFFERENCE || type == ENT_QUERY_MAX_DIFFERENCE)
+			{
+				query.difference = {ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN(),
+					type == ENT_QUERY_MIN_DIFFERENCE && ocn.size() >= 3 && EvaluableNode::ToBool(ocn[2])};
+			}
+			else
+			{
+				bool has_parameter = (type == ENT_QUERY_QUANTILE || type == ENT_QUERY_GENERALIZED_MEAN);
+				//Keep conversion order: percentage/power, weight, then mean options.
+				double parameter = type == ENT_QUERY_QUANTILE ? 0.5 : 1.0;
+				if(has_parameter && ocn.size() >= 2)
+					parameter = EvaluableNode::ToNumber(ocn[1]);
+				size_t weight_index = has_parameter ? 2 : 1;
+				if(ocn.size() > weight_index)
+					query.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
+				if(type == ENT_QUERY_QUANTILE)
+					query.quantilePercentage = parameter;
+				else if(type == ENT_QUERY_GENERALIZED_MEAN)
+					query.mean = {parameter, ocn.size() >= 4 ? EvaluableNode::ToNumber(ocn[3], 0.0) : 0.0,
+						ocn.size() >= 5 && EvaluableNode::ToBool(ocn[4]), ocn.size() >= 6 && EvaluableNode::ToBool(ocn[5])};
+			}
 			return;
+		}
 
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
@@ -1067,85 +1095,6 @@ namespace EntityQueryBuilder
 				cur_condition->singleLabelType = ENIVT_NUMBER;
 			else
 				cur_condition->singleLabelType = ENIVT_STRING_ID;
-
-			break;
-		}
-
-		case ENT_QUERY_MIN_DIFFERENCE:
-			cur_condition->singleLabel = label_sid;
-			//weightLabel is used in common paths, so make sure it is initialized
-			cur_condition->weightLabel = string_intern_pool.NOT_A_STRING_ID;
-
-			cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
-			if(ocn.size() >= 2)
-				cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[1]);
-
-			cur_condition->includeZeroDifferences = false;
-			if(ocn.size() >= 3)
-				cur_condition->includeZeroDifferences = EvaluableNode::ToBool(ocn[2]);
-			break;
-
-		case ENT_QUERY_MAX_DIFFERENCE:
-			cur_condition->singleLabel = label_sid;
-			//weightLabel is used in common paths, so make sure it is initialized
-			cur_condition->weightLabel = string_intern_pool.NOT_A_STRING_ID;
-
-			cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
-			if(ocn.size() >= 2)
-				cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[1]);
-
-			break;
-
-		case ENT_QUERY_MODE:
-		case ENT_QUERY_VALUE_MASSES:
-		{
-			cur_condition->singleLabel = label_sid;
-
-			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
-			if(ocn.size() >= 2)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]).second;
-
-			break;
-		}
-
-		case ENT_QUERY_QUANTILE:
-		{
-			cur_condition->singleLabel = label_sid;
-
-			cur_condition->qPercentage = 0.5;
-			if(ocn.size() >= 2)
-				cur_condition->qPercentage = EvaluableNode::ToNumber(ocn[1]);
-
-			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
-			if(ocn.size() >= 3)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]).second;
-
-			break;
-		}
-
-		case ENT_QUERY_GENERALIZED_MEAN:
-		{
-			cur_condition->singleLabel = label_sid;
-
-			cur_condition->pValue = 1;
-			if(ocn.size() >= 2)
-				cur_condition->pValue = EvaluableNode::ToNumber(ocn[1]);
-
-			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
-			if(ocn.size() >= 3)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]).second;
-
-			cur_condition->center = 0.0;
-			if(ocn.size() >= 4)
-				cur_condition->center = EvaluableNode::ToNumber(ocn[3], 0.0);
-
-			cur_condition->calculateMoment = false;
-			if(ocn.size() >= 5)
-				cur_condition->calculateMoment = EvaluableNode::ToBool(ocn[4]);
-
-			cur_condition->absoluteValue = false;
-			if(ocn.size() >= 6)
-				cur_condition->absoluteValue = EvaluableNode::ToBool(ocn[5]);
 
 			break;
 		}

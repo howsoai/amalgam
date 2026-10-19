@@ -2,6 +2,7 @@
 
 //project headers:
 #include "Entity.h"
+#include "EntityQueriesStatistics.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 
@@ -111,7 +112,7 @@ public:
 	//a label representing a weight label
 	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
 
-	//maximum distance, or the requested difference for min/max_difference
+	//maximum distance
 	double maxDistance = std::numeric_limits<double>::quiet_NaN();
 
 	//maximum number of entities to attempt to retrieve (based on queryType)
@@ -128,18 +129,6 @@ public:
 
 	//the random stream for queries that use it
 	RandomStream randomStream;
-
-	//includes zero as a valid difference for ENT_QUERY_MIN_DIFFERENCE
-	bool includeZeroDifferences = false;
-
-	//quantile percentage, for ENT_QUERY_QUANTILE
-	double qPercentage = 0.5;
-
-	//for ENT_QUERY_GENERALIZED_MEAN
-	double pValue = 1.0;
-	double center = 0.0;
-	bool calculateMoment = false;
-	bool absoluteValue = false;
 };
 
 namespace EntityQueries
@@ -148,8 +137,8 @@ namespace EntityQueries
 	{
 		if(auto node = std::get_if<EvaluableNode *>(&query))
 			return *node == nullptr ? ENT_NULL : (*node)->GetType();
-		if(std::holds_alternative<EntityQuerySum>(query))
-			return ENT_QUERY_SUM;
+		if(auto aggregate = std::get_if<EntityQueryAggregate>(&query))
+			return aggregate->queryType;
 		return std::get<EntityQueryCondition>(query).queryType;
 	}
 
@@ -180,8 +169,42 @@ namespace EntityQueries
 	void FilterEntities(EvaluableNode *query, StringInternPool::StringID label, Entity *container,
 		std::vector<Entity *> &matching_entities, bool is_first);
 
-	double ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+	//Share numeric dispatch across cached iterator types and fallback entity accessors.
+	//Borrow the accessors here: copying cached std::function accessors can allocate.
+	template<typename Iterator, typename ValueFunction, typename WeightFunction>
+	double ComputeNumericAggregate(const EntityQueryAggregate &query, Iterator first, Iterator last,
+		const ValueFunction &get_value, bool has_weight, const WeightFunction &get_weight,
+		std::vector<double> &values_buffer, std::vector<std::pair<double, double>> *quantile_buffer)
+	{
+		switch(query.queryType)
+		{
+		case ENT_QUERY_SUM:
+			return EntityQueriesStatistics::Sum(first, last, get_value, has_weight, get_weight);
+		case ENT_QUERY_QUANTILE:
+			return Quantile(first, last, get_value, has_weight, get_weight, query.quantilePercentage, quantile_buffer);
+		case ENT_QUERY_GENERALIZED_MEAN:
+			return GeneralizedMean(first, last, get_value, has_weight, get_weight,
+				query.mean.power, query.mean.center, query.mean.calculateMoment, query.mean.absoluteValue);
+		case ENT_QUERY_MIN_DIFFERENCE:
+		case ENT_QUERY_MAX_DIFFERENCE:
+			return EntityQueriesStatistics::ExtremeDifference(first, last, get_value,
+				query.queryType == ENT_QUERY_MIN_DIFFERENCE, query.difference.limit, query.difference.includeZero, values_buffer);
+		default:
+			return std::numeric_limits<double>::quiet_NaN();
+		}
+	}
+
+	double ComputeNumericAggregate(const EntityQueryAggregate &query, const std::vector<Entity *> &matching_entities);
+
+	EvaluableNodeReference ComputeMode(const EntityQueryAggregate &query,
+		const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm);
+
+	//The returned map owns one StringID reference per key.
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryAggregate &query,
 		const std::vector<Entity *> &matching_entities);
+
+	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
+		EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Existence filters were historically grouped; preserve their combined return labels.
 	template<typename Function>

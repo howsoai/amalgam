@@ -22,14 +22,37 @@ class EntityQueryCondition;
 class EntityReadReference;
 
 //Retain label conversion at query construction, including non-string arguments.
-struct EntityQuerySum
+struct EntityQueryAggregate
 {
+	EvaluableNodeType queryType;
 	StringInternPool::StringID valueLabel;
-	StringInternPool::StringID weightLabel;
+	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
+
+	struct MeanOptions
+	{
+		double power;
+		double center;
+		bool calculateMoment;
+		bool absoluteValue;
+	};
+
+	struct DifferenceOptions
+	{
+		double limit;
+		bool includeZero;
+	};
+
+	//Only the options selected by queryType are active. SUM, mode, and masses use just the labels.
+	union
+	{
+		double quantilePercentage = 0.5;
+		MeanOptions mean;
+		DifferenceOptions difference;
+	};
 };
 
 //Basic filters borrow rooted query nodes; parsed parameters and prepared state remain in-place.
-using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQuerySum>;
+using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQueryAggregate>;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches
@@ -119,9 +142,11 @@ public:
 	//makes sure any labels needed for cond are in the cache
 #if defined(MULTITHREAD_SUPPORT)
 	void EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQueryAggregate &query, Concurrency::ReadLock &lock);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
 	void EnsureLabelsAreCached(EntityQueryCondition *cond);
+	void EnsureLabelsAreCached(const EntityQueryAggregate &query);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
@@ -142,17 +167,15 @@ public:
 	void GetMatchingEntities(std::span<const EntityQuery> queries,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	double ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+	double ComputeNumericAggregate(const EntityQueryAggregate &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	//like GetMatchingEntities, but returns a string id
-	EvaluableNode *ComputeValueFromMatchingEntities(EntityQueryCondition *cond,
+	EvaluableNodeReference ComputeMode(const EntityQueryAggregate &query,
 		BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
 
-	//like GetMatchingEntities, but returns a flat_hash_map of string ids to numbers
-	//returns true if value was computed, false if not valid
-	void ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
-		OrderedHashMap<StringInternPool::StringID, double> &compute_results, bool is_first);
+	//The returned map owns one StringID reference per key.
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryAggregate &query,
+		BitArrayIntegerSet &matching_entities, bool is_first);
 
 	//like GetMatchingEntities, but returns entity_indices_sampled
 	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryCondition *cond,

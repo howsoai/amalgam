@@ -992,6 +992,19 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				ComputeAndAccumulatePartialSums<compute_surprisal>(r_dist_eval, enabled_indices, number_found->second.indicesWithValue,
 					query_feature_index, absolute_feature_index, high_accuracy);
 		}
+		else if(value.nodeType == ENIVT_BOOL)
+		{
+			bool bool_value = value.nodeValue.boolValue;
+			auto &bool_indices = (bool_value ? column->trueBoolIndices : column->falseBoolIndices);
+			if(bool_indices.size() > 0)
+			{
+				//all entities with the same bool value have the same distance term
+				double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+					EvaluableNodeImmediateValueWithType(bool_value, ENIVT_BOOL), query_feature_index, high_accuracy);
+				AccumulatePartialSums(enabled_indices, bool_indices, query_feature_index, term);
+			}
+		}
+		//ENIVT_NULL is handled at the top of this method
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{

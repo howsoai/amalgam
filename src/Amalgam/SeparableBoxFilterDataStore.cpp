@@ -976,6 +976,23 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
+		//immediate values are not stored in valueCodeSizeToIndices, so exact matches must be computed separately,
+		// otherwise their distance terms would be bounded below by the nonmatch term returned below
+		if(value.nodeType == ENIVT_STRING_ID)
+		{
+			auto string_found = column->stringIdValueEntries.find(value.nodeValue.stringID);
+			if(string_found != end(column->stringIdValueEntries))
+				ComputeAndAccumulatePartialSums<compute_surprisal>(r_dist_eval, enabled_indices, string_found->second->indicesWithValue,
+					query_feature_index, absolute_feature_index, high_accuracy);
+		}
+		else if(value.nodeType == ENIVT_NUMBER)
+		{
+			auto number_found = column->sortedNumberValueEntries.find(value.nodeValue.number);
+			if(number_found != end(column->sortedNumberValueEntries))
+				ComputeAndAccumulatePartialSums<compute_surprisal>(r_dist_eval, enabled_indices, number_found->second.indicesWithValue,
+					query_feature_index, absolute_feature_index, high_accuracy);
+		}
+
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch<compute_surprisal>(query_feature_index);

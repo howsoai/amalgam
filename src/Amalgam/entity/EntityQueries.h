@@ -148,6 +148,8 @@ namespace EntityQueries
 	{
 		if(auto node = std::get_if<EvaluableNode *>(&query))
 			return *node == nullptr ? ENT_NULL : (*node)->GetType();
+		if(std::holds_alternative<EntityQuerySum>(query))
+			return ENT_QUERY_SUM;
 		return std::get<EntityQueryCondition>(query).queryType;
 	}
 
@@ -155,7 +157,9 @@ namespace EntityQueries
 	{
 		if(auto node = std::get_if<EvaluableNode *>(&query))
 			return *node;
-		return std::get<EntityQueryCondition>(query).filterNode;
+		if(auto prepared = std::get_if<EntityQueryCondition>(&query))
+			return prepared->filterNode;
+		return nullptr;
 	}
 
 	inline StringInternPool::StringID GetFilterLabel(const EntityQuery &query)
@@ -175,6 +179,9 @@ namespace EntityQueries
 
 	void FilterEntities(EvaluableNode *query, StringInternPool::StringID label, Entity *container,
 		std::vector<Entity *> &matching_entities, bool is_first);
+
+	double ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+		const std::vector<Entity *> &matching_entities);
 
 	//Existence filters were historically grouped; preserve their combined return labels.
 	template<typename Function>

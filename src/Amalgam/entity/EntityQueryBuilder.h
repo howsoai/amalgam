@@ -953,9 +953,14 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		//These filters consume the rooted query node directly in both execution paths.
+		//SUM retains converted labels; basic filters consume rooted query nodes directly.
 		switch(type)
 		{
+		case ENT_QUERY_SUM:
+			conditions.emplace_back(EntityQuerySum{label_sid, ocn.size() >= 2
+				? EvaluableNode::ToStringIDIfExists(ocn[1]).second : StringInternPool::NOT_A_STRING_ID});
+			return;
+
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
 		case ENT_QUERY_EQUALS:
@@ -1091,7 +1096,6 @@ namespace EntityQueryBuilder
 
 			break;
 
-		case ENT_QUERY_SUM:
 		case ENT_QUERY_MODE:
 		case ENT_QUERY_VALUE_MASSES:
 		{

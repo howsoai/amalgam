@@ -9,6 +9,25 @@
 
 bool _enable_SBF_datastore = true;
 
+template<bool WriteMissing>
+static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entities, StringInternPool::StringID label)
+{
+	return [&matching_entities, label](size_t i, double &value) {
+		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(label);
+		if(found || WriteMissing)
+			value = ret_val;
+		return found;
+	};
+}
+
+double EntityQueries::ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+	const std::vector<Entity *> &matching_entities)
+{
+	return EntityQueriesStatistics::Sum<size_t>(0, matching_entities.size(),
+		GetEntityNumberAccessor<false>(matching_entities, value_label), weight_label != StringInternPool::NOT_A_STRING_ID,
+		GetEntityNumberAccessor<true>(matching_entities, weight_label));
+}
+
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 {
 	if(e == nullptr)
@@ -32,7 +51,6 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 	case ENT_QUERY_MAX:
 	case ENT_QUERY_MIN:
-	case ENT_QUERY_SUM:
 	case ENT_QUERY_MODE:
 	case ENT_QUERY_QUANTILE:
 	case ENT_QUERY_GENERALIZED_MEAN:
@@ -334,7 +352,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		return EvaluableNodeReference::Null();
 	}
 
-	case ENT_QUERY_SUM:
 	case ENT_QUERY_MODE:
 	case ENT_QUERY_QUANTILE:
 	case ENT_QUERY_GENERALIZED_MEAN:
@@ -345,32 +362,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		auto get_value = [&matching_entities, this]
-		(size_t i, double &value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
-				if(found)
-					value = ret_val;
-				return found;
-			};
-
-		auto get_weight = [&matching_entities, this]
-		(size_t i, double &weight_value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-				weight_value = ret_val;
-
-				return found;
-			};
+		auto get_value = GetEntityNumberAccessor<false>(matching_entities, singleLabel);
+		auto get_weight = GetEntityNumberAccessor<true>(matching_entities, weightLabel);
 
 		switch(queryType)
 		{
-		case ENT_QUERY_SUM:
-		{
-			double sum = EntityQueriesStatistics::Sum<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-			return EvaluableNodeReference(enm->AllocNode(sum), true);
-		}
 		case ENT_QUERY_MODE:
 		{
 			auto get_key_string_value = [&matching_entities, this]

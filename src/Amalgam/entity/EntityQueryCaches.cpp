@@ -122,7 +122,6 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 		break;
 	}
 
-	case ENT_QUERY_SUM:
 	case ENT_QUERY_MODE:
 	case ENT_QUERY_QUANTILE:
 	case ENT_QUERY_GENERALIZED_MEAN:
@@ -143,7 +142,19 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	default:;
 	}
 
+#if defined(MULTITHREAD_SUPPORT)
+	EnsureLabelsAreCached(labels_to_add, lock);
+#else
+	EnsureLabelsAreCached(labels_to_add);
+#endif
+}
 
+#if defined(MULTITHREAD_SUPPORT)
+void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
+#else
+void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add)
+#endif
+{
 	if(labels_to_add.size() == 0)
 		return;
 
@@ -166,6 +177,54 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	write_lock.unlock();
 	lock.lock();
 #endif
+}
+
+//The caller holds the cache read lock throughout column lookup and computation.
+template<typename Function>
+static double ComputeFromMatchingNumbers(SeparableBoxFilterDataStore &sbfds,
+	StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+	BitArrayIntegerSet &matching_entities, bool is_first, Function compute)
+{
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
+	if(column_index == std::numeric_limits<size_t>::max())
+		return std::numeric_limits<double>::quiet_NaN();
+
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
+	bool has_weight = weight_column_index != std::numeric_limits<size_t>::max();
+	if(!has_weight)
+		weight_column_index = 0;
+
+	auto compute_from = [&](auto &entities) {
+		using Iterator = decltype(entities.begin());
+		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(column_index, false);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(weight_column_index, true);
+		return compute(entities.begin(), entities.end(), get_value, has_weight, get_weight);
+	};
+	if(is_first)
+		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
+	return compute_from(matching_entities);
+}
+
+double EntityQueryCaches::ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
+	BitArrayIntegerSet &matching_entities, bool is_first)
+{
+#if defined(MULTITHREAD_SUPPORT)
+	Concurrency::ReadLock lock(mutex);
+#endif
+	std::vector<StringInternPool::StringID> labels_to_add;
+	if(!DoesHaveLabel(value_label))
+		labels_to_add.push_back(value_label);
+	if(weight_label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(weight_label))
+		labels_to_add.push_back(weight_label);
+#if defined(MULTITHREAD_SUPPORT)
+	EnsureLabelsAreCached(labels_to_add, lock);
+#else
+	EnsureLabelsAreCached(labels_to_add);
+#endif
+	return ComputeFromMatchingNumbers(sbfds, value_label, weight_label, matching_entities, is_first,
+		[](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
+			return EntityQueriesStatistics::Sum(first, last, get_value, has_weight, get_weight);
+		});
 }
 
 void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
@@ -457,100 +516,35 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		break;
 	}
 
-	case ENT_QUERY_SUM:
 	case ENT_QUERY_QUANTILE:
 	case ENT_QUERY_GENERALIZED_MEAN:
 	case ENT_QUERY_MIN_DIFFERENCE:
 	case ENT_QUERY_MAX_DIFFERENCE:
 	{
-		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
-		if(column_index == std::numeric_limits<size_t>::max())
-		{
-			compute_results.emplace_back(std::numeric_limits<double>::quiet_NaN(), 0);
-			return;
-		}
+		double result = ComputeFromMatchingNumbers(sbfds, cond->singleLabel, cond->weightLabel, matching_entities, is_first,
+			[&](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
+				switch(cond->queryType)
+				{
+				case ENT_QUERY_QUANTILE:
+					return Quantile(first, last, get_value,
+						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
 
-		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-		bool has_weight = false;
-		if(weight_column_index != std::numeric_limits<size_t>::max())
-			has_weight = true;
-		else //just use a valid column
-			weight_column_index = 0;
+				case ENT_QUERY_GENERALIZED_MEAN:
+					return GeneralizedMean(first, last, get_value,
+						has_weight, get_weight, cond->pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
 
-		double result = 0.0;
+				case ENT_QUERY_MIN_DIFFERENCE:
+					return EntityQueriesStatistics::ExtremeDifference(first, last, get_value, true,
+						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
 
-		if(is_first)
-		{
-			EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidNumbers(column_index);
-			auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index, false);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index, true);
+				case ENT_QUERY_MAX_DIFFERENCE:
+					return EntityQueriesStatistics::ExtremeDifference(first, last, get_value, false,
+						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
 
-			switch(cond->queryType)
-			{
-			case ENT_QUERY_SUM:
-				result = EntityQueriesStatistics::Sum(entities.begin(), entities.end(), get_value, has_weight, get_weight);
-				break;
-
-			case ENT_QUERY_QUANTILE:
-				result = Quantile(entities.begin(), entities.end(), get_value,
-					has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
-				break;
-
-			case ENT_QUERY_GENERALIZED_MEAN:
-				result = GeneralizedMean(entities.begin(), entities.end(), get_value,
-					has_weight, get_weight, cond->pValue, cond->center,
-					cond->calculateMoment, cond->absoluteValue);
-				break;
-
-			case ENT_QUERY_MIN_DIFFERENCE:
-				result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, true,
-					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-				break;
-
-			case ENT_QUERY_MAX_DIFFERENCE:
-				result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, false,
-					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-				break;
-
-			default:
-				break;
-			}
-		}
-		else
-		{
-			auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index, false);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
-
-			switch(cond->queryType)
-			{
-			case ENT_QUERY_SUM:
-				result = EntityQueriesStatistics::Sum(matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
-				break;
-
-			case ENT_QUERY_QUANTILE:
-				result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
-					has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
-				break;
-
-			case ENT_QUERY_GENERALIZED_MEAN:
-				result = GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
-					has_weight, get_weight, cond->pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
-				break;
-
-			case ENT_QUERY_MIN_DIFFERENCE:
-				result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, true,
-					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-				break;
-
-			case ENT_QUERY_MAX_DIFFERENCE:
-				result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, false,
-					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-				break;
-
-			default:
-				break;
-			}
-		}
+				default:
+					return 0.0;
+				}
+			});
 
 		compute_results.emplace_back(result, 0);
 		return;
@@ -763,6 +757,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
 		}
 
+		//Cached aggregates return immediately, even for contained_entities or a non-final query.
+		if(EntityQueries::GetQueryType(query) == ENT_QUERY_SUM)
+		{
+			auto &sum = std::get<EntityQuerySum>(query);
+			return enm->AllocIfNotImmediate(
+				entity_caches->ComputeSum(sum.valueLabel, sum.weightLabel, matching_ents, is_first), immediate_result);
+		}
+
 		if(EntityQueries::GetFilterNode(query) != nullptr)
 		{
 			//Keep the cache lock across filters that previously shared a prepared condition.
@@ -870,7 +872,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			break;
 		}
 
-		case ENT_QUERY_SUM:
 		case ENT_QUERY_QUANTILE:
 		case ENT_QUERY_GENERALIZED_MEAN:
 		case ENT_QUERY_MIN_DIFFERENCE:
@@ -1155,6 +1156,20 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		//reset to make sure it doesn't return an outdated list
 		query_return_value = EvaluableNodeReference::Null();
 
+		if(EntityQueries::GetQueryType(conditions[cond_index]) == ENT_QUERY_SUM)
+		{
+			if(first_condition)
+				matching_entities = container->GetContainedEntities();
+			//Fallback aggregates only compute in final compute_on_contained_entities position.
+			if(last_condition && return_query_value)
+			{
+				auto &sum = std::get<EntityQuerySum>(conditions[cond_index]);
+				query_return_value = EvaluableNodeReference(enm->AllocNode(
+					EntityQueries::ComputeSum(sum.valueLabel, sum.weightLabel, matching_entities)), true);
+			}
+			continue;
+		}
+
 		auto node = EntityQueries::GetFilterNode(conditions[cond_index]);
 		if(node != nullptr || std::holds_alternative<EvaluableNode *>(conditions[cond_index]))
 		{
@@ -1258,21 +1273,11 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		if(!DoesHaveLabel(label))
 			labels_to_add.push_back(label);
 	}
-	if(!labels_to_add.empty())
-	{
-	#if defined(MULTITHREAD_SUPPORT)
-		lock.unlock();
-		Concurrency::WriteLock write_lock(mutex);
-		labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
-			[this](auto sid) { return DoesHaveLabel(sid); }), end(labels_to_add));
-		if(!labels_to_add.empty())
-	#endif
-			sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
-	#if defined(MULTITHREAD_SUPPORT)
-		write_lock.unlock();
-		lock.lock();
-	#endif
-	}
+#if defined(MULTITHREAD_SUPPORT)
+	EnsureLabelsAreCached(labels_to_add, lock);
+#else
+	EnsureLabelsAreCached(labels_to_add);
+#endif
 
 	for(const auto &condition : queries)
 	{

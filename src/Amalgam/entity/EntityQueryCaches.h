@@ -21,8 +21,15 @@ class Entity;
 class EntityQueryCondition;
 class EntityReadReference;
 
-//Basic filters borrow rooted query nodes; other queries own their prepared state in-place.
-using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition>;
+//Retain label conversion at query construction, including non-string arguments.
+struct EntityQuerySum
+{
+	StringInternPool::StringID valueLabel;
+	StringInternPool::StringID weightLabel;
+};
+
+//Basic filters borrow rooted query nodes; parsed parameters and prepared state remain in-place.
+using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQuerySum>;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches
@@ -112,8 +119,10 @@ public:
 	//makes sure any labels needed for cond are in the cache
 #if defined(MULTITHREAD_SUPPORT)
 	void EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
 	void EnsureLabelsAreCached(EntityQueryCondition *cond);
+	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
 	//removes label_sid from the cache
@@ -131,6 +140,9 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
 	void GetMatchingEntities(std::span<const EntityQuery> queries,
+		BitArrayIntegerSet &matching_entities, bool is_first);
+
+	double ComputeSum(StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
 	//like GetMatchingEntities, but returns a string id

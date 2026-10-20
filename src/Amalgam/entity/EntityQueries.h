@@ -106,9 +106,6 @@ public:
 	//a single standalone label in the query
 	StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
 
-	//when requesting a single type
-	EvaluableNodeImmediateValueType singleLabelType = ENIVT_NOT_EXIST;
-
 	//a label representing a weight label
 	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
 
@@ -118,13 +115,7 @@ public:
 	//maximum number of entities to attempt to retrieve (based on queryType)
 	size_t maxToRetrieve = 0;
 
-	//if ENT_QUERY_SELECT has a start offset
-	bool hasStartOffset = false;
-
-	//ENT_QUERY_SELECT's value of the start offset
-	size_t startOffset = 0;
-
-	//whether ENT_QUERY_SELECT or ENT_QUERY_SAMPLE has a random stream; if not, it will use consistent order
+	//whether a distance query has an explicit random seed
 	bool hasRandomStream = false;
 
 	//the random stream for queries that use it
@@ -137,8 +128,8 @@ namespace EntityQueries
 	{
 		if(auto node = std::get_if<EvaluableNode *>(&query))
 			return *node == nullptr ? ENT_NULL : (*node)->GetType();
-		if(auto aggregate = std::get_if<EntityQueryAggregate>(&query))
-			return aggregate->queryType;
+		if(auto direct = std::get_if<EntityQueryParameters>(&query))
+			return direct->queryType;
 		return std::get<EntityQueryCondition>(query).queryType;
 	}
 
@@ -169,10 +160,15 @@ namespace EntityQueries
 	void FilterEntities(EvaluableNode *query, StringInternPool::StringID label, Entity *container,
 		std::vector<Entity *> &matching_entities, bool is_first);
 
+	void FindMinMax(const EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
+
+	void SelectEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
+	void SampleEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
+
 	//Share numeric dispatch across cached iterator types and fallback entity accessors.
 	//Borrow the accessors here: copying cached std::function accessors can allocate.
 	template<typename Iterator, typename ValueFunction, typename WeightFunction>
-	double ComputeNumericAggregate(const EntityQueryAggregate &query, Iterator first, Iterator last,
+	double ComputeNumericAggregate(const EntityQueryParameters &query, Iterator first, Iterator last,
 		const ValueFunction &get_value, bool has_weight, const WeightFunction &get_weight,
 		std::vector<double> &values_buffer, std::vector<std::pair<double, double>> *quantile_buffer)
 	{
@@ -194,13 +190,13 @@ namespace EntityQueries
 		}
 	}
 
-	double ComputeNumericAggregate(const EntityQueryAggregate &query, const std::vector<Entity *> &matching_entities);
+	double ComputeNumericAggregate(const EntityQueryParameters &query, const std::vector<Entity *> &matching_entities);
 
-	EvaluableNodeReference ComputeMode(const EntityQueryAggregate &query,
+	EvaluableNodeReference ComputeMode(const EntityQueryParameters &query,
 		const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm);
 
 	//The returned map owns one StringID reference per key.
-	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryAggregate &query,
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryParameters &query,
 		const std::vector<Entity *> &matching_entities);
 
 	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,

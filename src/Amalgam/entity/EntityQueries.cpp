@@ -20,7 +20,7 @@ static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entiti
 	};
 }
 
-double EntityQueries::ComputeNumericAggregate(const EntityQueryAggregate &query, const std::vector<Entity *> &matching_entities)
+double EntityQueries::ComputeNumericAggregate(const EntityQueryParameters &query, const std::vector<Entity *> &matching_entities)
 {
 	std::vector<double> values_buffer;
 	return ComputeNumericAggregate<size_t>(query, 0, matching_entities.size(),
@@ -28,7 +28,7 @@ double EntityQueries::ComputeNumericAggregate(const EntityQueryAggregate &query,
 		GetEntityNumberAccessor<true>(matching_entities, query.weightLabel), values_buffer, nullptr);
 }
 
-EvaluableNodeReference EntityQueries::ComputeMode(const EntityQueryAggregate &query,
+EvaluableNodeReference EntityQueries::ComputeMode(const EntityQueryParameters &query,
 	const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm)
 {
 	auto get_key_string_value = [&matching_entities, &query](size_t i, std::string &value) {
@@ -43,7 +43,7 @@ EvaluableNodeReference EntityQueries::ComputeMode(const EntityQueryAggregate &qu
 	return Parser::ParseFromKeyString(mode, enm);
 }
 
-OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMasses(const EntityQueryAggregate &query,
+OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMasses(const EntityQueryParameters &query,
 	const std::vector<Entity *> &matching_entities)
 {
 	auto get_key_string_value = [&matching_entities, &query](size_t i, StringInternPool::StringID &value) {
@@ -83,21 +83,11 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 	case ENT_NULL:
 		return false;
 
-	case ENT_QUERY_SELECT:
-	case ENT_QUERY_SAMPLE:
-		//it does not fail the condition here - needs to be checked elsewhere
-		return true;
-
 	case ENT_QUERY_IN_ENTITY_LIST:
 		return std::find(begin(existLabels), end(existLabels), e->GetIdStringId()) != end(existLabels);
 
 	case ENT_QUERY_NOT_IN_ENTITY_LIST:
 		return std::find(begin(existLabels), end(existLabels), e->GetIdStringId()) == end(existLabels);
-
-	case ENT_QUERY_MAX:
-	case ENT_QUERY_MIN:
-		//it does not fail the condition here - needs to be checked elsewhere
-		return true;
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
@@ -177,6 +167,176 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	return distance - radius;
 }
 
+void EntityQueries::SelectEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities)
+{
+	//regardless of options, need to sort entities by entity id
+	EntityManipulation::SortEntitiesByID(matching_entities);
+
+	size_t start_offset = std::min(matching_entities.size(), query.selection.startOffset);
+	size_t num_to_select = std::min(matching_entities.size() - start_offset, query.selection.count);
+
+	if(num_to_select == 0)
+	{
+		matching_entities.clear();
+		return;
+	}
+
+	if(query.selection.hasRandomStream)
+	{
+		size_t num_entities = matching_entities.size();
+		if(query.selection.hasStartOffset)
+		{
+			//shuffle all because we don't know what the starting offset will be and some values may be swapped with others
+			for(size_t i = 0; i < num_entities; i++)
+			{
+				size_t index_to_swap = query.randomStream.RandSize(num_entities);
+				std::swap(matching_entities[i], matching_entities[index_to_swap]);
+			}
+		}
+		else //no start offset, only need to shuffle the number to be returned; don't worry about the rest because this sequence won't be resumed
+		{
+			for(size_t i = 0; i < num_to_select; i++)
+			{
+				size_t index_to_swap = query.randomStream.RandSize(num_entities);
+				std::swap(matching_entities[i], matching_entities[index_to_swap]);
+			}
+		}
+	}
+
+	//remove any off the front based on start offset
+	if(query.selection.hasStartOffset)
+		matching_entities.erase(begin(matching_entities), begin(matching_entities) + start_offset);
+
+	//cut off everything but the number requested
+	matching_entities.resize(num_to_select);
+}
+
+void EntityQueries::SampleEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities)
+{
+	size_t num_entities = matching_entities.size();
+	size_t num_to_sample = query.selection.count;
+
+	if(num_entities == 0 || num_to_sample == 0)
+	{
+		matching_entities.clear();
+		return;
+	}
+
+	std::vector<Entity *> samples;
+	samples.reserve(num_to_sample);
+
+	//Preserve the separate weighted stream and its derivation even for unweighted samples.
+	RandomStream random_stream;
+	if(query.selection.hasRandomStream)
+		random_stream = query.randomStream.CreateOtherStreamViaRand();
+	else //just use a random seed
+		random_stream.SetState("12345");
+
+	if(query.valueLabel == StringInternPool::NOT_A_STRING_ID)
+	{
+		//select num_to_select entities and save them in the sample vector
+		for(size_t i = 0; i < num_to_sample; i++)
+		{
+			size_t index_to_swap = query.randomStream.RandSize(num_entities);
+			Entity *selected = matching_entities[index_to_swap];
+			samples.emplace_back(selected);
+		}
+	}
+	else //weighted
+	{
+		//retrieve weights
+		std::vector<double> entity_weights;
+		entity_weights.reserve(num_to_sample);
+
+		//retrieve and accumulate weights
+		for(Entity *e : matching_entities)
+		{
+			double value;
+			double found;
+
+			if(e != nullptr)
+				std::tie(value, found) = e->GetValueAtLabelAsNumber(query.valueLabel);
+			else
+				found = false;
+
+			if(found)
+			{
+				if(FastIsNaN(value))
+					value = 0.0;
+
+				entity_weights.push_back(value);
+			}
+			else
+			{
+				entity_weights.push_back(0.0);
+			}
+		}
+
+		//if just one sample, brute-force it
+		if(num_to_sample == 1)
+		{
+			size_t selected_index = WeightedDiscreteRandomSample(entity_weights, random_stream, true);
+			Entity *selected = matching_entities[selected_index];
+			samples.emplace_back(selected);
+		}
+		else //build temporary cache and query
+		{
+			WeightedDiscreteRandomStreamTransform<Entity *> wdrst(matching_entities, entity_weights, true);
+			for(size_t i = 0; i < num_to_sample; i++)
+				samples.emplace_back(wdrst.WeightedDiscreteRand(random_stream));
+		}
+	}
+
+	//swap samples vector with the matching_entities
+	std::swap(matching_entities, samples);
+}
+
+void EntityQueries::FindMinMax(const EntityQueryParameters &query, std::vector<Entity *> &matching_entities)
+{
+	//get values for each entity
+	std::vector<std::pair<Entity *, EvaluableNodeImmediateValue>> entity_values;
+	entity_values.reserve(matching_entities.size());
+	for(size_t i = 0; i < matching_entities.size(); i++)
+	{
+		if(matching_entities[i] == nullptr)
+			continue;
+
+		auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(query.valueLabel);
+
+		if(value.nodeType == query.extremum.valueType)
+			entity_values.emplace_back(matching_entities[i], value.nodeValue);
+	}
+
+	//Keep stable ties and choose the comparator before sorting.
+	auto sort_by = [&entity_values](auto less) {
+		std::stable_sort(begin(entity_values), end(entity_values),
+			[less](const auto &a, const auto &b) { return less(a.second, b.second); });
+	};
+	if(query.queryType == ENT_QUERY_MIN)
+	{
+		if(query.extremum.valueType == ENIVT_NUMBER)
+			sort_by([](auto a, auto b) { return a.number < b.number; });
+		else if(query.extremum.valueType == ENIVT_STRING_ID)
+			sort_by([](auto a, auto b) { return StringIDNaturalCompareSort(a.stringID, b.stringID); });
+	}
+	else //ENT_QUERY_MAX
+	{
+		if(query.extremum.valueType == ENIVT_NUMBER)
+			sort_by([](auto a, auto b) { return a.number > b.number; });
+		else if(query.extremum.valueType == ENIVT_STRING_ID)
+			sort_by([](auto a, auto b) { return StringIDNaturalCompareSortReverse(a.stringID, b.stringID); });
+	}
+
+	//delete elements beyond the number to keep
+	size_t num_to_keep = std::min(query.extremum.count, entity_values.size());
+	entity_values.erase(begin(entity_values) + num_to_keep, end(entity_values));
+
+	//only copy over entities to keep
+	matching_entities.resize(entity_values.size());
+	for(size_t i = 0; i < entity_values.size(); i++)
+		matching_entities[i] = entity_values[i].first;
+}
+
 EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *container,
 	std::vector<Entity *> &matching_entities, bool from_all_entities, EvaluableNodeManager *enm)
 {
@@ -204,193 +364,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	switch(queryType)
 	{
-	case ENT_QUERY_SELECT:
-	{
-		//regardless of options, need to sort entities by entity id
-		EntityManipulation::SortEntitiesByID(matching_entities);
-
-		size_t start_offset = std::min(matching_entities.size(), startOffset);
-		size_t num_to_select = std::min(matching_entities.size() - start_offset, maxToRetrieve);
-
-		if(num_to_select == 0)
-		{
-			matching_entities.clear();
-			return EvaluableNodeReference::Null();
-		}
-
-		if(hasRandomStream)
-		{
-			size_t num_entities = matching_entities.size();
-			if(hasStartOffset)
-			{
-				//shuffle all because we don't know what the starting offset will be and some values may be swapped with others
-				for(size_t i = 0; i < num_entities; i++)
-				{
-					size_t index_to_swap = randomStream.RandSize(num_entities);
-					std::swap(matching_entities[i], matching_entities[index_to_swap]);
-				}
-			}
-			else //no start offset, only need to shuffle the number to be returned; don't worry about the rest because this sequence won't be resumed
-			{
-				for(size_t i = 0; i < num_to_select; i++)
-				{
-					size_t index_to_swap = randomStream.RandSize(num_entities);
-					std::swap(matching_entities[i], matching_entities[index_to_swap]);
-				}
-			}
-		}
-
-		//remove any off the front based on start offset
-		if(hasStartOffset)
-			matching_entities.erase(begin(matching_entities), begin(matching_entities) + start_offset);
-
-		//cut off everything but the number requested
-		matching_entities.resize(num_to_select);
-		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_SAMPLE:
-	{
-		size_t num_entities = matching_entities.size();
-		size_t num_to_sample = maxToRetrieve;
-
-		if(num_entities == 0 || num_to_sample == 0)
-		{
-			matching_entities.clear();
-			return EvaluableNodeReference::Null();
-		}
-
-		std::vector<Entity *> samples;
-		samples.reserve(num_to_sample);
-
-		//obtain random stream either from the condition or use a default one
-		RandomStream random_stream;
-		if(hasRandomStream)
-			random_stream = randomStream.CreateOtherStreamViaRand();
-		else //just use a random seed
-			random_stream.SetState("12345");
-
-		if(singleLabel == StringInternPool::NOT_A_STRING_ID)
-		{
-			//select num_to_select entities and save them in the sample vector
-			for(size_t i = 0; i < num_to_sample; i++)
-			{
-				size_t index_to_swap = randomStream.RandSize(num_entities);
-				Entity *selected = matching_entities[index_to_swap];
-				samples.emplace_back(selected);
-			}
-		}
-		else //weighted
-		{
-			//retrieve weights
-			std::vector<double> entity_weights;
-			entity_weights.reserve(num_to_sample);
-
-			//retrieve and accumulate weights
-			for(Entity *e : matching_entities)
-			{
-				double value;
-				double found;
-
-				if(e != nullptr)
-					std::tie(value, found) = e->GetValueAtLabelAsNumber(singleLabel);
-				else
-					found = false;
-
-				if(found)
-				{
-					if(FastIsNaN(value))
-						value = 0.0;
-
-					entity_weights.push_back(value);
-				}
-				else
-				{
-					entity_weights.push_back(0.0);
-				}
-			}
-
-			//if just one sample, brute-force it
-			if(num_to_sample == 1)
-			{
-				size_t selected_index = WeightedDiscreteRandomSample(entity_weights, random_stream, true);
-				Entity *selected = matching_entities[selected_index];
-				samples.emplace_back(selected);
-			}
-			else //build temporary cache and query
-			{
-				WeightedDiscreteRandomStreamTransform<Entity *> wdrst(matching_entities, entity_weights, true);
-				for(size_t i = 0; i < num_to_sample; i++)
-					samples.emplace_back(wdrst.WeightedDiscreteRand(random_stream));
-			}
-		}
-
-		//swap samples vector with the matching_entities
-		std::swap(matching_entities, samples);
-		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_MAX:
-	case ENT_QUERY_MIN:
-	{
-		//get values for each entity
-		std::vector<std::pair<Entity *, EvaluableNodeImmediateValue>> entity_values;
-		entity_values.reserve(matching_entities.size());
-		for(size_t i = 0; i < matching_entities.size(); i++)
-		{
-			if(matching_entities[i] == nullptr)
-				continue;
-
-			auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
-
-			if(value.nodeType == singleLabelType)
-				entity_values.emplace_back(matching_entities[i], value.nodeValue);
-		}
-
-		//sort entities by value
-		if(queryType == ENT_QUERY_MIN)
-		{
-			if(singleLabelType == ENIVT_NUMBER)
-			{
-				std::stable_sort(begin(entity_values), end(entity_values),
-					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
-					{	return a.second.number < b.second.number;	});
-			}
-			else if(singleLabelType == ENIVT_STRING_ID)
-			{
-				std::stable_sort(begin(entity_values), end(entity_values),
-					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
-					{	return StringIDNaturalCompareSort(a.second.stringID, b.second.stringID);	});
-			}
-		}
-		else //ENT_QUERY_MAX
-		{
-			if(singleLabelType == ENIVT_NUMBER)
-			{
-				std::stable_sort(begin(entity_values), end(entity_values),
-					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
-					{	return a.second.number > b.second.number;	});
-			}
-			else if(singleLabelType == ENIVT_STRING_ID)
-			{
-				std::stable_sort(begin(entity_values), end(entity_values),
-					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
-					{	return StringIDNaturalCompareSortReverse(a.second.stringID, b.second.stringID);	});
-			}
-		}
-
-		//delete elements beyond the number to keep
-		size_t num_to_keep = std::min(maxToRetrieve, entity_values.size());
-		entity_values.erase(begin(entity_values) + num_to_keep, end(entity_values));
-
-		//only copy over entities to keep
-		matching_entities.resize(entity_values.size());
-		for(size_t i = 0; i < entity_values.size(); i++)
-			matching_entities[i] = entity_values[i].first;
-
-		return EvaluableNodeReference::Null();
-	}
-
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	{
 		if(distEvaluator.populateOmittedFeatureValues)

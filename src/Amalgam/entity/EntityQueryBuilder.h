@@ -953,9 +953,40 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		//Aggregates retain parsed arguments; basic filters consume rooted query nodes directly.
+		//Direct queries retain parsed arguments; basic filters consume rooted query nodes directly.
 		switch(type)
 		{
+		case ENT_QUERY_SELECT:
+		case ENT_QUERY_SAMPLE:
+		{
+			auto &query = std::get<EntityQueryParameters>(conditions.emplace_back(EntityQueryParameters{type, label_sid}));
+			query.selection = {ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1))
+				: (type == ENT_QUERY_SAMPLE ? 1u : 0u), 0, false, false};
+			if(type == ENT_QUERY_SELECT)
+			{
+				query.selection.hasStartOffset = ocn.size() > 1;
+				query.selection.startOffset = query.selection.hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
+			}
+			else if(ocn.size() > 1)
+				query.valueLabel = EvaluableNode::ToStringIDIfExists(ocn[1]).second;
+
+			query.selection.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
+			if(query.selection.hasRandomStream)
+				query.randomStream.SetState(EvaluableNode::ToString(ocn[2]));
+			else
+				query.randomStream = rs.CreateOtherStreamViaRand();
+			return;
+		}
+
+		case ENT_QUERY_MIN:
+		case ENT_QUERY_MAX:
+		{
+			auto &query = std::get<EntityQueryParameters>(conditions.emplace_back(EntityQueryParameters{type, label_sid}));
+			query.extremum = {ocn.size() >= 2 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 1,
+				ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]) ? ENIVT_NUMBER : ENIVT_STRING_ID};
+			return;
+		}
+
 		case ENT_QUERY_SUM:
 		case ENT_QUERY_MODE:
 		case ENT_QUERY_VALUE_MASSES:
@@ -964,7 +995,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
 		{
-			auto &query = std::get<EntityQueryAggregate>(conditions.emplace_back(EntityQueryAggregate{type, label_sid}));
+			auto &query = std::get<EntityQueryParameters>(conditions.emplace_back(EntityQueryParameters{type, label_sid}));
 			if(type == ENT_QUERY_MIN_DIFFERENCE || type == ENT_QUERY_MAX_DIFFERENCE)
 			{
 				query.difference = {ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN(),
@@ -1031,33 +1062,6 @@ namespace EntityQueryBuilder
 		//actually populate the condition parameters from the evaluable nodes
 		switch(type)
 		{
-		case ENT_QUERY_SELECT:
-		{
-			cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 0;
-
-			cur_condition->hasStartOffset = (ocn.size() > 1);
-			cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
-
-			cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
-			if(cur_condition->hasRandomStream)
-				cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
-			else
-				cur_condition->randomStream = rs.CreateOtherStreamViaRand();
-
-			break;
-		}
-		case ENT_QUERY_SAMPLE:
-		{
-			cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
-			cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : StringInternPool::NOT_A_STRING_ID;
-
-			cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
-			if(cur_condition->hasRandomStream)
-				cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
-			else
-				cur_condition->randomStream = rs.CreateOtherStreamViaRand();
-			break;
-		}
 		case ENT_QUERY_IN_ENTITY_LIST:
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
 		{
@@ -1078,27 +1082,6 @@ namespace EntityQueryBuilder
 			}
 			break;
 		}
-		case ENT_QUERY_MIN:
-		case ENT_QUERY_MAX:
-		{
-			cur_condition->singleLabel = label_sid;
-
-			//default to retrieve 1
-			cur_condition->maxToRetrieve = 1;
-			if(ocn.size() >= 2)
-			{
-				EvaluableNode *value = ocn[1];
-				cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(value, 1));
-			}
-
-			if(ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]))
-				cur_condition->singleLabelType = ENIVT_NUMBER;
-			else
-				cur_condition->singleLabelType = ENIVT_STRING_ID;
-
-			break;
-		}
-
 		default:;
 		}//end switch
 	}

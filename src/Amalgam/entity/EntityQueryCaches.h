@@ -21,8 +21,8 @@ class Entity;
 class EntityQueryCondition;
 class EntityReadReference;
 
-//Retain label conversion at query construction, including non-string arguments.
-struct EntityQueryAggregate
+//Direct queries retain parsed arguments, including label conversion at construction.
+struct EntityQueryParameters
 {
 	EvaluableNodeType queryType;
 	StringInternPool::StringID valueLabel;
@@ -42,17 +42,36 @@ struct EntityQueryAggregate
 		bool includeZero;
 	};
 
+	struct SelectionOptions
+	{
+		size_t count;
+		size_t startOffset;
+		bool hasStartOffset;
+		bool hasRandomStream;
+	};
+
+	struct ExtremumOptions
+	{
+		size_t count;
+		EvaluableNodeImmediateValueType valueType;
+	};
+
 	//Only the options selected by queryType are active. SUM, mode, and masses use just the labels.
 	union
 	{
 		double quantilePercentage = 0.5;
 		MeanOptions mean;
 		DifferenceOptions difference;
+		ExtremumOptions extremum;
+		SelectionOptions selection;
 	};
+
+	//Owned mutable state for SELECT/SAMPLE, derived in query construction order.
+	RandomStream randomStream;
 };
 
 //Basic filters borrow rooted query nodes; parsed parameters and prepared state remain in-place.
-using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQueryAggregate>;
+using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQueryParameters>;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches
@@ -142,11 +161,11 @@ public:
 	//makes sure any labels needed for cond are in the cache
 #if defined(MULTITHREAD_SUPPORT)
 	void EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock);
-	void EnsureLabelsAreCached(const EntityQueryAggregate &query, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQueryParameters &query, Concurrency::ReadLock &lock);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
 	void EnsureLabelsAreCached(EntityQueryCondition *cond);
-	void EnsureLabelsAreCached(const EntityQueryAggregate &query);
+	void EnsureLabelsAreCached(const EntityQueryParameters &query);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
@@ -167,18 +186,22 @@ public:
 	void GetMatchingEntities(std::span<const EntityQuery> queries,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	double ComputeNumericAggregate(const EntityQueryAggregate &query,
+	void FindMinMax(const EntityQueryParameters &query, BitArrayIntegerSet &matching_entities, bool is_first);
+
+	double ComputeNumericAggregate(const EntityQueryParameters &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	EvaluableNodeReference ComputeMode(const EntityQueryAggregate &query,
+	EvaluableNodeReference ComputeMode(const EntityQueryParameters &query,
 		BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
 
 	//The returned map owns one StringID reference per key.
-	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryAggregate &query,
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryParameters &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	//like GetMatchingEntities, but returns entity_indices_sampled
-	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryCondition *cond,
+	void SelectEntities(EntityQueryParameters &query, BitArrayIntegerSet &matching_entities, bool is_first);
+
+	//Sampling returns duplicates separately from the matching set.
+	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryParameters &query,
 		BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities);
 
 	//searches container for contained entities matching query.

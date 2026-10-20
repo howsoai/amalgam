@@ -1373,7 +1373,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 		{difference_type "continuous" data_type "code"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
-))&", R"(3.3255881193876142)"},
+))&", R"(2.662794059693807)"},
 			{R"&((generalized_distance
 	[1 1]
 	[1 1]
@@ -1674,7 +1674,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1]
 	[{difference_type "continuous" data_type "code"}]
-))&", R"(5.325588119387614)"},
+))&", R"(3.662794059693807)"},
 			{R"&((generalized_distance
 	[
 		[1.5 2 3 4 5 "s12"]
@@ -1685,7 +1685,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1]
 	[{difference_type "continuous" data_type "code" nominal_strings .false types_must_match .false}]
-))&", R"(3.9642281506573376)"},
+))&", R"(2.954460726360474)"},
 			{R"&((generalized_distance
 	;vector1
 	{

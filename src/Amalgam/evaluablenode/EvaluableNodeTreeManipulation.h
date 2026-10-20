@@ -491,11 +491,7 @@ public:
 		size_t len1 = aCharsBuffer.size();
 		size_t len2 = bCharsBuffer.size();
 
-		double avg_len = (len1 + len2) * 0.5;
-		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
-
-		double edit_score = std::exp(-static_cast<double>(commonality) / avg_len);
-		return 0.75 * edit_score + 0.25 * length_ratio;
+		return static_cast<double>(commonality) / std::max(len1, len2);
 	}
 
 	//returns the edit distance between the sequences a and b using the specified sequence_commonality_buffer
@@ -541,11 +537,13 @@ public:
 		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true)
 	{
 		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
-		size_t tree_1_size = EvaluableNode::GetDeepSize(tree1);
-		size_t tree_2_size = EvaluableNode::GetDeepSize(tree2);
+		double tree_1_size = static_cast<double>(EvaluableNode::GetDeepSize(tree1));
+		double tree_2_size = static_cast<double>(EvaluableNode::GetDeepSize(tree2));
 
-		//find the distance to edit from tree1 to shared, then from shared to tree_2.  Shared is the smallest, so subtract from each.
-		return (tree_1_size - shared_nodes.commonality) + (tree_2_size - shared_nodes.commonality);
+		double size_diff = std::abs(tree_1_size - tree_2_size);
+		double base_commonality_difference = static_cast<double>(std::min(tree_1_size, tree_2_size)) - shared_nodes.commonality;
+
+		return size_diff + base_commonality_difference;
 	}
 
 	//computes the total number of nodes in both trees that are equal

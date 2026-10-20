@@ -382,7 +382,7 @@ Example:
 ```
 Output:
 ```amalgam
-0.583096267567592
+0.47500000000000003
 ```
 Example:
 ```amalgam
@@ -491,7 +491,7 @@ Example:
 ```
 Output:
 ```amalgam
-3
+2
 ```
 Example:
 ```amalgam
@@ -528,7 +528,7 @@ Example:
 ```
 Output:
 ```amalgam
-2
+1
 ```
 Example:
 ```amalgam
@@ -560,7 +560,7 @@ Example:
 ```
 Output:
 ```amalgam
-0.8338074648648159
+0.5249999999999999
 ```
 Example:
 ```amalgam

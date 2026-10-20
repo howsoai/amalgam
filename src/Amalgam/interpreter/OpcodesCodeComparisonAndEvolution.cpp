@@ -426,7 +426,7 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 	"hello"
 	"el"
 	{nominal_strings .false}
-))&", R"(0.583096267567592)"},
+))&", R"(0.47500000000000003)"},
 			{R"&((commonality
 	"hello"
 	"el"
@@ -536,7 +536,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 	(lambda
 		(seq 2 1 4 (get_entity_comments))
 	)
-))&", R"(3)"},
+))&", R"(2)"},
 			{R"&((edit_distance
 	[
 		1
@@ -566,7 +566,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 		)
 		[5 6]
 	]
-))&", R"(2)"},
+))&", R"(1)"},
 			{R"&((edit_distance "hello" "hello"))&", R"(0)"},
 			{R"&((edit_distance
 	"hello"
@@ -577,7 +577,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 	"hello"
 	"el"
 	{nominal_strings .false}
-))&", R"(0.8338074648648159)"},
+))&", R"(0.5249999999999999)"},
 			{R"&((edit_distance
 	"hello"
 	"el"

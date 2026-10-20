@@ -377,7 +377,7 @@ static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &In
 			{nominal_strings .false types_must_match .false}
 		)
 	]
-))&", R"([64 64.74178574543642])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"}
+))&", R"([64 64.5625])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"}
 		});
 	d.requiresEntity = true;
 	d.retrievesData = true;
@@ -497,7 +497,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE_ENTITIES(ENT_EDIT_DISTANCE_ENTITIES,
 			)
 		]
 	)
-))&", R"([11 9.516428509127167])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"},
+))&", R"([11 9.875])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"},
 		});
 	d.retrievesData = true;
 	d.requiresEntity = true;

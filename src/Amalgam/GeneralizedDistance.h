@@ -1039,31 +1039,44 @@ public:
 
 		//everything below is for feature_type == FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING or FDT_CONTINUOUS_CODE
 
-		if(a.nodeType == ENIVT_NUMBER && b.nodeType == ENIVT_NUMBER)
-			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.nodeValue.number, b.nodeValue.number);
+		EvaluableNode en_a_buffer(ENT_NULL);
+		EvaluableNode en_b_buffer(ENT_NULL);
+		EvaluableNode *a_code = &en_a_buffer;
+		EvaluableNode *b_code = &en_b_buffer;
 
-		if(a.nodeType == ENIVT_BOOL && b.nodeType == ENIVT_BOOL)
-			return (a.nodeValue.boolValue == b.nodeValue.boolValue ? 0.0 : 1.0);
-
-		if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
-			return (a.nodeValue.stringID == b.nodeValue.stringID ? 0.0 : 1.0);
-
-		if(a.nodeType == ENIVT_CODE || b.nodeType == ENIVT_CODE)
+		if(a.nodeType == ENIVT_CODE)
 		{
-			//if one isn't code, then just return the size of the other, or at least 1
-			if(a.nodeType != ENIVT_CODE)
-				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(b.nodeValue.code)));
-			if(b.nodeType != ENIVT_CODE)
-				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.nodeValue.code)));
-
-			auto &code_attribs = feature_attribs.typeAttributes.code;
-			return EvaluableNodeTreeManipulation::EditDistance(a.nodeValue.code, b.nodeValue.code,
-				code_attribs.typesMustMatch, code_attribs.nominalNumbers,
-				code_attribs.nominalStrings, code_attribs.recursiveMatching);
+			a_code = a.nodeValue.code;
+		}
+		else
+		{
+			if(a.nodeType == ENIVT_STRING_ID)
+				en_a_buffer.SetTypeViaStringIdValue(a.nodeValue.stringID);
+			else if(a.nodeType == ENIVT_NUMBER)
+				en_a_buffer.SetTypeViaNumberValue(a.nodeValue.number);
+			else if(a.nodeType == ENIVT_BOOL)
+				en_a_buffer.SetTypeViaNumberValue(a.nodeValue.boolValue);
 		}
 
-		//different immediate types
-		return 1.0;
+		if(b.nodeType == ENIVT_CODE)
+		{
+			b_code = b.nodeValue.code;
+		}
+		else
+		{
+			b_code = &en_b_buffer;
+			if(b.nodeType == ENIVT_STRING_ID)
+				en_b_buffer.SetTypeViaStringIdValue(b.nodeValue.stringID);
+			else if(b.nodeType == ENIVT_NUMBER)
+				en_b_buffer.SetTypeViaNumberValue(b.nodeValue.number);
+			else if(b.nodeType == ENIVT_BOOL)
+				en_b_buffer.SetTypeViaNumberValue(b.nodeValue.boolValue);
+		}
+
+		auto &code_attribs = feature_attribs.typeAttributes.code;
+		return EvaluableNodeTreeManipulation::EditDistance(a_code, b_code,
+			code_attribs.typesMustMatch, code_attribs.nominalNumbers,
+			code_attribs.nominalStrings, code_attribs.recursiveMatching);
 	}
 
 	//computes the Minkowski distance between vectors a and b, and respective types a_types and b_types, with Minkowski parameter p

@@ -435,8 +435,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		ShrinkMemoryToCurrentUtilizationWithLock();
 }
 
-//TODO 26165: make this more efficient and replace method below
-/*
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
 	if(nodes.empty())
@@ -446,59 +444,54 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 	size_t target_size = std::min(nodes.size(), min_capacity);
 	target_size = RoundNodeIndexToNextSlab(target_size);
 
-	//if the current size is already at or below our floor, nothing to shrink
 	if(nodes.size() <= target_size)
 		return;
 
-	std::sort(begin(nodes) + firstUnusedNodeIndex, end(nodes));
+	//sort the unused portion so slab members are adjacent
+	std::sort(nodes.begin() + firstUnusedNodeIndex, nodes.end());
 
-	//walk the locations and find completed slabs to delete
-	for(size_t i = nodes.size() - 1; i >= firstUnusedNodeIndex; i--)
+	size_t read_index = firstUnusedNodeIndex;
+	size_t write_index = firstUnusedNodeIndex;
+
+	while(read_index < nodes.size())
 	{
-		EvaluableNode *node = nodes[i];
-		if(node == nullptr || !node->GetIsSlabStart())
-			continue;
+		EvaluableNode *node = nodes[read_index];
 
-		bool slab_complete = true;
-		for(size_t offset = 1; offset < _num_nodes_per_slab; ++offset)
+		//a slab can only be deleted if it's a start node and the subsequent pointers fill the slab
+		if(node != nullptr && node->GetIsSlabStart() && (nodes.size() - read_index >= _num_nodes_per_slab))
 		{
-			EvaluableNode *expected =
-				reinterpret_cast<EvaluableNode *>(reinterpret_cast<char *>(node) + (offset * sizeof(EvaluableNode)));
+			bool slab_complete = true;
 
-			auto it = std::find(begin(nodes) + firstUnusedNodeIndex, end(nodes), expected);
-			if(it == end(nodes))
+			//check if the next pointers are exactly the contiguous neighbors
+			for(size_t offset = 1; offset < _num_nodes_per_slab; offset++)
 			{
-				slab_complete = false;
-				break;
-			}
-		}
+				EvaluableNode *expected = reinterpret_cast<EvaluableNode *>(
+					reinterpret_cast<char *>(node) + (offset * sizeof(EvaluableNode)));
 
-		if(slab_complete)
-		{
-			EvaluableNode *laundered_start = std::launder(node);
-			std::destroy_n(laundered_start, _num_nodes_per_slab);
-			operator delete(laundered_start);
-
-			for(size_t j = firstUnusedNodeIndex; j < nodes.size(); ++j)
-			{
-				if(nodes[j] != nullptr)
+				if(read_index + offset >= nodes.size() || nodes[read_index + offset] != expected)
 				{
-					//check if this pointer falls within the range of the deleted slab
-					char *ptr_addr = reinterpret_cast<char *>(nodes[j]);
-					char *slab_base = reinterpret_cast<char *>(node);
-					if(ptr_addr >= slab_base && ptr_addr < (slab_base + (_num_nodes_per_slab * sizeof(EvaluableNode))))
-						nodes[j] = nullptr;
+					slab_complete = false;
+					break;
 				}
 			}
-		}
-	}
 
-	//move remaining non-null pointers to the front of the unused section
-	size_t write_index = firstUnusedNodeIndex;
-	for(size_t read_index = firstUnusedNodeIndex; read_index < nodes.size(); read_index++)
-	{
-		if(nodes[read_index] != nullptr)
+			if(slab_complete)
+			{
+				EvaluableNode *laundered_start = std::launder(node);
+				std::destroy_n(laundered_start, _num_nodes_per_slab);
+				operator delete(laundered_start);
+
+				//skip the remainder of the slab
+				read_index += _num_nodes_per_slab;
+				continue;
+			}
+		}
+
+		//if not a complete slab, keep the pointer and move forward
+		if(node != nullptr)
 			nodes[write_index++] = nodes[read_index];
+
+		read_index++;
 	}
 
 	size_t final_size = std::max(write_index, target_size);
@@ -507,41 +500,6 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 		nodes.resize(final_size);
 		nodes.shrink_to_fit();
 	}
-}
-*/
-
-void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
-{
-	size_t new_size = std::min(nodes.size(),
-		static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1);
-
-	size_t new_size = RoundNodeIndexToNextSlab(new_size);
-
-	//look for any empty space that can be trimmed
-	for(; new_size < nodes.size(); new_size += _num_nodes_per_slab)
-	{
-		if(nodes[new_size] == nullptr)
-			break;
-	}
-
-	if(new_size == nodes.size())
-		return;
-	nodes.resize(new_size);
-
-	//TODO 26165: sort remaining nodes by address, look for groups of _num_nodes_per_slab and if all are accounted for, delete
-
-	//look for any empty space that can be trimmed
-	for(; new_size < nodes.size(); new_size += _num_nodes_per_slab)
-	{
-		if(nodes[new_size] == nullptr)
-			break;
-	}
-
-	if(new_size == nodes.size())
-		return;
-
-	nodes.resize(new_size);
-	nodes.shrink_to_fit();
 }
 
 EvaluableNode *EvaluableNodeManager::GetGarbageCollectionParamsAsEvaluableNode()

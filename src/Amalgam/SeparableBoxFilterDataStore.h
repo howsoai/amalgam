@@ -460,48 +460,6 @@ public:
 		return NumberValueExtractor<Iter>{ invalid, column_as_weight,
 			column_data, (invalid ? nullptr : &column_data->numberIndices), numEntities };
 	}
-		
-	template<typename Iter>
-	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(
-		size_t column_index, bool column_as_weight)
-	{
-		//if invalid column_index, then always return 1.0
-		if(column_index >= columnData.size())
-		{
-			if(column_as_weight)
-				return [](Iter i, double &value) { value = 1.0;	return true; };
-			else
-				return [](Iter i, double &value) { value = 1.0;	return false; };
-		}
-
-		auto column_data = columnData[column_index].get();
-		auto number_indices_ptr = &column_data->numberIndices;
-
-		size_t cur_num_entities = numEntities;
-		return [&, number_indices_ptr, column_data, column_as_weight, cur_num_entities]
-		(Iter i, double &value)
-			{
-				size_t entity_index;
-				if constexpr(std::is_same<size_t, Iter>::value)
-					entity_index = i;
-				else
-					entity_index = *i;
-
-				if(entity_index >= cur_num_entities
-					|| !number_indices_ptr->contains(entity_index))
-				{
-					if(column_as_weight)
-					{
-						value = 1.0;
-						return true;
-					}
-					return false;
-				}
-
-				value = column_data->GetResolvedIndexValue(entity_index).number;
-				return true;
-			};
-	}
 
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)

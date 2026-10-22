@@ -15,6 +15,19 @@ constexpr float _extra_memory_capacity_factor_default = 3.0f;
 constexpr float _min_memory_retention_factor_default = 0.95f;
 constexpr float _alloc_expansion_factor_default = 1.5f;
 
+//number of nodes allocated per slab block to reduce memory fragmentation
+constexpr int _num_nodes_per_slab = 4;
+
+//number of nodes to allocate at once for the local allocation buffer
+constexpr int _num_slabs_per_lab_allocation = 8;
+constexpr int _num_nodes_per_lab_allocation = _num_slabs_per_lab_allocation * _num_nodes_per_slab;
+
+static constexpr size_t RoundNodeIndexToNextSlab(size_t index)
+{
+	size_t slab_index = (index + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
+	return slab_index * _num_nodes_per_slab;
+}
+
 size_t EvaluableNodeManager::minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
 size_t EvaluableNodeManager::maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
 float EvaluableNodeManager::extraMemoryCapacityFactor = _extra_memory_capacity_factor_default;
@@ -41,8 +54,17 @@ EvaluableNodeManager::~EvaluableNodeManager()
 	localAllocationBuffer.Clear(this);
 #endif
 
-	for(auto &n : nodes)
-		delete n;
+	//sort by the slab starts and only delete those; will ensure all memory is freed
+	auto slab_end_it = std::partition(begin(nodes), end(nodes),
+		[](EvaluableNode *n)
+		{ return n != nullptr && n->GetIsSlabStart(); });
+
+	for(auto it = begin(nodes); it != slab_end_it; ++it)
+	{
+		EvaluableNode *slab_start = *it;
+		std::destroy_n(slab_start, _num_nodes_per_slab);
+		operator delete(slab_start);
+	}
 }
 
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
@@ -218,33 +240,56 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 #endif
 
 	EvaluableNode *lab_node = AllocNodeFromLocalAllocationBufferIfAvailable();
-
-	//fast path; get node from thread local buffer
 	if(lab_node != nullptr)
 		return lab_node;
+
+	//round up to the next nearest slab
+	const size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(_num_nodes_per_lab_allocation);
 
 	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
 	//slow path allocation; attempt to allocate using an atomic without write locking
 	Concurrency::ReadLock read_lock(managerAttributesMutex);
 
-	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(labBlockAllocationSize);
+	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(num_nodes_to_allocate);
 #else
 	size_t first_index_to_allocate = firstUnusedNodeIndex;
-	firstUnusedNodeIndex += labBlockAllocationSize;
+	firstUnusedNodeIndex += num_nodes_to_allocate;
 #endif
 
-	size_t last_index_to_allocate = first_index_to_allocate + labBlockAllocationSize;
+	size_t last_index_to_allocate = first_index_to_allocate + num_nodes_to_allocate;
 
-	if(last_index_to_allocate < nodes.size())
-	{
-		for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
+	auto fill_nodes_range = [this](size_t start, size_t end) {
+		for(size_t i = start; i < end; i++)
 		{
 			if(nodes[i] == nullptr)
-				nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
+			{
+				//this can only occur on nodes that are round numbers of _num_nodes_per_slab
+			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+				AmlgAssert(i % _num_nodes_per_slab == 0);
+			#endif
+
+				EvaluableNode *slab_memory =
+					static_cast<EvaluableNode *>(operator new(sizeof(EvaluableNode) * _num_nodes_per_slab));
+
+				for(size_t j = 0; j < _num_nodes_per_slab; j++)
+				{
+				#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+					AmlgAssert(nodes[i + j] == nullptr);
+				#endif
+
+					nodes[i + j] = new (&slab_memory[j]) EvaluableNode(ENT_DEALLOCATED);
+				}
+				nodes[i]->SetIsSlabStart(true);
+			}
 
 			AddNodeToLocalAllocationBuffer(nodes[i]);
 		}
+	};
+
+	if(last_index_to_allocate < nodes.size())
+	{
+		fill_nodes_range(first_index_to_allocate, last_index_to_allocate);
 
 	#ifdef MULTITHREAD_SUPPORT
 		read_lock.unlock();
@@ -265,20 +310,17 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
 		//add extra node at the end in case of rounding down
 		//preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
+		size_t new_num_nodes =
+			static_cast<size_t>(allocExpansionFactor * (num_nodes + _num_nodes_per_lab_allocation)) + 1;
+
+		//round new_num_nodes up to nearest _num_nodes_per_slab
+		new_num_nodes = RoundNodeIndexToNextSlab(new_num_nodes);
 
 		//fill new EvaluableNode slots with nullptr
 		nodes.resize(new_num_nodes, nullptr);
 	}
 
-	//transfer nodes already allocated by this call into local allocation buffer
-	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
-	{
-		if(nodes[i] == nullptr)
-			nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
-
-		AddNodeToLocalAllocationBuffer(nodes[i]);
-	}
+	fill_nodes_range(first_index_to_allocate, last_index_to_allocate);
 
 #ifdef MULTITHREAD_SUPPORT
 	write_lock.unlock();
@@ -366,7 +408,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		}
 	}
 
-	firstUnusedNodeIndex = next_write_index;
+	firstUnusedNodeIndex = RoundNodeIndexToNextSlab(next_write_index);
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 
 	//if have more yet another entire extraMemoryCapacityFactor available, free it
@@ -376,20 +418,72 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
-	size_t new_size = std::min(nodes.size(),
-		static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1);
+	size_t min_capacity = static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1;
+	size_t original_size = nodes.size();
+	size_t target_size = std::min(original_size, min_capacity);
+	target_size = RoundNodeIndexToNextSlab(target_size);
 
-	if(new_size == nodes.size())
+	if(nodes.size() <= target_size)
 		return;
 
-	for(size_t i = new_size; i < nodes.size(); i++)
+	//look for any empty space that can be trimmed
+	size_t first_null_index = RoundNodeIndexToNextSlab(firstUnusedNodeIndex);
+	for(; first_null_index < nodes.size(); first_null_index += _num_nodes_per_slab)
 	{
-		if(nodes[i] != nullptr)
-			delete nodes[i];
+		if(nodes[first_null_index] == nullptr)
+			break;
 	}
 
-	nodes.resize(new_size);
-	nodes.shrink_to_fit();
+	if(first_null_index == nodes.size())
+		return;
+	nodes.resize(first_null_index);
+
+	//sort the unused portion so slab members are adjacent
+	std::sort(nodes.begin() + firstUnusedNodeIndex, nodes.end());
+
+	for(size_t index = firstUnusedNodeIndex; index < nodes.size(); index++)
+	{
+		EvaluableNode *node = nodes[index];
+
+		//a slab can only be deleted if it's a start node and the subsequent pointers fill the slab
+		if(node->GetIsSlabStart() && index + _num_nodes_per_slab < nodes.size())
+		{
+			bool slab_complete = true;
+
+			//check if the next pointers are exactly the contiguous neighbors
+			for(size_t offset = 1; offset < _num_nodes_per_slab; offset++)
+			{
+				//use pointer arithmetic, which will advance by offset * sizeof(EvaluableNode)
+				EvaluableNode *expected = node + offset;
+				if(nodes[index + offset] != expected)
+				{
+					slab_complete = false;
+					break;
+				}
+			}
+
+			if(slab_complete)
+			{
+				EvaluableNode *laundered_start = std::launder(node);
+				std::destroy_n(laundered_start, _num_nodes_per_slab);
+				operator delete(laundered_start);
+
+				for(size_t clear_index = index; clear_index < index + _num_nodes_per_slab; clear_index++)
+					nodes[clear_index] = nullptr;
+
+				//skip the remainder of the slab
+				index += _num_nodes_per_slab;
+				continue;
+			}
+		}
+	}
+
+	//move all nullptr's to the end, and erase
+	auto it = std::partition(begin(nodes), end(nodes), [](EvaluableNode *node) { return node != nullptr; });
+	nodes.erase(it, end(nodes));
+
+	if(nodes.size() < original_size)
+		nodes.shrink_to_fit();
 }
 
 EvaluableNode *EvaluableNodeManager::GetGarbageCollectionParamsAsEvaluableNode()

@@ -782,6 +782,39 @@ protected:
 		return num_entity_indices;
 	}
 
+	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
+	//returns the number of entities indices accumulated
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
+	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		BitArrayIntegerSet &enabled_indices, EfficientIntegerSet &entity_indices,
+		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
+	{
+		size_t num_entity_indices = entity_indices.size();
+		size_t max_index = num_entity_indices;
+
+		auto &partial_sums = parametersAndBuffers.partialSums;
+		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
+		size_t max_element = partial_sums.numInstances;
+
+		auto &column_data = columnData[absolute_feature_index];
+
+		//for each found element, accumulate associated partial sums
+		for(size_t entity_index : entity_indices)
+		{
+			if(!enabled_indices.contains(entity_index))
+				continue;
+
+			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
+			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+				other_value, query_feature_index, high_accuracy);
+
+			partial_sums.Accum(entity_index, accum_location, term);
+		}
+
+		return num_entity_indices;
+	}
+
 	//adds term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
 	inline size_t AccumulatePartialSums(SortedIntegerSet &entity_indices, size_t query_feature_index, double term)

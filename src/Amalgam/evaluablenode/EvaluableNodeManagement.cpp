@@ -437,38 +437,44 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
-	if(nodes.empty())
-		return;
-
 	size_t min_capacity = static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1;
-	size_t target_size = std::min(nodes.size(), min_capacity);
+	size_t original_size = nodes.size();
+	size_t target_size = std::min(original_size, min_capacity);
 	target_size = RoundNodeIndexToNextSlab(target_size);
 
 	if(nodes.size() <= target_size)
 		return;
 
+	//look for any empty space that can be trimmed
+	size_t first_null_index = RoundNodeIndexToNextSlab(firstUnusedNodeIndex);
+	for(; first_null_index < nodes.size(); first_null_index += _num_nodes_per_slab)
+	{
+		if(nodes[first_null_index] == nullptr)
+			break;
+	}
+
+	if(first_null_index == nodes.size())
+		return;
+	nodes.resize(first_null_index);
+
 	//sort the unused portion so slab members are adjacent
 	std::sort(nodes.begin() + firstUnusedNodeIndex, nodes.end());
 
-	size_t read_index = firstUnusedNodeIndex;
-	size_t write_index = firstUnusedNodeIndex;
-
-	while(read_index < nodes.size())
+	for(size_t index = firstUnusedNodeIndex; index < nodes.size(); index++)
 	{
-		EvaluableNode *node = nodes[read_index];
+		EvaluableNode *node = nodes[index];
 
 		//a slab can only be deleted if it's a start node and the subsequent pointers fill the slab
-		if(node != nullptr && node->GetIsSlabStart() && (nodes.size() - read_index >= _num_nodes_per_slab))
+		if(node->GetIsSlabStart() && index + _num_nodes_per_slab < nodes.size())
 		{
 			bool slab_complete = true;
 
 			//check if the next pointers are exactly the contiguous neighbors
 			for(size_t offset = 1; offset < _num_nodes_per_slab; offset++)
 			{
-				EvaluableNode *expected = reinterpret_cast<EvaluableNode *>(
-					reinterpret_cast<char *>(node) + (offset * sizeof(EvaluableNode)));
-
-				if(read_index + offset >= nodes.size() || nodes[read_index + offset] != expected)
+				//use pointer arithmetic, which will advance by offset * sizeof(EvaluableNode)
+				EvaluableNode *expected = node + offset;
+				if(nodes[index + offset] != expected)
 				{
 					slab_complete = false;
 					break;
@@ -481,25 +487,22 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 				std::destroy_n(laundered_start, _num_nodes_per_slab);
 				operator delete(laundered_start);
 
+				for(size_t clear_index = index; clear_index < index + _num_nodes_per_slab; clear_index++)
+					nodes[clear_index] = nullptr;
+
 				//skip the remainder of the slab
-				read_index += _num_nodes_per_slab;
+				index += _num_nodes_per_slab;
 				continue;
 			}
 		}
-
-		//if not a complete slab, keep the pointer and move forward
-		if(node != nullptr)
-			nodes[write_index++] = nodes[read_index];
-
-		read_index++;
 	}
 
-	size_t final_size = std::max(write_index, target_size);
-	if(final_size < nodes.size())
-	{
-		nodes.resize(final_size);
+	//move all nullptr's to the end, and erase
+	auto it = std::partition(begin(nodes), end(nodes), [](EvaluableNode *node) { return node != nullptr; });
+	nodes.erase(it, end(nodes));
+
+	if(nodes.size() < original_size)
 		nodes.shrink_to_fit();
-	}
 }
 
 EvaluableNode *EvaluableNodeManager::GetGarbageCollectionParamsAsEvaluableNode()

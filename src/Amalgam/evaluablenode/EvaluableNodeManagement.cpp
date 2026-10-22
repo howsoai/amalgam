@@ -9,8 +9,6 @@
 #include <vector>
 #include <utility>
 
-//TODO 26165: reduce alloc code by lambda
-
 constexpr size_t _min_gc_nodes_threshold_default = 64;
 constexpr size_t _max_gc_nodes_threshold_default = 1000000000;
 constexpr float _extra_memory_capacity_factor_default = 3.0f;
@@ -246,7 +244,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		return lab_node;
 
 	//round up to the next nearest slab
-	constexpr size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(_num_nodes_per_lab_allocation);
+	const size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(_num_nodes_per_lab_allocation);
 
 	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
@@ -261,9 +259,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 	size_t last_index_to_allocate = first_index_to_allocate + num_nodes_to_allocate;
 
-	if(last_index_to_allocate < nodes.size())
-	{
-		for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
+	auto fill_nodes_range = [this](size_t start, size_t end) {
+		for(size_t i = start; i < end; i++)
 		{
 			if(nodes[i] == nullptr)
 			{
@@ -272,9 +269,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 				AmlgAssert(i % _num_nodes_per_slab == 0);
 			#endif
 
-				EvaluableNode *slab_memory = static_cast<EvaluableNode *>(
-						operator new(sizeof(EvaluableNode) * _num_nodes_per_slab)
-					);
+				EvaluableNode *slab_memory =
+					static_cast<EvaluableNode *>(operator new(sizeof(EvaluableNode) * _num_nodes_per_slab));
 
 				for(size_t j = 0; j < _num_nodes_per_slab; j++)
 				{
@@ -289,6 +285,11 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 			AddNodeToLocalAllocationBuffer(nodes[i]);
 		}
+	};
+
+	if(last_index_to_allocate < nodes.size())
+	{
+		fill_nodes_range(first_index_to_allocate, last_index_to_allocate);
 
 	#ifdef MULTITHREAD_SUPPORT
 		read_lock.unlock();
@@ -309,9 +310,9 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
 		//add extra node at the end in case of rounding down
 		//preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor
-			* (num_nodes + _num_nodes_per_lab_allocation)) + 1;
-		
+		size_t new_num_nodes =
+			static_cast<size_t>(allocExpansionFactor * (num_nodes + _num_nodes_per_lab_allocation)) + 1;
+
 		//round new_num_nodes up to nearest _num_nodes_per_slab
 		new_num_nodes = RoundNodeIndexToNextSlab(new_num_nodes);
 
@@ -319,31 +320,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		nodes.resize(new_num_nodes, nullptr);
 	}
 
-	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
-	{
-		if(nodes[i] == nullptr)
-		{
-			//this can only occur on nodes that are round numbers of _num_nodes_per_slab
-		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			AmlgAssert(i % _num_nodes_per_slab == 0);
-		#endif
-
-			EvaluableNode *slab_memory =
-				static_cast<EvaluableNode *>(operator new(sizeof(EvaluableNode) * _num_nodes_per_slab));
-
-			for(size_t j = 0; j < _num_nodes_per_slab; j++)
-			{
-			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-				AmlgAssert(nodes[i + j] == nullptr);
-			#endif
-
-				nodes[i + j] = new (&slab_memory[j]) EvaluableNode(ENT_DEALLOCATED);
-			}
-			nodes[i]->SetIsSlabStart(true);
-		}
-
-		AddNodeToLocalAllocationBuffer(nodes[i]);
-	}
+	fill_nodes_range(first_index_to_allocate, last_index_to_allocate);
 
 #ifdef MULTITHREAD_SUPPORT
 	write_lock.unlock();

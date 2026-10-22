@@ -418,19 +418,20 @@ public:
 	//assumes and requires column_index is a valid column (not a feature_id)
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
 	template<typename Iter, bool AllowMissingColumn = false>
-	inline auto GetNumberValueFromEntityIteratorFunction(
-		size_t column_index, bool column_as_weight)
+	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
 		auto column_data = AllowMissingColumn && column_index >= columnData.size() ? nullptr : columnData[column_index].get();
 		size_t cur_num_entities = numEntities;
 		return [column_data, column_as_weight, cur_num_entities](Iter i, double &value)
 			{
 				if constexpr(AllowMissingColumn)
+				{
 					if(column_data == nullptr)
 					{
 						value = 1.0;
 						return column_as_weight;
 					}
+				}
 
 				size_t entity_index;
 				if constexpr(std::is_same<size_t, Iter>::value)
@@ -457,8 +458,7 @@ public:
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>
-	inline auto
-		GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
+	inline auto GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
 

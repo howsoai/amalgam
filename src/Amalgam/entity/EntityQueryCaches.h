@@ -2,6 +2,7 @@
 
 //project headers:
 #include "DistanceReferencePair.h"
+#include "EntityQuery.h"
 #include "EvaluableNode.h"
 #include "HashMaps.h"
 #include "IntegerSet.h"
@@ -18,60 +19,7 @@
 
 //forward declarations:
 class Entity;
-class EntityQueryCondition;
 class EntityReadReference;
-
-//Direct queries retain parsed arguments, including label conversion at construction.
-struct EntityQueryParameters
-{
-	EvaluableNodeType queryType;
-	StringInternPool::StringID valueLabel;
-	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
-
-	struct MeanOptions
-	{
-		double power;
-		double center;
-		bool calculateMoment;
-		bool absoluteValue;
-	};
-
-	struct DifferenceOptions
-	{
-		double limit;
-		bool includeZero;
-	};
-
-	struct SelectionOptions
-	{
-		size_t count;
-		size_t startOffset;
-		bool hasStartOffset;
-		bool hasRandomStream;
-	};
-
-	struct ExtremumOptions
-	{
-		size_t count;
-		EvaluableNodeImmediateValueType valueType;
-	};
-
-	//Only the options selected by queryType are active. SUM, mode, and masses use just the labels.
-	union
-	{
-		double quantilePercentage = 0.5;
-		MeanOptions mean;
-		DifferenceOptions difference;
-		ExtremumOptions extremum;
-		SelectionOptions selection;
-	};
-
-	//Owned mutable state for SELECT/SAMPLE, derived in query construction order.
-	RandomStream randomStream;
-};
-
-//Basic filters borrow rooted query nodes; parsed parameters and prepared state remain in-place.
-using EntityQuery = std::variant<EvaluableNode *, EntityQueryCondition, EntityQueryParameters>;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches
@@ -149,23 +97,20 @@ public:
 		}
 	}
 
-	//specifies that this cache can be used for the input condition
-	static bool DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition);
-
 	//returns true if the cache already has the label specified
 	inline bool DoesHaveLabel(StringInternPool::StringID label_id)
 	{
 		return sbfds.DoesHaveLabel(label_id);
 	}
 
-	//makes sure any labels needed for cond are in the cache
+	//caches the labels needed by the active payload
 #if defined(MULTITHREAD_SUPPORT)
-	void EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock);
-	void EnsureLabelsAreCached(const EntityQueryParameters &query, Concurrency::ReadLock &lock);
+	template<typename Parameters>
+	void EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
-	void EnsureLabelsAreCached(EntityQueryCondition *cond);
-	void EnsureLabelsAreCached(const EntityQueryParameters &query);
+	template<typename Parameters>
+	void EnsureLabelsAreCached(const Parameters &parameters);
 	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
@@ -180,28 +125,28 @@ public:
 
 	//returns the set matching_entities of entity ids in the cache that match the provided query condition cond, will fill compute_results with numeric results if KNN query
 	//if is_first is true, optimizes to skip unioning results with matching_entities (just overwrites instead).
-	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
+	void GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
 		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
 	void GetMatchingEntities(std::span<const EntityQuery> queries,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	void FindMinMax(const EntityQueryParameters &query, BitArrayIntegerSet &matching_entities, bool is_first);
+	void FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first);
 
-	double ComputeNumericAggregate(const EntityQueryParameters &query,
+	double ComputeNumericAggregate(const EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	EvaluableNodeReference ComputeMode(const EntityQueryParameters &query,
+	EvaluableNodeReference ComputeMode(const EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
 
 	//The returned map owns one StringID reference per key.
-	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryParameters &query,
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);
 
-	void SelectEntities(EntityQueryParameters &query, BitArrayIntegerSet &matching_entities, bool is_first);
+	void SelectEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
 	//Sampling returns duplicates separately from the matching set.
-	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryParameters &query,
+	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities);
 
 	//searches container for contained entities matching query.

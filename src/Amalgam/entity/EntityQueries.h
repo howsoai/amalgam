@@ -3,11 +3,13 @@
 //project headers:
 #include "Entity.h"
 #include "EntityQueriesStatistics.h"
+#include "EntityQuery.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 
 //system headers:
 #include <limits>
+#include <span>
 #include <tuple>
 #include <utility>
 #include <variant>
@@ -19,156 +21,35 @@ class Entity;
 //if set to false, will not allow use of the SBF datastore
 extern bool _enable_SBF_datastore;
 
-class EntityQueryCondition
-{
-public:
-	EntityQueryCondition() = default;
-	EntityQueryCondition(EntityQueryCondition &&) noexcept = default;
-	EntityQueryCondition &operator=(EntityQueryCondition &&) noexcept = default;
-	EntityQueryCondition(const EntityQueryCondition &) = delete;
-	EntityQueryCondition &operator=(const EntityQueryCondition &) = delete;
-
-	//returns true if the entity matches the condition
-	bool DoesEntityMatchCondition(Entity *e);
-
-	//computes the distance measure of the condition
-	// returns NaN if invalid
-	double GetConditionDistanceMeasure(Entity *e, bool high_accuracy);
-
-	EvaluableNodeReference GetMatchingEntities(Entity *container, std::vector<Entity *> &matching_entities,
-		bool from_all_entities, EvaluableNodeManager *enm);
-
-	EvaluableNodeType queryType = ENT_NULL;
-
-	//only non-string filter labels need preparation: retain their conversion in singleLabel.
-
-	EvaluableNode *filterNode = nullptr;
-
-	//the labels that comprise each dimension of the position
-	std::vector<StringInternPool::StringID> positionLabels;
-
-	//when initialized, points to an OrderedChildNodes vector of the values to compare
-	EvaluableNode::OrderedType *positionsToCompare = nullptr;
-
-	GeneralizedDistanceEvaluator distEvaluator{};
-
-	//an entity to exclude, and to use its label values if relevant
-	StringInternPool::StringID entityIdToExclude = StringInternPool::NOT_A_STRING_ID;
-
-	//index of an entity to exclude
-	size_t exclusionEntityIndex = std::numeric_limits<size_t>::max();
-
-	//minimum number of entities to attempt to retrieve
-	size_t minToRetrieve = std::numeric_limits<size_t>::max();
-
-	//incremental probability where, if the next entity is below this threshold, don't retrieve more
-	double numToRetrieveMinIncrementalProbability = 0.0;
-
-	//number of entities to attempt to retrieve after any constraints
-	size_t extraToRetrieve = 0;
-
-	//distance weight exponent for distance queries (takes distance and raises it to the respective exponent) when returning distances
-	//only applicable when computeSurprisal is false
-	double distanceWeightExponent = 1.0;
-
-	//if true, will populate any omitted feature values
-	bool populateOmittedFeatureValues = false;
-
-	//min cluster for ENT_QUERY_ENTITY_CLUSTERS
-	double minClusterWeight = 0.0;
-
-	//indicates whether a compute result should be returned as a sorted list
-	bool returnSortedList = false;
-
-	//for ENT_QUERY_NEAREST_GENERALIZED_DISTANCE and ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, if returnSortedList is true,
-	// additionally return these labels if valid
-	std::vector<StringInternPool::StringID> additionalSortedListLabels;
-
-	//interpreter calling the query
-	Interpreter *interpreter = nullptr;
-
-	//containing entity
-	Entity *entity = nullptr;
-
-	//if conviction_of_removal is true, then it will compute the conviction as if the entities were removed, if false,
-	// will compute added or included
-	bool convictionOfRemoval = false;
-
-	//if true, use concurrency if applicable
-	bool useConcurrency = false;
-
-	//entity IDs for coerced ID filters or distance statistics
-	std::vector<StringInternPool::StringID> existLabels;
-
-	//the position for a distance query
-	std::vector<EvaluableNodeImmediateValueWithType> valuesToCompare;
-
-	//a single standalone label in the query
-	StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
-
-	//a label representing a weight label
-	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
-
-	//maximum distance
-	double maxDistance = std::numeric_limits<double>::quiet_NaN();
-
-	//maximum number of entities to attempt to retrieve (based on queryType)
-	size_t maxToRetrieve = 0;
-
-	//whether a distance query has an explicit random seed
-	bool hasRandomStream = false;
-
-	//the random stream for queries that use it
-	RandomStream randomStream;
-};
-
 namespace EntityQueries
 {
-	inline EvaluableNodeType GetQueryType(const EntityQuery &query)
-	{
-		if(auto node = std::get_if<EvaluableNode *>(&query))
-			return *node == nullptr ? ENT_NULL : (*node)->GetType();
-		if(auto direct = std::get_if<EntityQueryParameters>(&query))
-			return direct->queryType;
-		return std::get<EntityQueryCondition>(query).queryType;
-	}
-
 	inline EvaluableNode *GetFilterNode(const EntityQuery &query)
 	{
-		if(auto node = std::get_if<EvaluableNode *>(&query))
-			return *node;
-		if(auto prepared = std::get_if<EntityQueryCondition>(&query))
-			return prepared->filterNode;
+		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
+			return filter->node;
 		return nullptr;
 	}
 
 	inline StringInternPool::StringID GetFilterLabel(const EntityQuery &query)
 	{
-		if(auto prepared = std::get_if<EntityQueryCondition>(&query))
-			return prepared->singleLabel;
-		auto node = std::get<EvaluableNode *>(query);
-		if(node == nullptr || node->GetOrderedChildNodes().empty())
-			return StringInternPool::NOT_A_STRING_ID;
-		auto label = node->GetOrderedChildNodes()[0];
-		return label != nullptr && label->GetType() == ENT_STRING ? label->GetStringIDReference() : StringInternPool::NOT_A_STRING_ID;
+		return std::get<EntityQuery::Filter>(query.payload).label;
 	}
 
 	//Converts range endpoints once per filter, outside the entity loop.
 	std::tuple<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>
 		GetQueryRange(EvaluableNode *query);
 
-	void FilterEntities(EvaluableNode *query, StringInternPool::StringID label, Entity *container,
+	void FilterEntities(const EntityQuery &query, Entity *container,
 		std::vector<Entity *> &matching_entities, bool is_first);
 
-	void FindMinMax(const EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
+	void FindMinMax(const EntityQuery &query, std::vector<Entity *> &matching_entities);
 
-	void SelectEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
-	void SampleEntities(EntityQueryParameters &query, std::vector<Entity *> &matching_entities);
+	void SelectEntities(EntityQuery &query, std::vector<Entity *> &matching_entities);
+	void SampleEntities(EntityQuery &query, std::vector<Entity *> &source_entities, std::vector<Entity *> &matching_entities);
 
 	//Share numeric dispatch across cached iterator types and fallback entity accessors.
-	//Borrow the accessors here: copying cached std::function accessors can allocate.
 	template<typename Iterator, typename ValueFunction, typename WeightFunction>
-	double ComputeNumericAggregate(const EntityQueryParameters &query, Iterator first, Iterator last,
+	double ComputeNumericAggregate(const EntityQuery &query, Iterator first, Iterator last,
 		const ValueFunction &get_value, bool has_weight, const WeightFunction &get_weight,
 		std::vector<double> &values_buffer, std::vector<std::pair<double, double>> *quantile_buffer)
 	{
@@ -177,60 +58,73 @@ namespace EntityQueries
 		case ENT_QUERY_SUM:
 			return EntityQueriesStatistics::Sum(first, last, get_value, has_weight, get_weight);
 		case ENT_QUERY_QUANTILE:
-			return Quantile(first, last, get_value, has_weight, get_weight, query.quantilePercentage, quantile_buffer);
+			return Quantile(first, last, get_value, has_weight, get_weight, std::get<EntityQuery::Quantile>(query.payload).percentage, quantile_buffer);
 		case ENT_QUERY_GENERALIZED_MEAN:
+		{
+			auto &mean = std::get<EntityQuery::Mean>(query.payload);
 			return GeneralizedMean(first, last, get_value, has_weight, get_weight,
-				query.mean.power, query.mean.center, query.mean.calculateMoment, query.mean.absoluteValue);
+				mean.power, mean.center, mean.calculateMoment, mean.absoluteValue);
+		}
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
+		{
+			auto &difference = std::get<EntityQuery::Difference>(query.payload);
 			return EntityQueriesStatistics::ExtremeDifference(first, last, get_value,
-				query.queryType == ENT_QUERY_MIN_DIFFERENCE, query.difference.limit, query.difference.includeZero, values_buffer);
+				query.queryType == ENT_QUERY_MIN_DIFFERENCE, difference.limit, difference.includeZero, values_buffer);
+		}
 		default:
 			return std::numeric_limits<double>::quiet_NaN();
 		}
 	}
 
-	double ComputeNumericAggregate(const EntityQueryParameters &query, const std::vector<Entity *> &matching_entities);
+	double ComputeNumericAggregate(const EntityQuery &query, const std::vector<Entity *> &matching_entities);
 
-	EvaluableNodeReference ComputeMode(const EntityQueryParameters &query,
+	EvaluableNodeReference ComputeMode(const EntityQuery &query,
 		const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm);
 
 	//The returned map owns one StringID reference per key.
-	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQueryParameters &query,
+	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQuery &query,
 		const std::vector<Entity *> &matching_entities);
 
 	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
 		EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result);
 
-	//Existence filters were historically grouped; preserve their combined return labels.
+	//resolve the ID source once, before iterating entities
+	template<typename Function>
+	__forceinline void WithEntityIds(const EntityQuery &query, Function function)
+	{
+		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
+		{
+			std::span<EvaluableNode *const> nodes;
+			auto &ocn = filter->node->GetOrderedChildNodes();
+			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
+				nodes = ocn[0]->GetOrderedChildNodesReference();
+			function(nodes, [](auto node) {
+				return EvaluableNode::IsNull(node) ? StringInternPool::NOT_A_STRING_ID : node->GetStringIDReference();
+			});
+		}
+		else
+			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
+	}
+
+	//existence filters were historically grouped; preserve their combined return labels.
 	template<typename Function>
 	void ForEachQueryLabel(const std::vector<EntityQuery> &queries, size_t query_index, Function function)
 	{
-		auto type = GetQueryType(queries[query_index]);
+		auto type = queries[query_index].queryType;
 		if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
 		{
 			size_t first = query_index;
-			while(first > 0 && GetQueryType(queries[first - 1]) == type)
+			while(first > 0 && queries[first - 1].queryType == type)
 				--first;
 			for(size_t i = first; i <= query_index; i++)
 				function(GetFilterLabel(queries[i]));
 		}
-		else if((type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
-			&& std::holds_alternative<EvaluableNode *>(queries[query_index]))
-		{
-			auto &ocn = std::get<EvaluableNode *>(queries[query_index])->GetOrderedChildNodes();
-			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
-				for(auto node : ocn[0]->GetOrderedChildNodesReference())
-				{
-					auto [valid, id] = EvaluableNode::ToStringIDIfExists(node);
-					if(valid)
+		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+			WithEntityIds(queries[query_index], [&](const auto &ids, auto get_id) {
+				for(auto item : ids)
+					if(auto id = get_id(item); id != StringInternPool::NOT_A_STRING_ID)
 						function(id);
-				}
-		}
-		else if(auto prepared = std::get_if<EntityQueryCondition>(&queries[query_index]))
-		{
-			for(auto id : prepared->existLabels)
-				function(id);
-		}
+			});
 	}
 }

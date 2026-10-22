@@ -103,7 +103,7 @@ public:
 			buffers.neighbors, additional_holdout_reference);
 
 		double entity_weight = 0.0;
-		distanceTransform->getEntityWeightFunction(entity_reference, entity_weight);
+		distanceTransform->GetEntityWeight(entity_reference, entity_weight);
 		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
@@ -115,7 +115,7 @@ public:
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers.neighbors, included_entities);
 
 		double entity_weight = 0.0;
-		distanceTransform->getEntityWeightFunction(entity_reference, entity_weight);
+		distanceTransform->GetEntityWeight(entity_reference, entity_weight);
 		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
@@ -156,7 +156,7 @@ public:
 				knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, true, buffers.neighbors);
 
 				double entity_weight = 0.0;
-				distanceTransform->getEntityWeightFunction(entity, entity_weight);
+				distanceTransform->GetEntityWeight(entity, entity_weight);
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT
@@ -237,7 +237,7 @@ public:
 			//modulate total probability based on this entity's weight
 			//and change operation into a multiply since it's faster than a divide
 			double entity_weight = 0.0;
-			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			distanceTransform->GetEntityWeight(entity, entity_weight);
 			double weight_multiplier = entity_weight / total_prob;
 
 			//accumulate neighbor weights

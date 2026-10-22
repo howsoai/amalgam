@@ -569,7 +569,6 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		//Fold a single preceding exclusion into the distance query, as before.
 		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
 		bool reuse_exclusion = false;
 		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
@@ -953,7 +952,7 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		//Direct queries retain parsed arguments; basic filters consume rooted query nodes directly.
+		//advanced queries retain parsed arguments; basic filters use query nodes directly
 		switch(type)
 		{
 		case ENT_QUERY_SELECT:

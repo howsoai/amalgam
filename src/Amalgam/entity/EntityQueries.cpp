@@ -225,7 +225,6 @@ void EntityQueries::SampleEntities(EntityQueryParameters &query, std::vector<Ent
 	std::vector<Entity *> samples;
 	samples.reserve(num_to_sample);
 
-	//Preserve the separate weighted stream and its derivation even for unweighted samples.
 	RandomStream random_stream;
 	if(query.selection.hasRandomStream)
 		random_stream = query.randomStream.CreateOtherStreamViaRand();
@@ -307,7 +306,6 @@ void EntityQueries::FindMinMax(const EntityQueryParameters &query, std::vector<E
 			entity_values.emplace_back(matching_entities[i], value.nodeValue);
 	}
 
-	//Keep stable ties and choose the comparator before sorting.
 	auto sort_by = [&entity_values](auto less) {
 		std::stable_sort(begin(entity_values), end(entity_values),
 			[less](const auto &a, const auto &b) { return less(a.second, b.second); });

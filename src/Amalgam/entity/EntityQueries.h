@@ -40,8 +40,8 @@ public:
 
 	EvaluableNodeType queryType = ENT_NULL;
 
-	//Only non-string filter labels need preparation: retain their conversion in singleLabel.
-	//The node itself is still borrowed from the interpreter's rooted condition nodes.
+	//only non-string filter labels need preparation: retain their conversion in singleLabel.
+
 	EvaluableNode *filterNode = nullptr;
 
 	//the labels that comprise each dimension of the position

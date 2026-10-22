@@ -146,7 +146,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::Stri
 #endif
 }
 
-//The caller holds the cache read lock throughout column lookup and computation.
+//caller must hold a cache read lock
 template<typename Function>
 static double ComputeFromMatchingNumbers(SeparableBoxFilterDataStore &sbfds,
 	StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
@@ -475,7 +475,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		break;
 	}
 
-	default:  // Other Enum value not handled
+	default:
 	{
 		break;
 	}
@@ -1059,17 +1059,25 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		{
 			if(first_condition)
 				matching_entities = container->GetContainedEntities();
+
 			if(direct->queryType == ENT_QUERY_MIN || direct->queryType == ENT_QUERY_MAX)
+			{
 				EntityQueries::FindMinMax(*direct, matching_entities);
+			}
 			else if(direct->queryType == ENT_QUERY_SELECT)
+			{
 				EntityQueries::SelectEntities(*direct, matching_entities);
+			}
 			else if(direct->queryType == ENT_QUERY_SAMPLE)
+			{
 				EntityQueries::SampleEntities(*direct, matching_entities);
-			//Fallback aggregates only compute in final compute_on_contained_entities position.
+			}
 			else if(last_condition && return_query_value)
 			{
 				if(direct->queryType == ENT_QUERY_MODE)
+				{
 					query_return_value = EntityQueries::ComputeMode(*direct, matching_entities, enm);
+				}
 				else if(direct->queryType == ENT_QUERY_VALUE_MASSES)
 				{
 					auto value_weights = EntityQueries::ComputeValueMasses(*direct, matching_entities);
@@ -1080,6 +1088,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 					query_return_value = EvaluableNodeReference(enm->AllocNode(
 						EntityQueries::ComputeNumericAggregate(*direct, matching_entities)), true);
 			}
+
 			continue;
 		}
 
@@ -1113,8 +1122,8 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			|| condition.queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
 			|| condition.queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition.queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition.queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS ||
-			condition.queryType == ENT_QUERY_ENTITY_CLUSTERS)
+			|| condition.queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| condition.queryType == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			if(!CanUseQueryCaches(conditions))
 				return EvaluableNodeReference::Null();
@@ -1161,7 +1170,9 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		auto &included_entities = is_first ? matching_entities : temp;
 		if(is_first && type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
+
 		if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
+		{
 			for(auto node : ocn[0]->GetOrderedChildNodesReference())
 			{
 				auto id = EvaluableNode::IsNull(node) ? StringInternPool::NOT_A_STRING_ID : node->GetStringIDReference();
@@ -1171,6 +1182,8 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 				else if(index != std::numeric_limits<size_t>::max())
 					included_entities.insert(index);
 			}
+		}
+
 		if(type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
 			matching_entities.Intersect(temp);
 		return;
@@ -1206,6 +1219,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
 			else
 				sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
+
 			matching_entities.UpdateNumElements();
 			break;
 
@@ -1214,6 +1228,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 				sbfds.FindAllEntitiesWithoutFeature(label, matching_entities);
 			else
 				sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
+
 			matching_entities.UpdateNumElements();
 			break;
 
@@ -1222,13 +1237,17 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		{
 			auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
 			if(is_first && type == ENT_QUERY_EQUALS)
+			{
 				sbfds.UnionAllEntitiesWithValue(label, value, matching_entities);
+			}
 			else
 			{
 				if(is_first)
 					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+
 				temp.clear();
 				sbfds.UnionAllEntitiesWithValue(label, value, temp);
+
 				if(type == ENT_QUERY_EQUALS)
 					matching_entities.Intersect(temp);
 				else

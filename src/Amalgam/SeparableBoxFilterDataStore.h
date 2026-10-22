@@ -425,7 +425,11 @@ public:
 				return columnAsWeight;
 			}
 
-			size_t entity_index = std::is_same_v<size_t, Iter> ? i : *i;
+			size_t entity_index;
+			if constexpr(std::is_same_v<size_t, Iter>)
+				entity_index = i;
+			else
+				entity_index = *i;
 
 			if(entity_index >= numEntities || !numberIndices->contains(entity_index))
 			{
@@ -452,7 +456,7 @@ public:
 	// double to store the value and return true if the value is found
 	//assumes and requires column_index is a valid column (not a feature_id)
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
-	template<typename Iter, typename FuncType>
+	template<typename Iter>
 	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
 		bool invalid = (column_index >= columnData.size());

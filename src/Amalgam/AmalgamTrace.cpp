@@ -329,20 +329,21 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		#if defined(MULTITHREAD_SUPPORT)
 			response = std::to_string(Concurrency::GetMaxNumThreads());
 		#else
-			response = FAILURE_RESPONSE;
+			response = "1";
 		#endif
 		}
 		else if(command == "SET_MAX_NUM_THREADS")
 		{
-		#if defined(MULTITHREAD_SUPPORT)
 			response = SUCCESS_RESPONSE;
 			auto num_threads = std::stoll(input);
+		#if defined(MULTITHREAD_SUPPORT)
 			if(num_threads >= 0)
 				Concurrency::SetMaxNumThreads(static_cast<size_t>(num_threads));
 			else
 				response = FAILURE_RESPONSE;
 		#else
-			response = FAILURE_RESPONSE;
+			if(num_threads != 1 && num_threads != 0)
+				response = FAILURE_RESPONSE;
 		#endif
 		}
 		else if(command == "GET_GARBAGE_COLLECTION_PARAMS")

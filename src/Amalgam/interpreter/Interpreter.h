@@ -585,8 +585,9 @@ public:
 	}
 
 	//computes a unary numeric function on the given node, returns an ENT_NULL if n is interpreted as an ENT_NULL
-	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result,
-		std::function<double(double)> func)
+	template<typename FuncType>
+	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n,
+		EvaluableNodeRequestedValueTypes immediate_result, FuncType func)
 	{
 		if(immediate_result.AnyPrimitiveImmediateType())
 		{

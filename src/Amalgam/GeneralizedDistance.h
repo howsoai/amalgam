@@ -1055,7 +1055,7 @@ public:
 			else if(a.nodeType == ENIVT_NUMBER)
 				en_a_buffer.SetTypeViaNumberValue(a.nodeValue.number);
 			else if(a.nodeType == ENIVT_BOOL)
-				en_a_buffer.SetTypeViaNumberValue(a.nodeValue.boolValue);
+				en_a_buffer.SetTypeViaBoolValue(a.nodeValue.boolValue);
 		}
 
 		if(b.nodeType == ENIVT_CODE)
@@ -1070,7 +1070,7 @@ public:
 			else if(b.nodeType == ENIVT_NUMBER)
 				en_b_buffer.SetTypeViaNumberValue(b.nodeValue.number);
 			else if(b.nodeType == ENIVT_BOOL)
-				en_b_buffer.SetTypeViaNumberValue(b.nodeValue.boolValue);
+				en_b_buffer.SetTypeViaBoolValue(b.nodeValue.boolValue);
 		}
 
 		auto &code_attribs = feature_attribs.typeAttributes.code;

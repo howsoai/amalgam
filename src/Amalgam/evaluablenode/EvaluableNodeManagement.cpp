@@ -9,7 +9,6 @@
 #include <vector>
 #include <utility>
 
-//TODO 26165: assert lab size is a multiple of _num_nodes_per_slab
 //TODO 26165: reduce alloc code by lambda
 
 constexpr size_t _min_gc_nodes_threshold_default = 64;
@@ -20,6 +19,10 @@ constexpr float _alloc_expansion_factor_default = 1.5f;
 
 //number of nodes allocated per slab block to reduce memory fragmentation
 constexpr int _num_nodes_per_slab = 4;
+
+//number of nodes to allocate at once for the local allocation buffer
+constexpr int _num_slabs_per_lab_allocation = 8;
+constexpr int _num_nodes_per_lab_allocation = _num_slabs_per_lab_allocation * _num_nodes_per_slab;
 
 static constexpr size_t RoundNodeIndexToNextSlab(size_t index)
 {
@@ -243,7 +246,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		return lab_node;
 
 	//round up to the next nearest slab
-	constexpr size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(labBlockAllocationSize);
+	constexpr size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(_num_nodes_per_lab_allocation);
 
 	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
@@ -306,7 +309,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
 		//add extra node at the end in case of rounding down
 		//preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
+		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor
+			* (num_nodes + _num_nodes_per_lab_allocation)) + 1;
 		
 		//round new_num_nodes up to nearest _num_nodes_per_slab
 		new_num_nodes = RoundNodeIndexToNextSlab(new_num_nodes);

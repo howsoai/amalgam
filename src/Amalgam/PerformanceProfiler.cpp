@@ -356,9 +356,10 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 	return {total_mem_increase, positive_mem_increase};
 }
 
-template<typename StatValueType, typename CounterValueType, typename CounterMapType>
+template<typename StatValueType, typename CounterValueType,
+	typename CounterMapType, typename CounterFuncType>
 inline std::vector<std::pair<std::string, StatValueType>> GetPerformanceStat(CounterMapType &counters,
-	std::function<StatValueType(CounterValueType &)> counter_function)
+	CounterFuncType counter_function)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);

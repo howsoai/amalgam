@@ -462,8 +462,7 @@ public:
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>
-	inline std::function<bool(Iter, StringInternPool::StringID &)>
-		GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
+	inline auto GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
 		auto invalid_indices_ptr = &column_data->invalidIndices;
@@ -492,7 +491,7 @@ public:
 	// assumes and requires column_index is a valid column (not a feature_id)
 	//returns a key string version of the data in the column
 	template<typename Iter>
-	inline std::function<bool(Iter, std::string &)> GetValueToKeyStringFromEntityIteratorFunction(size_t column_index)
+	inline auto GetValueToKeyStringFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
 		auto invalid_indices_ptr = &column_data->invalidIndices;

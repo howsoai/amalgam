@@ -1032,7 +1032,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		if(is_first && type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
-		EntityQueries::WithEntityIds(queries.front(), [&](const auto &ids, auto get_id) {
+		EntityQueries::IterateOverFilteredEntities(queries.front(), [&](const auto &ids, auto get_id) {
 			for(auto item : ids)
 			{
 				size_t index = container->GetContainedEntityIndex(get_id(item));

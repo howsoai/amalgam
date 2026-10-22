@@ -9,15 +9,16 @@
 #include <variant>
 #include <vector>
 
-//a plan slot owns only its active payload. Filter nodes and distance callbacks borrow
-//evaluated nodes rooted by the interpreter until execution completes.
+//data structure used for an entity query
 struct EntityQuery
 {
 	//initialize the tag and active alternative without zeroing inactive distance storage.
 	EntityQuery() {}
+
 	template<typename Parameters, typename... Args>
 	EntityQuery(EvaluableNodeType type, std::in_place_type_t<Parameters>, Args &&... args)
 		: queryType(type), payload(std::in_place_type<Parameters>, std::forward<Args>(args)...) {}
+
 	EntityQuery(EntityQuery &&) noexcept = default;
 	EntityQuery &operator=(EntityQuery &&) noexcept = default;
 	EntityQuery(const EntityQuery &) = delete;
@@ -178,10 +179,13 @@ struct EntityQuery
 	{
 		return std::visit([](const auto &parameters) {
 			Aggregate labels{StringInternPool::NOT_A_STRING_ID};
+
 			if constexpr(requires { parameters.valueLabel; })
 				labels.valueLabel = parameters.valueLabel;
+
 			if constexpr(requires { parameters.weightLabel; })
 				labels.weightLabel = parameters.weightLabel;
+
 			return labels;
 		}, payload);
 	}

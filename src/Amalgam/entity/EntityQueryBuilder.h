@@ -577,7 +577,7 @@ namespace EntityQueryBuilder
 			size_t num_ids = 0;
 			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1,
 				[&](auto id) { excluded_id = id; ++num_ids; });
-			EntityQueries::WithEntityIds(conditions.back(),
+			EntityQueries::IterateOverFilteredEntities(conditions.back(),
 				[&](const auto &ids, auto) { reuse_exclusion = ids.size() == 1 && num_ids == 1; });
 		}
 

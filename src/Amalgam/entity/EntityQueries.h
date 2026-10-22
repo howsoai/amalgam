@@ -35,7 +35,7 @@ namespace EntityQueries
 		return std::get<EntityQuery::Filter>(query.payload).label;
 	}
 
-	//Converts range endpoints once per filter, outside the entity loop.
+	//converts range endpoints once per filter, outside the entity loop
 	std::tuple<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>
 		GetQueryRange(EvaluableNode *query);
 
@@ -82,16 +82,16 @@ namespace EntityQueries
 	EvaluableNodeReference ComputeMode(const EntityQuery &query,
 		const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm);
 
-	//The returned map owns one StringID reference per key.
+	//the returned map owns the StringID references for the keys
 	OrderedHashMap<StringInternPool::StringID, double> ComputeValueMasses(const EntityQuery &query,
 		const std::vector<Entity *> &matching_entities);
 
 	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
 		EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result);
 
-	//resolve the ID source once, before iterating entities
+	//iterates function over entities that were filtered as a result of the query
 	template<typename Function>
-	__forceinline void WithEntityIds(const EntityQuery &query, Function function)
+	__forceinline void IterateOverFilteredEntities(const EntityQuery &query, Function function)
 	{
 		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
 		{
@@ -99,6 +99,7 @@ namespace EntityQueries
 			auto &ocn = filter->node->GetOrderedChildNodes();
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
 				nodes = ocn[0]->GetOrderedChildNodesReference();
+
 			function(nodes, [](auto node) {
 				return EvaluableNode::IsNull(node) ? StringInternPool::NOT_A_STRING_ID : node->GetStringIDReference();
 			});
@@ -121,10 +122,14 @@ namespace EntityQueries
 				function(GetFilterLabel(queries[i]));
 		}
 		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
-			WithEntityIds(queries[query_index], [&](const auto &ids, auto get_id) {
+		{
+			IterateOverFilteredEntities(queries[query_index], [&](const auto &ids, auto get_id) {
 				for(auto item : ids)
+				{
 					if(auto id = get_id(item); id != StringInternPool::NOT_A_STRING_ID)
 						function(id);
+				}
 			});
+		}
 	}
 }

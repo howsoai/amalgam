@@ -38,8 +38,10 @@ EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,
 		value = std::move(ret_val);
 		return found;
 	};
+
 	auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_key_string_value,
 		weight_label != StringInternPool::NOT_A_STRING_ID, GetEntityNumberAccessor<true>(matching_entities, weight_label));
+
 	if(!found)
 		return EvaluableNodeReference::Null();
 	return Parser::ParseFromKeyString(mode, enm);
@@ -54,6 +56,7 @@ OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMa
 		value = ret_val;
 		return found;
 	};
+
 	return EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_key_string_value,
 		weight_label != StringInternPool::NOT_A_STRING_ID, GetEntityNumberAccessor<false>(matching_entities, weight_label));
 }
@@ -513,7 +516,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
-		WithEntityIds(query, [&](const auto &ids, auto get_id) {
+		IterateOverFilteredEntities(query, [&](const auto &ids, auto get_id) {
 			if(is_first && type == ENT_QUERY_IN_ENTITY_LIST)
 			{
 				matching_entities.reserve(ids.size());

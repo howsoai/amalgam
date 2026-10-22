@@ -790,9 +790,6 @@ protected:
 		BitArrayIntegerSet &enabled_indices, EfficientIntegerSet &entity_indices,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		size_t num_entity_indices = entity_indices.size();
-		size_t max_index = num_entity_indices;
-
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
 		size_t max_element = partial_sums.numInstances;
@@ -812,7 +809,7 @@ protected:
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
 
-		return num_entity_indices;
+		return entity_indices.size();
 	}
 
 	//adds term to the partial sums associated for each id in entity_indices for query_feature_index

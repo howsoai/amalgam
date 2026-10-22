@@ -342,7 +342,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 			else
 				response = FAILURE_RESPONSE;
 		#else
-			if(num_threads != 1)
+			if(num_threads != 1 && num_threads != 0)
 				response = FAILURE_RESPONSE;
 		#endif
 		}

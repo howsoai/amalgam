@@ -792,8 +792,6 @@ protected:
 	{
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
-		size_t max_element = partial_sums.numInstances;
-
 		auto &column_data = columnData[absolute_feature_index];
 
 		//for each found element, accumulate associated partial sums

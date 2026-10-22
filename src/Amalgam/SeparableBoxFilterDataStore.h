@@ -413,10 +413,54 @@ public:
 		return std::max(0.0, begin(sorted_number_value_entries)->first);
 	}
 
+	//helper object for GetNumberValueFromEntityIteratorFunction
+	template<typename Iter>
+	struct NumberValueExtractor
+	{
+		inline bool operator()(Iter i, double &value) const
+		{
+			if(isInvalidColumn)
+			{
+				value = 1.0;
+				return columnAsWeight;
+			}
+
+			size_t entity_index = std::is_same_v<size_t, Iter> ? i : *i;
+
+			if(entity_index >= numEntities || !numberIndices->contains(entity_index))
+			{
+				if(columnAsWeight)
+				{
+					value = 1.0;
+					return true;
+				}
+				return false;
+			}
+
+			value = columnData->GetResolvedIndexValue(entity_index).number;
+			return true;
+		}
+
+		bool isInvalidColumn;
+		bool columnAsWeight;
+		SBFDSColumnData *columnData;
+		EfficientIntegerSet *numberIndices;
+		size_t numEntities;
+	};
+
 	//returns a function that will take in an entity index iterator and reference to a
 	// double to store the value and return true if the value is found
 	//assumes and requires column_index is a valid column (not a feature_id)
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
+	template<typename Iter, typename FuncType>
+	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
+	{
+		bool invalid = (column_index >= columnData.size());
+		SBFDSColumnData *column_data = invalid ? nullptr : columnData[column_index].get();
+		return NumberValueExtractor<Iter>{ invalid, column_as_weight,
+			column_data, (invalid ? nullptr : &column_data->numberIndices), numEntities };
+	}
+		
 	template<typename Iter>
 	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(
 		size_t column_index, bool column_as_weight)

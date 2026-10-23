@@ -168,6 +168,9 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
+		if(e->GetIdStringId() == entityIdToExclude)
+			return false;
+
 		std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
 		for(size_t i = 0; i < positionLabels.size(); i++)
 		{

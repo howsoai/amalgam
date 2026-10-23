@@ -89,7 +89,7 @@ namespace EntityQueries
 	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
 		EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result);
 
-	//iterates function over entities that were filtered as a result of the query
+	//calls function once with the borrowed or converted ID list and its accessor, before entity iteration
 	template<typename Function>
 	__forceinline void IterateOverFilteredEntities(const EntityQuery &query, Function function)
 	{
@@ -108,7 +108,7 @@ namespace EntityQueries
 			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
 	}
 
-	//existence filters were historically grouped; preserve their combined return labels.
+	//consecutive existence filters of the same type contribute combined return labels through query_index.
 	template<typename Function>
 	void ForEachQueryLabel(const std::vector<EntityQuery> &queries, size_t query_index, Function function)
 	{

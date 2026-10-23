@@ -26,6 +26,7 @@ struct EntityQuery
 
 	struct Filter
 	{
+		//the interpreter roots evaluated query arguments until execution finishes
 		EvaluableNode *node;
 		StringInternPool::StringID label;
 	};
@@ -129,6 +130,7 @@ struct EntityQuery
 		//the labels that comprise each dimension of the position
 		std::vector<StringInternPool::StringID> positionLabels;
 
+		//feature callback nodes borrow the interpreter's rooted query arguments
 		GeneralizedDistanceEvaluator distEvaluator;
 
 		//minimum number of entities to attempt to retrieve
@@ -172,6 +174,7 @@ struct EntityQuery
 		RandomStream randomStream;
 	};
 
+	//ENT_NULL also marks invalid queries whose parsed payload is still present
 	EvaluableNodeType queryType = ENT_NULL;
 	std::variant<std::monostate, Filter, EntityIds, Aggregate, Quantile, Mean, Difference, Extremum, Select, Sample, Distance> payload;
 

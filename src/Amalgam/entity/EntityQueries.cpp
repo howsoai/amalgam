@@ -32,7 +32,7 @@ double EntityQueries::ComputeNumericAggregate(const EntityQuery &query, const st
 EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,
 	const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm)
 {
-	auto [value_label, weight_label] = query.GetAggregateLabels();
+	auto [value_label, weight_label] = std::get<EntityQuery::Aggregate>(query.payload);
 	auto get_key_string_value = [&matching_entities, label = value_label](size_t i, std::string &value) {
 		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(label, true, true);
 		value = std::move(ret_val);
@@ -50,7 +50,7 @@ EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,
 OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMasses(const EntityQuery &query,
 	const std::vector<Entity *> &matching_entities)
 {
-	auto [value_label, weight_label] = query.GetAggregateLabels();
+	auto [value_label, weight_label] = std::get<EntityQuery::Aggregate>(query.payload);
 	auto get_key_string_value = [&matching_entities, label = value_label](size_t i, StringInternPool::StringID &value) {
 		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(label, true, true);
 		value = ret_val;
@@ -438,9 +438,7 @@ EvaluableNodeReference EntityQuery::Distance::GetMatchingEntities(EvaluableNodeT
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		//compute distances
-		//Note that this recalculates the distance.  Since this is a small number of cases, it shouldn't be a big performance impact -- for larger queries, it will use faster methods
-		// if this becomes a performance issue, then DoesEntityMatchCondition can be refactored to optionally return the values it computed
+		//returned distances may need higher precision than the distances used for filtering
 		bool high_accuracy = (distEvaluator.highAccuracyDistances || distEvaluator.recomputeAccurateDistances);
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());

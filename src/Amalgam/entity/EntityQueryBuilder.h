@@ -569,7 +569,8 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		//an entity target needs its own exclusion slot, so retain any preceding exclusion filter
+		//reuse a single preceding NOT_IN ID as the nearest/within distance exclusion.
+		//an entity-ID target uses that slot to exclude itself, so retain its preceding exclusion filter separately.
 		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
 		bool reuse_exclusion = false;
 		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
@@ -577,11 +578,11 @@ namespace EntityQueryBuilder
 				|| ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT]->GetType() != ENT_STRING)
 			&& !conditions.empty() && conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
-			size_t num_ids = 0;
-			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1,
-				[&](auto id) { excluded_id = id; ++num_ids; });
-			EntityQueries::IterateOverFilteredEntities(conditions.back(),
-				[&](const auto &ids, auto) { reuse_exclusion = ids.size() == 1 && num_ids == 1; });
+			EntityQueries::IterateOverFilteredEntities(conditions.back(), [&](const auto &ids, auto get_id) {
+				if(ids.size() == 1)
+					excluded_id = get_id(ids.front());
+				reuse_exclusion = excluded_id != StringInternPool::NOT_A_STRING_ID;
+			});
 		}
 
 		if(!reuse_exclusion)
@@ -757,8 +758,6 @@ namespace EntityQueryBuilder
 
 		//value transforms for whatever is measured as "distance"
 		//need to populate distance transform BEFORE populating feature attributes
-		cur_condition->distEvaluator.computeSurprisal = false;
-		cur_condition->distEvaluator.transformSurprisalToProb = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
@@ -801,7 +800,6 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
 
 		//set numerical precision
-		cur_condition->distEvaluator.highAccuracyDistances = false;
 		cur_condition->distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
@@ -1029,7 +1027,7 @@ namespace EntityQueryBuilder
 
 		case ENT_QUERY_IN_ENTITY_LIST:
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
-			//coercing an ID can allocate; prepare those lists once, as before.
+			//coercing an ID can allocate; prepare those lists once to avoid repeated coercion during query execution.
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
 				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesReference()), end(ocn[0]->GetOrderedChildNodesReference()),
 					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))

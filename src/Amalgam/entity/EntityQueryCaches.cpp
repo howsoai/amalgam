@@ -177,6 +177,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 	if(matching_entities.size() == 0)
 		return;
 
+	//column preparation can prune and reorder features; initialize distance terms only afterward
 	sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
 	if(auto neighbors = std::get_if<EntityQuery::Distance::Neighbors>(&cond->target))
 	{
@@ -216,8 +217,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
-				size_t entity_index = container->GetContainedEntityIndex(neighbors->entityIdToExclude);
-				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
+				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, exclusion_entity_index,
 					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
 					cond->interpreter, cond->entity, compute_results,
 					std::numeric_limits<size_t>::max(), cond->randomStream);
@@ -234,9 +234,8 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
-				size_t entity_index = container->GetContainedEntityIndex(neighbors->entityIdToExclude);
 				sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
-					entity_index, neighbors->maxDistance, cond->singleLabel, matching_entities, false,
+					exclusion_entity_index, neighbors->maxDistance, cond->singleLabel, matching_entities, false,
 					cond->interpreter, cond->entity, compute_results);
 			}
 			else
@@ -761,7 +760,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		if(EntityQueries::GetFilterNode(query) != nullptr
 			|| std::holds_alternative<EntityQuery::EntityIds>(query.payload))
 		{
-			//keep the cache lock across filters that previously shared a prepared condition.
+			//hold the cache lock across consecutive filters in the same group; inclusive comparisons join the BETWEEN group.
 			auto group_type = [](EvaluableNodeType type) {
 				switch(type)
 				{

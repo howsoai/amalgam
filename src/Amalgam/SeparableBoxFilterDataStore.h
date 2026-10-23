@@ -415,7 +415,7 @@ public:
 
 	//returns a function that will take in an entity index iterator and reference to a
 	// double to store the value and return true if the value is found
-	//assumes and requires column_index is a valid column (not a feature_id)
+	//requires a valid column_index unless AllowMissingColumn is true; the accessor borrows the column under the cache lock
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
 	template<typename Iter, bool AllowMissingColumn = false>
 	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)

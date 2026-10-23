@@ -415,28 +415,24 @@ public:
 
 	//returns a function that will take in an entity index iterator and reference to a
 	// double to store the value and return true if the value is found
-	//assumes and requires column_index is a valid column (not a feature_id)
+	//requires a valid column_index unless allow_missing_column is true; the accessor borrows the column under the cache lock
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
-	template<typename Iter>
-	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(
-		size_t column_index, bool column_as_weight)
+	template<typename Iter, bool allow_missing_column = false>
+	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
-		//if invalid column_index, then always return 1.0
-		if(column_index >= columnData.size())
-		{
-			if(column_as_weight)
-				return [](Iter i, double &value) { value = 1.0;	return true; };
-			else
-				return [](Iter i, double &value) { value = 1.0;	return false; };
-		}
-
-		auto column_data = columnData[column_index].get();
-		auto number_indices_ptr = &column_data->numberIndices;
-
+		auto column_data = allow_missing_column && column_index >= columnData.size() ? nullptr : columnData[column_index].get();
 		size_t cur_num_entities = numEntities;
-		return [&, number_indices_ptr, column_data, column_as_weight, cur_num_entities]
-		(Iter i, double &value)
+		return [column_data, column_as_weight, cur_num_entities](Iter i, double &value)
 			{
+				if constexpr(allow_missing_column)
+				{
+					if(column_data == nullptr)
+					{
+						value = 1.0;
+						return column_as_weight;
+					}
+				}
+
 				size_t entity_index;
 				if constexpr(std::is_same<size_t, Iter>::value)
 					entity_index = i;
@@ -444,7 +440,7 @@ public:
 					entity_index = *i;
 
 				if(entity_index >= cur_num_entities
-					|| !number_indices_ptr->contains(entity_index))
+					|| !column_data->numberIndices.contains(entity_index))
 				{
 					if(column_as_weight)
 					{
@@ -462,14 +458,12 @@ public:
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>
-	inline std::function<bool(Iter, StringInternPool::StringID &)>
-		GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
+	inline auto GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
-		auto invalid_indices_ptr = &column_data->invalidIndices;
 
 		size_t cur_num_entities = numEntities;
-		return [&, invalid_indices_ptr, column_data, cur_num_entities]
+		return [column_data, cur_num_entities]
 		(Iter i, StringInternPool::StringID &value)
 			{
 				size_t entity_index;
@@ -479,7 +473,7 @@ public:
 					entity_index = *i;
 
 				if(entity_index >= cur_num_entities
-						|| invalid_indices_ptr->contains(entity_index))
+						|| column_data->invalidIndices.contains(entity_index))
 					return false;
 
 				auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
@@ -492,13 +486,12 @@ public:
 	// assumes and requires column_index is a valid column (not a feature_id)
 	//returns a key string version of the data in the column
 	template<typename Iter>
-	inline std::function<bool(Iter, std::string &)> GetValueToKeyStringFromEntityIteratorFunction(size_t column_index)
+	inline auto GetValueToKeyStringFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
-		auto invalid_indices_ptr = &column_data->invalidIndices;
 
 		size_t cur_num_entities = numEntities;
-		return [&, invalid_indices_ptr, column_data, cur_num_entities]
+		return [column_data, cur_num_entities]
 		(Iter i, std::string &value)
 			{
 				size_t entity_index;
@@ -508,7 +501,7 @@ public:
 					entity_index = *i;
 
 				if(entity_index >= cur_num_entities
-						|| invalid_indices_ptr->contains(entity_index))
+						|| column_data->invalidIndices.contains(entity_index))
 					return false;
 
 				auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);

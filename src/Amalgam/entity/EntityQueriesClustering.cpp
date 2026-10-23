@@ -65,7 +65,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		[&](size_t entity)
 		{
 			double entity_weight = 1.0;
-			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			distanceTransform->GetEntityWeight(entity, entity_weight);
 			return entity_weight;
 		},
 		minimum_cluster_weight);

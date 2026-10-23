@@ -263,12 +263,18 @@ public:
 	class DistanceTransform
 	{
 	public:
+		//get_weight must outlive this transform
+		template<typename WeightFunction>
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
 			size_t min_to_retrieve, size_t max_to_retrieve,
 			double num_to_retrieve_min_increment_prob,
 			size_t extra_to_retrieve,
-			bool has_weight, double min_weight, std::function<bool(EntityReference, double &)> get_weight)
+			bool has_weight, double min_weight, WeightFunction &get_weight)
+			: weightFunctionContext(const_cast<void *>(static_cast<const void *>(&get_weight))),
+			getWeight([](void *context, EntityReference entity, double &weight) -> bool {
+				return (*static_cast<WeightFunction *>(context))(entity, weight);
+			})
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;
@@ -295,7 +301,6 @@ public:
 				minToRetrieve = maxToRetrieve;
 
 			hasWeight = has_weight;
-			getEntityWeightFunction = get_weight;
 		}
 
 		__forceinline static double ConvertProbabilityToSurprisal(double prob)
@@ -424,7 +429,7 @@ public:
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -446,7 +451,7 @@ public:
 								return std::make_tuple(surprisal, surprisal, prob, prob, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							return std::make_tuple(surprisal, surprisal, prob, prob * weight, weight);
 						}, result_func);
 				}
@@ -464,7 +469,7 @@ public:
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -483,7 +488,7 @@ public:
 							return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 						double weight = 0.0;
-						getEntityWeightFunction(iter->reference, weight);
+						GetEntityWeight(iter->reference, weight);
 						return std::make_tuple(iter->distance, iter->distance, prob, weight * prob, weight);
 					}, result_func);
 				}
@@ -497,7 +502,7 @@ public:
 								return std::make_tuple(1.0, 1.0, 1.0, 1.0, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							return std::make_tuple(weight, 1.0, 1.0, weight, weight);
 						}, result_func);
 				}
@@ -516,7 +521,7 @@ public:
 								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							return std::make_tuple(iter->distance, iter->distance, prob, weight * prob, weight);
 						}, result_func);
 				}
@@ -533,7 +538,7 @@ public:
 								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 							double weight = 0.0;
-							getEntityWeightFunction(iter->reference, weight);
+							GetEntityWeight(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -554,12 +559,16 @@ public:
 		__forceinline size_t TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
 			bool sort_results, bool resize_neighbors = true)
 		{
-			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
-				entity_distance_pair_container.begin(), entity_distance_pair_container.end(),
-				[](auto ed_pair, double weighted_value, double unweighted_value, double prob_mass, double weight)
-				{
-					ed_pair->distance = weighted_value;
-				});
+			//unweighted distances need no transform when bandwidth selection is disabled
+			size_t num_kept = entity_distance_pair_container.size();
+			if(computeSurprisal || hasWeight || distanceWeightExponent != 1
+				|| minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
+				num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
+					entity_distance_pair_container.begin(), entity_distance_pair_container.end(),
+					[](auto ed_pair, double weighted_value, double unweighted_value, double prob_mass, double weight)
+					{
+						ed_pair->distance = weighted_value;
+					});
 
 			if(resize_neighbors)
 				entity_distance_pair_container.resize(num_kept);
@@ -733,7 +742,7 @@ public:
 					break;
 
 				double weight = 0.0;
-				getEntityWeightFunction(entity_distance_iter->reference, weight);
+				GetEntityWeight(entity_distance_iter->reference, weight);
 				weight_of_identical_entities += weight;
 			}
 
@@ -750,8 +759,11 @@ public:
 			return entity_weight * distance_contribution * fraction_per_identical_entity;
 		}
 
-		//return the entity weight for the entity reference if it exists, 1.0 if it does not
-		std::function<bool(EntityReference, double &)> getEntityWeightFunction;
+		//calls the borrowed weight accessor
+		bool GetEntityWeight(EntityReference entity, double &weight)
+		{
+			return getWeight(weightFunctionContext, entity, weight);
+		}
 
 	protected:
 
@@ -777,7 +789,11 @@ public:
 		//number of entities to attempt to retrieve after any constraints
 		size_t extraToRetrieve;
 
-		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
+		//if hasWeight is true, then will call GetEntityWeight and apply the respective entity weight to each distance
 		bool hasWeight;
+
+	private:
+		void *weightFunctionContext;
+		bool (*getWeight)(void *, EntityReference, double &);
 	};
 };

@@ -160,7 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
-		static std::vector<EntityQueryCondition> conditions;
+		static std::vector<EntityQuery> conditions;
 
 	conditions.clear();
 	for(auto &cond_node : condition_nodes)

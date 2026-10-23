@@ -415,12 +415,12 @@ public:
 
 	//returns a function that will take in an entity index iterator and reference to a
 	// double to store the value and return true if the value is found
-	//requires a valid column_index unless AllowMissingColumn is true; the accessor borrows the column under the cache lock
+	//requires a valid column_index unless allow_missing_column is true; the accessor borrows the column under the cache lock
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
-	template<typename Iter, bool AllowMissingColumn = false>
+	template<typename Iter, bool allow_missing_column = false>
 	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
-		auto column_data = AllowMissingColumn && column_index >= columnData.size() ? nullptr : columnData[column_index].get();
+		auto column_data = allow_missing_column && column_index >= columnData.size() ? nullptr : columnData[column_index].get();
 		size_t cur_num_entities = numEntities;
 		return [column_data, column_as_weight, cur_num_entities](Iter i, double &value)
 			{

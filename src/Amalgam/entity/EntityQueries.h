@@ -108,7 +108,7 @@ namespace EntityQueries
 			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
 	}
 
-	//consecutive existence filters of the same type contribute combined return labels through query_index.
+	//iterates over consecutive existence filters of the same type
 	template<typename Function>
 	void ForEachQueryLabel(const std::vector<EntityQuery> &queries, size_t query_index, Function function)
 	{

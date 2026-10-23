@@ -424,7 +424,7 @@ public:
 		size_t cur_num_entities = numEntities;
 		return [column_data, column_as_weight, cur_num_entities](Iter i, double &value)
 			{
-				if constexpr(AllowMissingColumn)
+				if constexpr(allow_missing_column)
 				{
 					if(column_data == nullptr)
 					{

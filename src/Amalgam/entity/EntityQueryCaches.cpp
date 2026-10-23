@@ -241,6 +241,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 			}
 			else
 			{
+				matching_entities.erase(exclusion_entity_index);
 				sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
 					neighbors->valuesToCompare, neighbors->maxDistance, cond->singleLabel, matching_entities, false,
 					cond->interpreter, cond->entity, compute_results);

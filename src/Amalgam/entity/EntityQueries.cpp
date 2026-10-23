@@ -81,7 +81,7 @@ EvaluableNodeReference EntityQueries::ValueMassesToResult(OrderedHashMap<StringI
 
 bool EntityQuery::Distance::DoesEntityMatchCondition(Entity *e, Neighbors &neighbors)
 {
-	if(e == nullptr)
+	if(e == nullptr || e->GetIdStringId() == neighbors.entityIdToExclude)
 		return false;
 
 	std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());

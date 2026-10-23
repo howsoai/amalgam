@@ -569,9 +569,12 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
+		//an entity target needs its own exclusion slot, so retain any preceding exclusion filter
 		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
 		bool reuse_exclusion = false;
 		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+			&& (ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT] == nullptr
+				|| ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT]->GetType() != ENT_STRING)
 			&& !conditions.empty() && conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
 			size_t num_ids = 0;

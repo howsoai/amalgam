@@ -263,7 +263,7 @@ public:
 	class DistanceTransform
 	{
 	public:
-		//get_weight must outlive this transform
+		//get_weight must be const-callable and outlive this transform
 		template<typename WeightFunction>
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
@@ -271,9 +271,9 @@ public:
 			double num_to_retrieve_min_increment_prob,
 			size_t extra_to_retrieve,
 			bool has_weight, double min_weight, WeightFunction &get_weight)
-			: weightFunctionContext(const_cast<void *>(static_cast<const void *>(&get_weight))),
-				getWeight([](void *context, EntityReference entity, double &weight) -> bool {
-					return (*static_cast<WeightFunction *>(context))(entity, weight);
+			: weightFunctionContext(&get_weight),
+				getWeight([](const void *context, EntityReference entity, double &weight) -> bool {
+					return (*static_cast<const WeightFunction *>(context))(entity, weight);
 				})
 		{
 			distanceWeightExponent = distance_weight_exponent;
@@ -789,7 +789,7 @@ public:
 		bool hasWeight;
 
 	private:
-		void *weightFunctionContext;
-		bool (*getWeight)(void *, EntityReference, double &);
+		const void *weightFunctionContext;
+		bool (*getWeight)(const void *, EntityReference, double &);
 	};
 };

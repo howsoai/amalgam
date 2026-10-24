@@ -9,11 +9,11 @@
 
 bool _enable_SBF_datastore = true;
 
-template<bool write_missing, bool public_label = false>
+template<bool write_missing>
 static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entities, StringInternPool::StringID label)
 {
 	return [&matching_entities, label](size_t i, double &value) {
-		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(label, public_label);
+		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(label, false);
 		if(found || write_missing)
 			value = ret_val;
 		return found;
@@ -23,10 +23,30 @@ static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entiti
 double EntityQueries::ComputeNumericAggregate(const EntityQuery &query, const std::vector<Entity *> &matching_entities)
 {
 	auto [value_label, weight_label] = query.GetAggregateLabels();
+	//Match the cache's numeric domain: no coercion, and nonnumeric/missing weights are one.
+	//Keep this local to numeric aggregates; other query accessors have different semantics.
+	auto get_number = [&matching_entities](StringInternPool::StringID label, bool as_weight) {
+		bool is_label_accessible = !Entity::IsLabelPrivate(label);
+		return [&matching_entities, label, as_weight, is_label_accessible](size_t i, double &value) {
+			if(is_label_accessible)
+			{
+				auto labels = matching_entities[i]->GetLabelIndexView();
+				auto number = labels.find(label);
+				if(number != end(labels) && number->second != nullptr && number->second->GetType() == ENT_NUMBER)
+				{
+					value = number->second->GetNumberValueReference();
+					return true;
+				}
+			}
+			if(as_weight)
+				value = 1.0;
+			return as_weight;
+		};
+	};
 	std::vector<double> values_buffer;
 	return ComputeNumericAggregate<size_t>(query, 0, matching_entities.size(),
-		GetEntityNumberAccessor<false, true>(matching_entities, value_label), weight_label != StringInternPool::NOT_A_STRING_ID,
-		GetEntityNumberAccessor<true>(matching_entities, weight_label), values_buffer, nullptr);
+		get_number(value_label, false), weight_label != StringInternPool::NOT_A_STRING_ID,
+		get_number(weight_label, true), values_buffer, nullptr);
 }
 
 EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,

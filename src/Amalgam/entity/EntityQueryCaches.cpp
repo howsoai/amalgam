@@ -65,34 +65,6 @@ void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::Stri
 #endif
 }
 
-//caller must hold a cache read lock
-template<typename Function>
-static double ComputeFromMatchingNumbers(SeparableBoxFilterDataStore &sbfds,
-	StringInternPool::StringID value_label, StringInternPool::StringID weight_label,
-	BitArrayIntegerSet &matching_entities, bool is_first, Function compute)
-{
-	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
-	if(column_index == std::numeric_limits<size_t>::max())
-		return std::numeric_limits<double>::quiet_NaN();
-
-	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
-	bool has_weight = weight_column_index != std::numeric_limits<size_t>::max();
-	if(!has_weight)
-		weight_column_index = 0;
-
-	auto compute_from = [&](auto &entities) {
-		using Iterator = decltype(entities.begin());
-		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(column_index, false);
-		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(weight_column_index, true);
-		return compute(entities.begin(), entities.end(), get_value, has_weight, get_weight);
-	};
-
-	if(is_first)
-		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
-
-	return compute_from(matching_entities);
-}
-
 template<typename Parameters>
 #if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock)
@@ -137,11 +109,27 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 #else
 	EnsureLabelsAreCached(labels);
 #endif
-	return ComputeFromMatchingNumbers(sbfds, value_label, weight_label, matching_entities, is_first,
-		[&query](auto first, auto last, auto &get_value, bool has_weight, auto &get_weight) {
-			return EntityQueries::ComputeNumericAggregate(query, first, last, get_value, has_weight, get_weight,
-				buffers.doubleVector, &buffers.pairDoubleVector);
-		});
+
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
+	if(column_index == std::numeric_limits<size_t>::max())
+		//A missing column has no numeric values, just like an empty valid-number set.
+		return query.queryType == ENT_QUERY_SUM ? 0.0 : std::numeric_limits<double>::quiet_NaN();
+
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
+	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
+
+	auto compute_from = [&]<bool values_prevalidated>(auto &entities) {
+		using Iterator = decltype(entities.begin());
+		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(column_index, false);
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
+		return EntityQueries::ComputeNumericAggregate<Iterator, values_prevalidated>(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
+			buffers.doubleVector, &buffers.pairDoubleVector);
+	};
+
+	if(is_first)
+		return compute_from.operator()<true>(sbfds.GetEntitiesWithValidNumbers(column_index));
+
+	return compute_from.operator()<false>(matching_entities);
 }
 
 void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,

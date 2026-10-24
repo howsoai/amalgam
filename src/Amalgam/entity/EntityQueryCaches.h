@@ -103,7 +103,7 @@ public:
 		return sbfds.DoesHaveLabel(label_id);
 	}
 
-	//caches the labels needed by the active payload
+	//caches labels needed by the current query if they are not in the cache
 #if defined(MULTITHREAD_SUPPORT)
 	template<typename Parameters>
 	void EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock);
@@ -145,7 +145,7 @@ public:
 
 	void SelectEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
-	//Sampling returns duplicates separately from the matching set.
+	//returns samples in entity_indices_sampled, as it may contain duplicates
 	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities);
 

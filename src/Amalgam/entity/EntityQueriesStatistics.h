@@ -272,9 +272,9 @@ public:
 			size_t extra_to_retrieve,
 			bool has_weight, double min_weight, WeightFunction &get_weight)
 			: weightFunctionContext(const_cast<void *>(static_cast<const void *>(&get_weight))),
-			getWeight([](void *context, EntityReference entity, double &weight) -> bool {
-				return (*static_cast<WeightFunction *>(context))(entity, weight);
-			})
+				getWeight([](void *context, EntityReference entity, double &weight) -> bool {
+					return (*static_cast<WeightFunction *>(context))(entity, weight);
+				})
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;

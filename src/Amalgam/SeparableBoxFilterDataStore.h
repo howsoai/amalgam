@@ -420,7 +420,9 @@ public:
 	template<typename Iter, bool allow_missing_column = false>
 	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
-		auto column_data = allow_missing_column && column_index >= columnData.size() ? nullptr : columnData[column_index].get();
+		auto column_data = ((allow_missing_column && column_index >= columnData.size())
+			? nullptr : columnData[column_index].get());
+
 		size_t cur_num_entities = numEntities;
 		return [column_data, column_as_weight, cur_num_entities](Iter i, double &value)
 			{

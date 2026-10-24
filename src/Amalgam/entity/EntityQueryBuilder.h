@@ -562,8 +562,8 @@ namespace EntityQueryBuilder
 		std::vector<EntityQuery> &conditions, RandomStream &rs,
 		Interpreter *calling_interpreter)
 	{
-		//cache ordered child nodes so don't need to keep fetching
-		auto &ocn = cn->GetOrderedChildNodes();
+		//can just get the reference because already know it's a distance query
+		auto &ocn = cn->GetOrderedChildNodesReference();
 
 		//need to at least have position, otherwise not valid query
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)

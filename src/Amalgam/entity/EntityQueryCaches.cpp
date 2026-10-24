@@ -86,8 +86,10 @@ static double ComputeFromMatchingNumbers(SeparableBoxFilterDataStore &sbfds,
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(weight_column_index, true);
 		return compute(entities.begin(), entities.end(), get_value, has_weight, get_weight);
 	};
+
 	if(is_first)
 		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
+
 	return compute_from(matching_entities);
 }
 
@@ -391,7 +393,6 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 			);
 		}
 	}
-
 }
 
 void EntityQueryCaches::FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first)
@@ -1023,20 +1024,20 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries,
 	BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto type = queries.front().queryType;
-	if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+	auto first_query_type = queries.front().queryType;
+	if(first_query_type == ENT_QUERY_IN_ENTITY_LIST || first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
 		auto &temp = buffers.tempMatchingEntityIndices;
 		temp.clear();
 		auto &included_entities = is_first ? matching_entities : temp;
-		if(is_first && type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+		if(is_first && first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
 		EntityQueries::IterateOverFilteredEntities(queries.front(), [&](const auto &ids, auto get_id) {
 			for(auto item : ids)
 			{
 				size_t index = container->GetContainedEntityIndex(get_id(item));
-				if(type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+				if(first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 					matching_entities.erase(index);
 				else if(index != std::numeric_limits<size_t>::max())
 				{
@@ -1049,7 +1050,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 			}
 		});
 
-		if(type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
+		if(first_query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
 			matching_entities.Intersect(temp);
 		return;
 	}

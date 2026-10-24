@@ -118,18 +118,18 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
 	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
 
-	auto compute_from = [&]<bool values_prevalidated>(auto &entities) {
+	auto compute_from = [&](auto &entities) {
 		using Iterator = decltype(entities.begin());
 		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(column_index, false);
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
-		return EntityQueries::ComputeNumericAggregate<Iterator, values_prevalidated>(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
+		return EntityQueries::ComputeNumericAggregate(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
 			buffers.doubleVector, &buffers.pairDoubleVector);
 	};
 
 	if(is_first)
-		return compute_from.operator()<true>(sbfds.GetEntitiesWithValidNumbers(column_index));
+		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
 
-	return compute_from.operator()<false>(matching_entities);
+	return compute_from(matching_entities);
 }
 
 void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,

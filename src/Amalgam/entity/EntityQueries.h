@@ -48,8 +48,7 @@ namespace EntityQueries
 	void SampleEntities(EntityQuery &query, std::vector<Entity *> &source_entities, std::vector<Entity *> &matching_entities);
 
 	//Share numeric dispatch across cached iterator types and fallback entity accessors.
-	//Set values_prevalidated only when get_value accepts every element in the range.
-	template<typename Iterator, bool values_prevalidated = false, typename ValueFunction, typename WeightFunction>
+	template<typename Iterator, typename ValueFunction, typename WeightFunction>
 	double ComputeNumericAggregate(const EntityQuery &query, Iterator first, Iterator last,
 		const ValueFunction &get_value, bool has_weight, const WeightFunction &get_weight,
 		std::vector<double> &values_buffer, std::vector<std::pair<double, double>> *quantile_buffer)
@@ -62,17 +61,6 @@ namespace EntityQueries
 			return Quantile(first, last, get_value, has_weight, get_weight, std::get<EntityQuery::Quantile>(query.payload).percentage, quantile_buffer);
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
-			//Make an all-rejected range empty, just like the cache's valid-number set.
-			//GeneralizedMean's empty-range result differs from some all-rejected results
-			//(for example, p=0 moments). Skip only the rejected prefix, without a buffer
-			//or an additional pass over the remaining values.
-			if constexpr(!values_prevalidated)
-			{
-				double value;
-				while(first != last && !get_value(first, value))
-					++first;
-			}
-
 			auto &mean = std::get<EntityQuery::Mean>(query.payload);
 			return GeneralizedMean(first, last, get_value, has_weight, get_weight,
 				mean.power, mean.center, mean.calculateMoment, mean.absoluteValue);

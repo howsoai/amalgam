@@ -686,6 +686,10 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 			}
 			else
 			{
+				//An all-rejected range is empty, even when computing a product moment.
+				if(num_elements == 0)
+					return std::numeric_limits<double>::quiet_NaN();
+
 				if(!calculate_moment)
 					mean /= num_elements;
 				mean = std::exp(mean);
@@ -726,6 +730,10 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 					num_elements++;
 				}
 			}
+
+			//Do not let an infinite power turn an empty result into pow(NaN, 0) == 1.
+			if(num_elements == 0)
+				return std::numeric_limits<double>::quiet_NaN();
 
 			mean /= num_elements;
 			if(!calculate_moment)
@@ -880,11 +888,13 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 		}
 		else
 		{
+			bool value_found = false;
 			for(ValueIterator i = first; i != last; ++i)
 			{
 				double value = 0.0;
 				if(get_value(i, value))
 				{
+					value_found = true;
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
 
@@ -900,6 +910,10 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 					}
 				}
 			}
+
+			//Track acceptance separately: valid weights can be zero or cancel out.
+			if(!value_found)
+				return std::numeric_limits<double>::quiet_NaN();
 
 			//can divide at the end because multiplication is associative and commutative
 			mean /= weights_sum;

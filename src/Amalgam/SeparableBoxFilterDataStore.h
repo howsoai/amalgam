@@ -417,7 +417,8 @@ public:
 	// double to store the value and return true if the value is found
 	//requires a valid column_index unless allow_missing_column is true; the accessor borrows the column under the cache lock
 	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
-	template<typename Iter, bool allow_missing_column = false>
+	//numeric_only requires every input index to belong to this column's numberIndices
+	template<typename Iter, bool allow_missing_column = false, bool numeric_only = false>
 	inline auto GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
 		auto column_data = ((allow_missing_column && column_index >= columnData.size())
@@ -442,17 +443,16 @@ public:
 					entity_index = *i;
 
 				if(entity_index >= cur_num_entities
-					|| !column_data->numberIndices.contains(entity_index))
+					|| (!numeric_only && !column_data->numberIndices.contains(entity_index)))
 				{
 					if(column_as_weight)
-					{
 						value = 1.0;
-						return true;
-					}
-					return false;
+					return column_as_weight;
 				}
 
-				value = column_data->GetResolvedIndexValue(entity_index).number;
+				//The index is numeric, either by contract or by the check above.
+				value = column_data->ResolveValue(column_data->internedNumberValues.valueInterningEnabled
+					? ENIVT_NUMBER_INDIRECTION_INDEX : ENIVT_NUMBER, column_data->valueEntries[entity_index]).number;
 				return true;
 			};
 	}

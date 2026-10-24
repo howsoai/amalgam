@@ -798,21 +798,7 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 		}
 		else if(p_value == 0.0) // geometric
 		{
-			//collect weights total first
-			for(ValueIterator i = first; i != last; ++i)
-			{
-				double value = 0.0;
-				if(get_value(i, value))
-				{
-					double weight_value = 1.0;
-					get_weight(i, weight_value);
-
-					//don't multiply if zero in case value is infinite
-					if(weight_value != 0.0)
-						weights_sum += weight_value;
-				}
-			}
-
+			//Accumulate weights in the same order as the values; early exits do not use the sum.
 			bool zero_found = false;
 			for(ValueIterator i = first; i != last; ++i)
 			{
@@ -825,6 +811,7 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 					//don't multiply if zero in case value is infinite
 					if(weight_value != 0.0)
 					{
+						weights_sum += weight_value;
 						double diff = value - center;
 						if(absolute_value)
 							diff = std::abs(diff);

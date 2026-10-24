@@ -120,7 +120,8 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 
 	auto compute_from = [&](auto &entities) {
 		using Iterator = decltype(entities.begin());
-		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator>(column_index, false);
+		//Both ranges contain only this column's numeric indices; weights may still be nonnumeric.
+		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
 		return EntityQueries::ComputeNumericAggregate(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
 			buffers.doubleVector, &buffers.pairDoubleVector);
@@ -129,6 +130,18 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	if(is_first)
 		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
 
+	auto &numeric_entities = sbfds.GetEntitiesWithValidNumbers(column_index);
+	if(numeric_entities.IsSisContainer() && numeric_entities.GetEndInteger() > matching_entities.GetEndInteger())
+	{
+		//Sparse IntersectTo can grow the destination to its last index. Avoid allocating
+		//when an earlier filter has already restricted the destination to a shorter range.
+		for(auto entity_index : matching_entities)
+			if(!numeric_entities.contains(entity_index))
+				matching_entities.erase(entity_index, false);
+		matching_entities.TrimBack();
+	}
+	else
+		numeric_entities.IntersectTo(matching_entities);
 	return compute_from(matching_entities);
 }
 

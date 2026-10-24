@@ -105,7 +105,9 @@ namespace EntityQueries
 			});
 		}
 		else
+		{
 			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
+		}
 	}
 
 	//iterates over consecutive existence filters of the same type

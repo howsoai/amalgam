@@ -559,11 +559,7 @@ public:
 		__forceinline size_t TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
 			bool sort_results, bool resize_neighbors = true)
 		{
-			//unweighted distances need no transform when bandwidth selection is disabled
-			size_t num_kept = entity_distance_pair_container.size();
-			if(computeSurprisal || hasWeight || distanceWeightExponent != 1
-				|| minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
-				num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
+			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
 					entity_distance_pair_container.begin(), entity_distance_pair_container.end(),
 					[](auto ed_pair, double weighted_value, double unweighted_value, double prob_mass, double weight)
 					{

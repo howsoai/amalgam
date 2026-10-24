@@ -9,12 +9,12 @@
 
 bool _enable_SBF_datastore = true;
 
-template<bool WriteMissing, bool PublicLabel = false>
+template<bool write_missing, bool public_label = false>
 static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entities, StringInternPool::StringID label)
 {
 	return [&matching_entities, label](size_t i, double &value) {
-		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(label, PublicLabel);
-		if(found || WriteMissing)
+		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(label, public_label);
+		if(found || write_missing)
 			value = ret_val;
 		return found;
 	};
@@ -492,11 +492,13 @@ EntityQueries::GetQueryRange(EvaluableNode *query)
 				type == ENT_QUERY_LESS_OR_EQUAL_TO ? -std::numeric_limits<double>::infinity() : value,
 				type == ENT_QUERY_LESS_OR_EQUAL_TO ? value : std::numeric_limits<double>::infinity()};
 		}
+
 		auto value = EvaluableNode::ToStringIDIfExists(low).second;
 		return {ENIVT_STRING_ID,
 			type == ENT_QUERY_LESS_OR_EQUAL_TO ? StringInternPool::NOT_A_STRING_ID : value,
 			type == ENT_QUERY_LESS_OR_EQUAL_TO ? value : StringInternPool::NOT_A_STRING_ID};
 	}
+
 	if(EvaluableNode::IsNumericOrNull(low) || EvaluableNode::IsNumericOrNull(high))
 		return {ENIVT_NUMBER, EvaluableNode::ToNumber(low), EvaluableNode::ToNumber(high)};
 	return {ENIVT_STRING_ID, EvaluableNode::ToStringIDIfExists(low).second, EvaluableNode::ToStringIDIfExists(high).second};
@@ -544,7 +546,9 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 	//on the first filter, copy only matches into the result
 	auto filter_entities = [&](auto remove) {
 		if(!is_first)
+		{
 			std::erase_if(matching_entities, remove);
+		}
 		else
 		{
 			matching_entities.clear();

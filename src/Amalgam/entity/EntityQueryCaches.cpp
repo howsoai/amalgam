@@ -118,40 +118,20 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
 	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
 
-	auto compute_from = [&](auto &entities, auto is_selected) {
+	auto compute_from = [&](auto &entities) {
 		using Iterator = decltype(entities.begin());
 		//Both ranges contain only this column's numeric indices; weights may still be nonnumeric.
-		auto get_number = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
-		auto get_value = [&](Iterator i, double &value) { return is_selected(i) && get_number(i, value); };
+		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
 		return EntityQueries::ComputeNumericAggregate(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
 			buffers.doubleVector, &buffers.pairDoubleVector);
 	};
 
-	auto select_all = [](auto) { return true; };
 	if(is_first)
-		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index), select_all);
+		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
 
-	auto &numeric_entities = sbfds.GetEntitiesWithValidNumbers(column_index);
-	if(numeric_entities.IsSisContainer() && numeric_entities.size() < matching_entities.size())
-	{
-		//All scalar numeric aggregates skip values rejected by get_value; none needs
-		//a materialized intersection. Preserve ascending numeric-index order and check
-		//selection before reading values or weights, leaving matching_entities unchanged.
-		return compute_from(numeric_entities, [&](auto i) { return matching_entities.contains(*i); });
-	}
-	if(numeric_entities.IsSisContainer() && numeric_entities.GetEndInteger() > matching_entities.GetEndInteger())
-	{
-		//Sparse IntersectTo can grow the destination to its last index. Avoid allocating
-		//when an earlier filter has already restricted the destination to a shorter range.
-		for(auto entity_index : matching_entities)
-			if(!numeric_entities.contains(entity_index))
-				matching_entities.erase(entity_index, false);
-		matching_entities.TrimBack();
-	}
-	else
-		numeric_entities.IntersectTo(matching_entities);
-	return compute_from(matching_entities, select_all);
+	sbfds.GetEntitiesWithValidNumbers(column_index).IntersectTo(matching_entities);
+	return compute_from(matching_entities);
 }
 
 void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
@@ -1096,7 +1076,6 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 			else
 				sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
 
-			matching_entities.UpdateNumElements();
 			break;
 
 		case ENT_QUERY_NOT_EXISTS:
@@ -1105,7 +1084,6 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 			else
 				sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
 
-			matching_entities.UpdateNumElements();
 			break;
 
 		case ENT_QUERY_EQUALS:
@@ -1175,4 +1153,8 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		}
 		is_first = false;
 	}
+	//The caller groups EXISTS and NOT_EXISTS separately. Each group only removes
+	//members, so batch operations can use the old count as an upper bound until here.
+	if(first_query_type == ENT_QUERY_EXISTS || first_query_type == ENT_QUERY_NOT_EXISTS)
+		matching_entities.UpdateNumElements();
 }

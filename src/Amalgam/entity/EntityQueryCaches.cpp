@@ -118,19 +118,28 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
 	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
 
-	auto compute_from = [&](auto &entities) {
+	auto compute_from = [&](auto &entities, auto is_selected) {
 		using Iterator = decltype(entities.begin());
 		//Both ranges contain only this column's numeric indices; weights may still be nonnumeric.
-		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
+		auto get_number = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
+		auto get_value = [&](Iterator i, double &value) { return is_selected(i) && get_number(i, value); };
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
 		return EntityQueries::ComputeNumericAggregate(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
 			buffers.doubleVector, &buffers.pairDoubleVector);
 	};
 
+	auto select_all = [](auto) { return true; };
 	if(is_first)
-		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index));
+		return compute_from(sbfds.GetEntitiesWithValidNumbers(column_index), select_all);
 
 	auto &numeric_entities = sbfds.GetEntitiesWithValidNumbers(column_index);
+	if(numeric_entities.IsSisContainer() && numeric_entities.size() < matching_entities.size())
+	{
+		//All scalar numeric aggregates skip values rejected by get_value; none needs
+		//a materialized intersection. Preserve ascending numeric-index order and check
+		//selection before reading values or weights, leaving matching_entities unchanged.
+		return compute_from(numeric_entities, [&](auto i) { return matching_entities.contains(*i); });
+	}
 	if(numeric_entities.IsSisContainer() && numeric_entities.GetEndInteger() > matching_entities.GetEndInteger())
 	{
 		//Sparse IntersectTo can grow the destination to its last index. Avoid allocating
@@ -142,7 +151,7 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	}
 	else
 		numeric_entities.IntersectTo(matching_entities);
-	return compute_from(matching_entities);
+	return compute_from(matching_entities, select_all);
 }
 
 void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,

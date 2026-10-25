@@ -129,16 +129,20 @@ bool EntityQuery::Distance::DoesEntityMatchCondition(Entity *e, Neighbors &neigh
 	return true;
 }
 
-double EntityQuery::Distance::GetConditionDistanceMeasure(Entity *e, Neighbors &neighbors, bool high_accuracy)
+double EntityQuery::Distance::GetConditionDistanceMeasure(Entity *e, bool high_accuracy,
+	std::vector<EvaluableNodeImmediateValueWithType> &position)
 {
 	if(e == nullptr)
 		return std::numeric_limits<double>::quiet_NaN();
+
+	auto &neighbors = std::get<Neighbors>(target);
 
 	//make sure not excluding this entity
 	if(e->GetIdStringId() == neighbors.entityIdToExclude)
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
+	//The caller owns this scratch space for the query; every used feature is overwritten.
+	position.resize(positionLabels.size());
 	for(size_t i = 0; i < positionLabels.size(); i++)
 	{
 		auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
@@ -337,6 +341,7 @@ EvaluableNodeReference EntityQuery::Distance::GetMatchingEntities(EvaluableNodeT
 	std::vector<Entity *> &matching_entities, bool from_all_entities, EvaluableNodeManager *enm)
 {
 	auto &neighbors = std::get<Neighbors>(target);
+	std::vector<EvaluableNodeImmediateValueWithType> position;
 
 	if(from_all_entities)
 	{
@@ -379,7 +384,7 @@ EvaluableNodeReference EntityQuery::Distance::GetMatchingEntities(EvaluableNodeT
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>, double, EntityReferenceToIndex> nearest_entities(randomStream);
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{
-			double value = GetConditionDistanceMeasure(matching_entities[i], neighbors, distEvaluator.highAccuracyDistances);
+			double value = GetConditionDistanceMeasure(matching_entities[i], distEvaluator.highAccuracyDistances, position);
 			if(FastIsNaN(value))
 				continue;
 
@@ -412,7 +417,7 @@ EvaluableNodeReference EntityQuery::Distance::GetMatchingEntities(EvaluableNodeT
 		{
 			//recompute distance accurately for each found entity result
 			for(auto &it : entity_values)
-				it.distance = GetConditionDistanceMeasure(it.reference, neighbors, true);
+				it.distance = GetConditionDistanceMeasure(it.reference, true, position);
 		}
 
 		auto weight_function = [this](Entity *e, double &weight)
@@ -463,7 +468,7 @@ EvaluableNodeReference EntityQuery::Distance::GetMatchingEntities(EvaluableNodeT
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());
 		for(size_t i = 0; i < matching_entities.size(); i++)
-			entity_values.emplace_back(GetConditionDistanceMeasure(matching_entities[i], neighbors, high_accuracy), matching_entities[i]);
+			entity_values.emplace_back(GetConditionDistanceMeasure(matching_entities[i], high_accuracy, position), matching_entities[i]);
 
 
 		auto weight_function = [this]

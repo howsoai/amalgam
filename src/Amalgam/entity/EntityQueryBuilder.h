@@ -569,9 +569,12 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
+		//if a distance query, see if excluding an entity in the previous query -- if so, exclude here
+		//but not if the position is an entity id, since entityIdToExclude will hold that entity instead
 		EntityQueryCondition *cur_condition = nullptr;
 		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+			&& (ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT] == nullptr
+				|| ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT]->GetType() != ENT_STRING)
 			&& conditions.size() > 0
 			&& conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1)
 		{

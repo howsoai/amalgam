@@ -353,6 +353,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else
 				{
+					matching_entities.erase(cond->exclusionEntityIndex);
 					sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
 						cond->valuesToCompare, cond->maxDistance, cond->singleLabel, matching_entities, false,
 						cond->interpreter, cond->entity, compute_results);

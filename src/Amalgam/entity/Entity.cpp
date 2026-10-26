@@ -231,6 +231,13 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
+#ifdef MULTITHREAD_SUPPORT
+	//MT-only to preserve ST code generation; explicit ENIVT_NUMBER keeps raw NaNs numeric.
+	EvaluableNode *node = label->second;
+	if(destination_temp_enm == nullptr && node != nullptr && node->GetType() == ENT_NUMBER)
+		return std::pair(EvaluableNodeImmediateValueWithType(node->GetNumberValueReference(), ENIVT_NUMBER), true);
+#endif
+
 	auto retval = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(label->second, destination_temp_enm);
 	return std::pair(retval, true);
 }

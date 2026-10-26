@@ -112,7 +112,6 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 
 	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
 	if(column_index == std::numeric_limits<size_t>::max())
-		//A missing column has no numeric values, just like an empty valid-number set.
 		return query.queryType == ENT_QUERY_SUM ? 0.0 : std::numeric_limits<double>::quiet_NaN();
 
 	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
@@ -120,7 +119,6 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 
 	auto compute_from = [&](auto &entities) {
 		using Iterator = decltype(entities.begin());
-		//Both ranges contain only this column's numeric indices; weights may still be nonnumeric.
 		auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, false, true>(column_index, false);
 		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<Iterator, true>(weight_column_index, true);
 		return EntityQueries::ComputeNumericAggregate(query, entities.begin(), entities.end(), get_value, has_weight, get_weight,
@@ -1153,8 +1151,8 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		}
 		is_first = false;
 	}
-	//The caller groups EXISTS and NOT_EXISTS separately. Each group only removes
-	//members, so batch operations can use the old count as an upper bound until here.
+	//caller groups EXISTS and NOT_EXISTS separately. each group only removes
+	//members, so batch operations can use the old count as an upper bound until here
 	if(first_query_type == ENT_QUERY_EXISTS || first_query_type == ENT_QUERY_NOT_EXISTS)
 		matching_entities.UpdateNumElements();
 }

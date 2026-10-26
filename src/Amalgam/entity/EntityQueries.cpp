@@ -23,14 +23,13 @@ static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entiti
 double EntityQueries::ComputeNumericAggregate(const EntityQuery &query, const std::vector<Entity *> &matching_entities)
 {
 	auto [value_label, weight_label] = query.GetAggregateLabels();
-	//Check each distinct label once, before constructing accessors or visiting entities.
+
 	if(Entity::IsLabelPrivate(value_label))
 		return query.queryType == ENT_QUERY_SUM ? 0.0 : std::numeric_limits<double>::quiet_NaN();
 	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
 	bool is_weight_accessible = weight_label == value_label || (has_weight && !Entity::IsLabelPrivate(weight_label));
 
-	//Match the cache's numeric domain: no coercion, and nonnumeric/missing weights are one.
-	//Keep this local to numeric aggregates; other query accessors have different semantics.
+
 	auto get_number = [&matching_entities](StringInternPool::StringID label, bool as_weight, bool is_label_accessible) {
 		return [&matching_entities, label, as_weight, is_label_accessible](size_t i, double &value) {
 			if(is_label_accessible)

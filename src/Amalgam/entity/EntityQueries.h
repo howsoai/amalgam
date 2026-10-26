@@ -47,7 +47,7 @@ namespace EntityQueries
 	void SelectEntities(EntityQuery &query, std::vector<Entity *> &matching_entities);
 	void SampleEntities(EntityQuery &query, std::vector<Entity *> &source_entities, std::vector<Entity *> &matching_entities);
 
-	//Share numeric dispatch across cached iterator types and fallback entity accessors.
+	//computes aggregation across iterators
 	template<typename Iterator, typename ValueFunction, typename WeightFunction>
 	double ComputeNumericAggregate(const EntityQuery &query, Iterator first, Iterator last,
 		const ValueFunction &get_value, bool has_weight, const WeightFunction &get_weight,

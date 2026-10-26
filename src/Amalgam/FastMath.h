@@ -686,7 +686,6 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 			}
 			else
 			{
-				//An all-rejected range is empty, even when computing a product moment.
 				if(num_elements == 0)
 					return std::numeric_limits<double>::quiet_NaN();
 
@@ -731,7 +730,6 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 				}
 			}
 
-			//Do not let an infinite power turn an empty result into pow(NaN, 0) == 1.
 			if(num_elements == 0)
 				return std::numeric_limits<double>::quiet_NaN();
 
@@ -798,7 +796,6 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 		}
 		else if(p_value == 0.0) // geometric
 		{
-			//Accumulate weights in the same order as the values; early exits do not use the sum.
 			bool zero_found = false;
 			for(ValueIterator i = first; i != last; ++i)
 			{
@@ -898,7 +895,6 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 				}
 			}
 
-			//Track acceptance separately: valid weights can be zero or cancel out.
 			if(!value_found)
 				return std::numeric_limits<double>::quiet_NaN();
 

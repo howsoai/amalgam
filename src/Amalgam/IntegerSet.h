@@ -1093,12 +1093,10 @@ public:
 			return;
 		}
 
-		//An intersection can only shrink; sparse indices beyond our bounds need no storage.
-		//Use buckets so that even a sparse maximum of SIZE_MAX cannot overflow.
 		bitBucket.resize(std::min(bitBucket.size(), GetBucket(sis.GetIntegerVector().back()) + 1));
 		curMaxNumIndices = bitBucket.size() * numBitsPerBucket;
 
-		//Build one mask per bucket instead of clearing individual missing bits.
+		//build one mask per bucket
 		auto other = sis.begin();
 		auto other_end = sis.end();
 		for(size_t bucket = 0; bucket < bitBucket.size(); bucket++)

@@ -148,12 +148,10 @@ double EntityQuery::Distance::GetConditionDistanceMeasure(Entity *e, bool high_a
 
 	//The caller owns this scratch space for the query; every used feature is overwritten.
 	position.resize(positionLabels.size());
-	//Snapshot the buffer pointer to avoid redundant reloads after each getter call; lookups do not resize the vector.
-	auto *position_data = position.data();
 	for(size_t i = 0; i < positionLabels.size(); i++)
 	{
 		auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
-		position_data[i] = value;
+		position[i] = value;
 		if(value.nodeType == ENIVT_NOT_EXIST)
 			return std::numeric_limits<double>::quiet_NaN();
 	}

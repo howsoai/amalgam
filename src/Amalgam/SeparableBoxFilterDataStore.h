@@ -550,13 +550,12 @@ public:
 	}
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
-	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
-	//assumes that enabled_indices only contains indices that have valid values for all the features
+	//assumes that possible_knn_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
 		double max_dist, StringInternPool::StringID radius_label,
-		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		BitArrayIntegerSet &possible_knn_indices,
 		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
@@ -568,19 +567,7 @@ public:
 			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
 				position_label_sids, position_values, &dist_eval, interpreter, entity);
 
-		//make a copy of the entities if enabled_indices is read-only
-		BitArrayIntegerSet *possible_knn_indices;
-		if(read_only_enabled_indices)
-		{
-			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
-			*possible_knn_indices = enabled_indices;
-		}
-		else
-		{
-			possible_knn_indices = &enabled_indices;
-		}
-
-		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, possible_knn_indices, distances_out);
 	}
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
@@ -640,8 +627,8 @@ public:
 	}
 
 	//Finds the nearest neighbors
-	//enabled_indices is the set of entities to find from, and will be modified
-	//assumes that enabled_indices only contains indices that have valid values for all the features
+	//possible_knn_indices is the set of entities to find from, and will be modified
+	//assumes that possible_knn_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValueWithType> &position_values,

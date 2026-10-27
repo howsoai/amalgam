@@ -176,9 +176,8 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 	sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
 	if(auto neighbors = std::get_if<EntityQuery::Distance::Neighbors>(&cond->target))
 	{
-		//resolve the exclusion and distance target once, under the cache lock
-		size_t exclusion_entity_index = neighbors->entityIdToExclude == StringInternPool::NOT_A_STRING_ID
-			? std::numeric_limits<size_t>::max() : container->GetContainedEntityIndex(neighbors->entityIdToExclude);
+		size_t exclusion_entity_index = container->GetContainedEntityIndex(neighbors->entityIdToExclude);
+
 		cond->distEvaluator.InitializeParametersAndFeatureParams(neighbors->populateOmittedFeatureValues);
 		//labels and values must have the same size if they're prepopulated
 		if(!cond->distEvaluator.populateOmittedFeatureValues && neighbors->valuesToCompare.size() != cond->positionLabels.size())
@@ -238,7 +237,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 			{
 				matching_entities.erase(exclusion_entity_index);
 				sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
-					neighbors->valuesToCompare, neighbors->maxDistance, cond->singleLabel, matching_entities, false,
+					neighbors->valuesToCompare, neighbors->maxDistance, cond->singleLabel, matching_entities,
 					cond->interpreter, cond->entity, compute_results);
 			}
 		}

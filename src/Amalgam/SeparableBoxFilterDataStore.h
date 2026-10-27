@@ -588,8 +588,8 @@ public:
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids,
-		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
+		std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
+		size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
@@ -641,7 +641,8 @@ public:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,

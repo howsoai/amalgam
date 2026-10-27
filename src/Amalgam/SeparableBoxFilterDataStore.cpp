@@ -505,15 +505,13 @@ template<bool expand_to_first_nonzero_distance, bool compute_surprisal>
 void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
+	std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 {
 	auto &dist_eval = *r_dist_eval.distEvaluator;
 	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
 
 	size_t num_enabled_features = dist_eval.featureAttribs.size();
-
-	enabled_indices.erase(ignore_index);
 
 	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 
@@ -705,22 +703,22 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 template void SeparableBoxFilterDataStore::FindNearestEntities<true, true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
+	std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
 
 template void SeparableBoxFilterDataStore::FindNearestEntities<true, false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
+	std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
 
 template void SeparableBoxFilterDataStore::FindNearestEntities<false, true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
+	std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
 
 template void SeparableBoxFilterDataStore::FindNearestEntities<false, false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
+	std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
 
 void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity, bool set_not_exist)
 {

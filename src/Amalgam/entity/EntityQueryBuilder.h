@@ -362,6 +362,7 @@ namespace EntityQueryBuilder
 				//normalize the weights
 				double total_accumulated = std::accumulate(begin(accumulated_feature_weights),
 					end(accumulated_feature_weights), 0.0);
+
 				if(total_accumulated != 0.0)
 				{
 					const double inverse_total = 1.0 / total_accumulated;

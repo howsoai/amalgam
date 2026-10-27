@@ -410,6 +410,9 @@
     <ClInclude Include="ConcurrentHashMaps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="entity\EntityQuery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

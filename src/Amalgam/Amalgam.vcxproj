@@ -664,6 +664,7 @@
     <ClInclude Include="entity\EntityQueriesClustering.h" />
     <ClInclude Include="entity\EntityQueriesDensityFunctions.h" />
     <ClInclude Include="entity\EntityQueriesStatistics.h" />
+    <ClInclude Include="entity\EntityQuery.h" />
     <ClInclude Include="entity\EntityQueryBuilder.h" />
     <ClInclude Include="entity\EntityQueryCaches.h" />
     <ClInclude Include="entity\EntityWriteListener.h" />

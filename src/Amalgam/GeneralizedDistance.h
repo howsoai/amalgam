@@ -8,6 +8,7 @@
 
 //system headers:
 #include <limits>
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -1088,8 +1089,8 @@ public:
 	//	-uses featured nominal dimensions: if a dimension is marked in nominal_dimensions as true, partial distance is binary: 0.0 if equal, 1.0 otherwise
 	//if deviations.size() == 0, no deviations are used, else deviations.size() must == a.size() == b.size()
 	//	-uses per-feature deviations: per-feature deviation is added after the distance between ai and bi is computed
-	__forceinline double ComputeMinkowskiDistance(std::vector<EvaluableNodeImmediateValueWithType> &a,
-		std::vector<EvaluableNodeImmediateValueWithType> &b, bool fast_approx_deviation, bool high_accuracy)
+	__forceinline double ComputeMinkowskiDistance(std::span<const EvaluableNodeImmediateValueWithType> a,
+		std::span<const EvaluableNodeImmediateValueWithType> b, bool fast_approx_deviation, bool high_accuracy)
 	{
 		if(a.size() != b.size())
 			return std::numeric_limits<double>::quiet_NaN();

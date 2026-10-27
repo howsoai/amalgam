@@ -46,7 +46,7 @@ public:
 		BitArrayIntegerSet potentialMatchesSet;
 
 		//used when needing to accum entities with nulls
-		BitArrayIntegerSet nullAccumSet;
+		BitArrayIntegerSet possibleNearestNeighborsSet;
 
 		FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> potentialGoodMatches;
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> sortedResults;
@@ -535,7 +535,7 @@ public:
 		BitArrayIntegerSet *possible_knn_indices;
 		if(read_only_enabled_indices)
 		{
-			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
 			*possible_knn_indices = enabled_indices;
 		}
 		else
@@ -572,7 +572,7 @@ public:
 		BitArrayIntegerSet *possible_knn_indices;
 		if(read_only_enabled_indices)
 		{
-			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
 			*possible_knn_indices = enabled_indices;
 		}
 		else
@@ -607,7 +607,7 @@ public:
 		BitArrayIntegerSet *possible_knn_indices;
 		if(read_only_enabled_indices)
 		{
-			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
 			*possible_knn_indices = enabled_indices;
 		}
 		else
@@ -662,7 +662,7 @@ public:
 		BitArrayIntegerSet *possible_knn_indices;
 		if(read_only_enabled_indices)
 		{
-			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
 			*possible_knn_indices = enabled_indices;
 		}
 		else

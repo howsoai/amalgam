@@ -61,10 +61,7 @@ public:
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity_index)
 			{
-				cachedNeighbors[entity_index].clear();
-				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, entity_index, top_k, radiusLabelId, *relevantIndices, true, expand_to_first_nonzero_distance,
-					interpreter, entity, cachedNeighbors[entity_index]);
+				GetKnnWithoutCache(entity_index, top_k, expand_to_first_nonzero_distance, cachedNeighbors[entity_index]);
 			}
 	#ifdef MULTITHREAD_SUPPORT
 			,

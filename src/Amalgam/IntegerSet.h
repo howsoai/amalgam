@@ -1093,66 +1093,23 @@ public:
 			return;
 		}
 
-		//remove elements off the top first for efficiency
-		size_t sis_end_index = sis.GetEndInteger();
-		resize(sis_end_index);
-		size_t num_buckets = bitBucket.size();
+		bitBucket.resize(std::min(bitBucket.size(), GetBucket(sis.GetIntegerVector().back()) + 1));
+		curMaxNumIndices = bitBucket.size() * numBitsPerBucket;
 
-		//intersect
-		size_t cur_id = 0;
-		size_t cur_bucket = 0;
-		for(auto other_id : sis)
+		//build one mask per bucket
+		auto other = sis.begin();
+		auto other_end = sis.end();
+		for(size_t bucket = 0; bucket < bitBucket.size(); bucket++)
 		{
-			size_t other_id_bucket = GetBucket(other_id);
-			//if next id is beyond last bucket, then just truncate
-			if(other_id_bucket >= num_buckets)
+			uint64_t mask = 0;
+			while(other != other_end && GetBucket(*other) == bucket)
 			{
-				bitBucket.resize(cur_bucket + 1);
-				break;
+				mask |= 1ULL << GetBit(*other);
+				++other;
 			}
-
-			//any buckets that need to be skipped should be zeroed out
-			if(other_id_bucket > cur_bucket)
-			{
-				//if there are any bits left in the last bucket after the last cur_id, clear them
-				size_t first_empty_bit = GetBit(cur_id);
-				if(first_empty_bit > 0)
-				{
-					size_t last_bucket_bitmask = (0xFFFFFFFFFFFFFFFFULL >> (numBitsPerBucket - first_empty_bit));
-					bitBucket[cur_bucket] &= last_bucket_bitmask;
-				}
-				//set cur_id to the next id past the bucket
-				cur_bucket = GetBucket(cur_id + numBitsPerBucket - 1);
-				cur_id = numBitsPerBucket * cur_bucket;
-
-				//zero out buckets skipped over
-				cur_id += numBitsPerBucket * (other_id_bucket - cur_bucket);
-				for(; cur_bucket < other_id_bucket; cur_bucket++)
-					bitBucket[cur_bucket] = 0;
-			}
-
-			//zero out everything until the other id
-			auto &bucket_value = bitBucket[cur_bucket];
-			for(; cur_id < other_id; cur_id++)
-				bucket_value &= ~(1ULL << GetBit(cur_id));
-
-			//cur_id and other_id are in both sets, so don't remove it
-			cur_id++;
-			cur_bucket = GetBucket(cur_id);
+			bitBucket[bucket] &= mask;
 		}
 
-		//if there are any bits left in the last bucket after the last cur_id, clear them
-		if(cur_bucket < bitBucket.size())
-		{
-			size_t first_empty_bit = GetBit(cur_id);
-			if(first_empty_bit > 0)
-			{
-				size_t last_bucket_bitmask = (0xFFFFFFFFFFFFFFFFULL >> (numBitsPerBucket - first_empty_bit));
-				bitBucket[cur_bucket] &= last_bucket_bitmask;
-			}
-		}
-
-		curMaxNumIndices = (bitBucket.size() * numBitsPerBucket);
 		TrimBack();
 	}
 

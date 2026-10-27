@@ -219,9 +219,10 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 			}
 			else
 			{
+				matching_entities.erase(exclusion_entity_index);
 				sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, neighbors->valuesToCompare,
-					distance_transform.GetNumToRetrieve(), cond->singleLabel, exclusion_entity_index,
-					matching_entities, false, false, cond->interpreter, cond->entity, compute_results,
+					distance_transform.GetNumToRetrieve(), cond->singleLabel,
+					matching_entities, false, cond->interpreter, cond->entity, compute_results,
 					cond->randomStream);
 			}
 		}

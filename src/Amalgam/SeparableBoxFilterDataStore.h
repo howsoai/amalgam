@@ -645,8 +645,8 @@ public:
 	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
-		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_index,
-		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
+		size_t top_k, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &possible_knn_indices, bool expand_to_first_nonzero_distance,
 		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
 	{
@@ -658,37 +658,23 @@ public:
 			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
 				position_label_sids, position_values, &dist_eval, interpreter, entity);
 
-		//make a copy of the entities if enabled_indices is read-only
-		BitArrayIntegerSet *possible_knn_indices;
-		if(read_only_enabled_indices)
-		{
-			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
-			*possible_knn_indices = enabled_indices;
-		}
-		else
-		{
-			possible_knn_indices = &enabled_indices;
-		}
-
-		possible_knn_indices->erase(ignore_index);
-
 		if(expand_to_first_nonzero_distance)
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 		else
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 	}
 

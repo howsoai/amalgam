@@ -112,10 +112,11 @@ public:
 		size_t num_position_labels = positionLabelIds->size();
 		values.resize(num_position_labels);
 
-		sbfDataStore->FindEntitiesNearestToPosition(*distEvaluator,
-			*positionLabelIds, values, top_k, radiusLabelId,
-			std::numeric_limits<size_t>::max(), *relevantIndices, true, expand_to_first_nonzero_distance,
-			interpreter, entity, out);
+		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
+		possible_knn = *relevantIndices;
+
+		sbfDataStore->FindEntitiesNearestToPosition(*distEvaluator, *positionLabelIds, values,
+			top_k, radiusLabelId, possible_knn, expand_to_first_nonzero_distance, interpreter, entity, out);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results

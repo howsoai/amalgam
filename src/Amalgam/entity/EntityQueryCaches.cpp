@@ -211,6 +211,10 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
+				//TODO 26224: update with the following code and move the erase above
+				//sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels,
+				//distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
+				//	cond->interpreter, cond->entity, compute_results, cond->randomStream);
 				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, exclusion_entity_index,
 					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
 					cond->interpreter, cond->entity, compute_results,
@@ -227,15 +231,15 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		}
 		else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
+			matching_entities.erase(exclusion_entity_index);
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
 				sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
-					exclusion_entity_index, neighbors->maxDistance, cond->singleLabel, matching_entities, false,
+					exclusion_entity_index, neighbors->maxDistance, cond->singleLabel, matching_entities,
 					cond->interpreter, cond->entity, compute_results);
 			}
 			else
 			{
-				matching_entities.erase(exclusion_entity_index);
 				sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
 					neighbors->valuesToCompare, neighbors->maxDistance, cond->singleLabel, matching_entities,
 					cond->interpreter, cond->entity, compute_results);

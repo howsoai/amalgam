@@ -514,12 +514,12 @@ public:
 	}
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
-	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
-	//assumes that enabled_indices only contains indices that have valid values for all the features
+	//assumes that possible_knn_indices only contains indices that have valid values for all the features
+	//it assumes that search_index is already removed from possible_knn_indices unless it is intended to be included
 	void FindEntitiesWithinDistanceToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, double max_dist, StringInternPool::StringID radius_label,
-		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		BitArrayIntegerSet &possible_knn_indices,
 		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
@@ -531,22 +531,7 @@ public:
 			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
 				position_label_sids, search_index, &dist_eval, interpreter, entity);
 
-		//make a copy of the entities if enabled_indices is read-only
-		BitArrayIntegerSet *possible_knn_indices;
-		if(read_only_enabled_indices)
-		{
-			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
-			*possible_knn_indices = enabled_indices;
-		}
-		else
-		{
-			possible_knn_indices = &enabled_indices;
-		}
-
-		//remove search_index so it doesn't find itself
-		possible_knn_indices->erase(search_index);
-
-		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, possible_knn_indices, distances_out);
 	}
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist

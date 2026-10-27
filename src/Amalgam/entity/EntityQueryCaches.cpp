@@ -77,6 +77,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters)
 		if(label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(label))
 			labels_to_add.push_back(label);
 	};
+
 	if constexpr(requires { parameters.positionLabels; })
 	{
 		for(auto label : parameters.positionLabels)
@@ -86,8 +87,10 @@ void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters)
 		for(auto label : parameters.additionalSortedListLabels)
 			add_label(label);
 	}
+
 	if constexpr(requires { parameters.valueLabel; })
 		add_label(parameters.valueLabel);
+
 	if constexpr(requires { parameters.weightLabel; } && !requires { parameters.positionLabels; })
 		add_label(parameters.weightLabel);
 
@@ -153,6 +156,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 	}
 
 	auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t, true>(weight_column, true);
+
 	EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 		cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
 		cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
@@ -160,6 +164,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 
 	if(is_first)
 		matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
+
 	for(auto label : cond->positionLabels)
 		sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
 	matching_entities.UpdateNumElements();
@@ -398,6 +403,7 @@ void EntityQueryCaches::FindMinMax(const EntityQuery::Extremum &parameters, bool
 		temp = matching_entities;
 		matching_entities.clear();
 	}
+
 	sbfds.FindMinMax(parameters.valueLabel, parameters.valueType, parameters.count,
 		largest, is_first ? nullptr : &temp, matching_entities);
 }
@@ -725,16 +731,20 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_SELECT:
 			entity_caches->SelectEntities(query, matching_ents, is_first);
 			continue;
+
 		case ENT_QUERY_SAMPLE:
 			entity_caches->GetMatchingEntitiesViaSamplingWithReplacement(query, matching_ents, indices_with_duplicates, is_first, !is_last || !return_query_value);
 			continue;
+
 		case ENT_QUERY_MODE:
 			return entity_caches->ComputeMode(query, matching_ents, enm, is_first);
+
 		case ENT_QUERY_VALUE_MASSES:
 		{
 			auto value_weights = entity_caches->ComputeValueMasses(query, matching_ents, is_first);
 			return EntityQueries::ValueMassesToResult(value_weights, enm, immediate_result);
 		}
+
 		case ENT_QUERY_SUM:
 		case ENT_QUERY_QUANTILE:
 		case ENT_QUERY_GENERALIZED_MEAN:
@@ -767,15 +777,21 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 					return ENT_NULL;
 				}
 			};
+
 			auto type = group_type(query.queryType);
 			size_t group_end = cond_index + 1;
+
 			if(type != ENT_NULL)
+			{
 				while(group_end < conditions.size()
-					&& EntityQueries::GetFilterNode(conditions[group_end]) != nullptr
-					&& group_type(conditions[group_end].queryType) == type)
+						&& EntityQueries::GetFilterNode(conditions[group_end]) != nullptr
+						&& group_type(conditions[group_end].queryType) == type)
 					group_end++;
+			}
+
 			entity_caches->GetMatchingEntities(
 				std::span<const EntityQuery>(conditions.data() + cond_index, group_end - cond_index), matching_ents, is_first);
+
 			cond_index = group_end - 1;
 			continue;
 		}

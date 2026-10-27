@@ -123,8 +123,10 @@ struct EntityQuery
 		std::variant<Neighbors, Statistics, Positions, Clusters> target;
 
 		bool DoesEntityMatchCondition(Entity *e, Neighbors &neighbors);
+
 		double GetConditionDistanceMeasure(Entity *e, bool high_accuracy,
 			std::vector<EvaluableNodeImmediateValueWithType> &position);
+
 		EvaluableNodeReference GetMatchingEntities(EvaluableNodeType query_type, Entity *container,
 			std::vector<Entity *> &matching_entities, bool from_all_entities, EvaluableNodeManager *enm);
 

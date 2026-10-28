@@ -570,6 +570,8 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
+		//TODO 26224: look into removing the following logic so that conditions do not need to be stored in a vector and can be processed one at a time
+
 		//reuse a single preceding NOT_IN ID as the nearest/within distance exclusion.
 		//an entity-ID target uses that slot to exclude itself, so retain its preceding exclusion filter separately.
 		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
@@ -579,7 +581,7 @@ namespace EntityQueryBuilder
 				|| ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT]->GetType() != ENT_STRING)
 			&& !conditions.empty() && conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
-			EntityQueries::IterateOverFilteredEntities(conditions.back(), [&](const auto &ids, auto get_id) {
+			EntityQueries::IterateOverEntityList(conditions.back(), [&](const auto &ids, auto get_id) {
 				if(ids.size() == 1)
 					excluded_id = get_id(ids.front());
 				reuse_exclusion = excluded_id != StringInternPool::NOT_A_STRING_ID;

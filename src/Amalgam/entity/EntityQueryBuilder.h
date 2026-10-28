@@ -36,17 +36,6 @@ namespace EntityQueryBuilder
 		NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS //always last - do not add after this
 	};
 
-	//returns true if it is a distance
-	constexpr static bool IsEvaluableNodeTypeDistanceQuery(EvaluableNodeType t)
-	{
-		return (t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
-			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
-			|| t == ENT_QUERY_ENTITY_CLUSTERS
-			);
-	}
-
 	//populates deviation data for a given nominal value
 	//assumes that value_deviation_assoc is a valid pointer to an assoc
 	template<typename NominalDeviationValuesType>
@@ -1035,10 +1024,14 @@ namespace EntityQueryBuilder
 	//builds a query condition from condition_node into query
 	inline void BuildCondition(EvaluableNode *condition_node, EntityQuery &query, Interpreter *calling_interpreter)
 	{
-		EvaluableNodeType type = condition_node->GetType();
-		if(IsEvaluableNodeTypeDistanceQuery(type))
-			BuildDistanceCondition(condition_node, type, query, calling_interpreter);
+		EvaluableNodeType t = condition_node->GetType();
+		if(t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+				|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
+				|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+				|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+				|| t == ENT_QUERY_ENTITY_CLUSTERS)
+			BuildDistanceCondition(condition_node, t, query, calling_interpreter);
 		else
-			BuildNonDistanceCondition(condition_node, type, query, calling_interpreter);
+			BuildNonDistanceCondition(condition_node, t, query, calling_interpreter);
 	}
 };

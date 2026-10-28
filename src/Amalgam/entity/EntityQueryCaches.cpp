@@ -842,6 +842,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			query_return->ReserveMappedChildNodes(matching_ents.size());
 
 			size_t num_labels = 0;
+			//TODO 26224: the use of ForEachQueryLabel here and below needs to be reexamined
 			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1, [&](auto) { ++num_labels; });
 			for(const auto &entity_index : matching_ents)
 			{

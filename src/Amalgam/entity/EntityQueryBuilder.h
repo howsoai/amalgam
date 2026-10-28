@@ -1031,4 +1031,14 @@ namespace EntityQueryBuilder
 			return;
 		}
 	}
+
+	//builds a query condition from condition_node into query
+	inline void BuildCondition(EvaluableNode *condition_node, EntityQuery &query, Interpreter *calling_interpreter)
+	{
+		EvaluableNodeType type = condition_node->GetType();
+		if(IsEvaluableNodeTypeDistanceQuery(type))
+			BuildDistanceCondition(condition_node, type, query, calling_interpreter);
+		else
+			BuildNonDistanceCondition(condition_node, type, query, calling_interpreter);
+	}
 };

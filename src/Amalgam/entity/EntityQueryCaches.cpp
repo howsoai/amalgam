@@ -24,19 +24,6 @@ thread_local
 #endif
 EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityProcessor::buffers;
 
-//accelerating a p of 0 with the current caches would be a large effort, as everything would have to be
-// transformed via logarithms and then pValue = 1 applied
-//however, because other transforms, like surprisal_to_prob already transform the data to log space,
-//accelerating this edge case does not seem worthwhile
-static bool CanUseQueryCaches(const std::vector<EntityQuery> &conditions)
-{
-	for(const auto &query : conditions)
-		if(auto distance = std::get_if<EntityQuery::Distance>(&query.payload);
-			distance != nullptr && query.queryType != ENT_NULL && distance->distEvaluator.pValue == 0)
-			return false;
-	return true;
-}
-
 #if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
 #else
@@ -899,12 +886,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		{
 			conditions.emplace_back();
 			auto &query = conditions.back();
-
-			EvaluableNodeType type = cond_node->GetType();
-			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, query, interpreter);
-			else
-				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, query, interpreter);
+			EntityQueryBuilder::BuildCondition(cond_node, query, interpreter);
 		}
 		else if(cond_node->GetType() == ENT_LIST)
 		{
@@ -915,17 +897,12 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 
 				conditions.emplace_back();
 				auto &query = conditions.back();
-
-				EvaluableNodeType type = cn->GetType();
-				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-					EntityQueryBuilder::BuildDistanceCondition(cn, type, query, interpreter);
-				else
-					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, query, interpreter);
+				EntityQueryBuilder::BuildCondition(cn, query, interpreter);
 			}
 		}
 	}
 
-	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
+	if(_enable_SBF_datastore) [[likely]]
 	{
 		//if haven't built a cache before, need to build the cache container
 		//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
@@ -944,9 +921,6 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 
 		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);
 	}
-
-	if(container == nullptr)
-		return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
 
 	//list of the entities to be found, pruned down, and ultimately returned after converting to matching_entity_ids
 	std::vector<Entity *> matching_entities;
@@ -1033,9 +1007,6 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			|| query.queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| query.queryType == ENT_QUERY_ENTITY_CLUSTERS)
 		{
-			if(!CanUseQueryCaches(conditions))
-				return EvaluableNodeReference::Null();
-
 			//if haven't built a cache before, need to build the cache container
 			//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
 			if(!container->HasQueryCaches())

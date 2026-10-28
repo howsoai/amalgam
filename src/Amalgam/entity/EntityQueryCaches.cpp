@@ -843,7 +843,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 			size_t num_labels = 0;
 			//TODO 26224: the use of ForEachQueryLabel here and below needs to be reexamined
-			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1, [&](auto) { ++num_labels; });
+			EntityQueries::ForEachQueryLabel(conditions.back(), [&](auto) { ++num_labels; });
 			for(const auto &entity_index : matching_ents)
 			{
 				EvaluableNode *entity_values = nullptr;
@@ -851,7 +851,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				{
 					entity_values = enm->AllocNode(ENT_ASSOC);
 					entity_values->ReserveMappedChildNodes(num_labels);
-					EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1,
+					EntityQueries::ForEachQueryLabel(conditions.back(),
 						[&](auto label_sid) {
 							entity_values->SetMappedChildNode(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
 						});
@@ -948,7 +948,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 				for(auto entity : matching_entities)
 				{
 					auto values = enm->AllocNode(ENT_ASSOC);
-					EntityQueries::ForEachQueryLabel(conditions, cond_index,
+					EntityQueries::ForEachQueryLabel(query,
 						[&](auto label) { values->SetMappedChildNode(label, entity->GetValueAtLabel(label, enm).first); });
 					result->SetMappedChildNode(entity->GetIdStringId(), values);
 				}

@@ -112,20 +112,16 @@ namespace EntityQueries
 
 	//iterates over consecutive existence filters of the same type
 	template<typename Function>
-	void ForEachQueryLabel(const std::vector<EntityQuery> &queries, size_t query_index, Function function)
+	void ForEachQueryLabel(EntityQuery &query, Function function)
 	{
-		auto type = queries[query_index].queryType;
+		auto type = query.queryType;
 		if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
 		{
-			size_t first = query_index;
-			while(first > 0 && queries[first - 1].queryType == type)
-				--first;
-			for(size_t i = first; i <= query_index; i++)
-				function(GetFilterLabel(queries[i]));
+			function(GetFilterLabel(query));
 		}
 		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
-			IterateOverEntityList(queries[query_index], [&](const auto &ids, auto get_id) {
+			IterateOverEntityList(query, [&](const auto &ids, auto get_id) {
 				for(auto item : ids)
 				{
 					if(auto id = get_id(item); id != StringInternPool::NOT_A_STRING_ID)

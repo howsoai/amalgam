@@ -92,6 +92,7 @@ public:
 	{
 		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
 		possible_knn = *relevantIndices;
+		possible_knn.erase(index);
 
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
@@ -140,6 +141,7 @@ public:
 
 		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
 		possible_knn = *relevantIndices;
+		possible_knn.erase(index);
 		possible_knn.erase(additional_holdout_index);
 
 		//there were not enough results for this search, just do a new search
@@ -166,6 +168,7 @@ public:
 
 		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
 		possible_knn = from_indices;
+		possible_knn.erase(index);
 
 		//there were not enough results for this search, just do a new search
 		out.clear();

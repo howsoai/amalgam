@@ -558,6 +558,7 @@ public:
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices
 	//assumes that possible_knn_indices only contains indices that have valid values for all the features
+	//it assumes that search_index is already removed from possible_knn_indices unless it is intended to be included
 	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
 		size_t top_k, StringInternPool::StringID radius_label,
@@ -568,28 +569,24 @@ public:
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		if(dist_eval.computeSurprisal)
+		{
 			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
 				position_label_sids, search_index, &dist_eval, interpreter, entity);
-		else
-			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
-				position_label_sids, search_index, &dist_eval, interpreter, entity);
 
-		//remove search_index so it doesn't find itself
-		possible_knn_indices.erase(search_index);
-
-		if(expand_to_first_nonzero_distance)
-		{
-			if(r_dist_eval.distEvaluator->computeSurprisal)
+			if(expand_to_first_nonzero_distance)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
-				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
+				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 		else
 		{
-			if(r_dist_eval.distEvaluator->computeSurprisal)
-				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
+			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, search_index, &dist_eval, interpreter, entity);
+
+			if(expand_to_first_nonzero_distance)
+				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
@@ -610,25 +607,24 @@ public:
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		if(dist_eval.computeSurprisal)
+		{
 			InitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
 				position_label_sids, position_values, &dist_eval, interpreter, entity);
-		else
-			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
-				position_label_sids, position_values, &dist_eval, interpreter, entity);
 
-		if(expand_to_first_nonzero_distance)
-		{
-			if(r_dist_eval.distEvaluator->computeSurprisal)
+			if(expand_to_first_nonzero_distance)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
-				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
+				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 		else
 		{
-			if(r_dist_eval.distEvaluator->computeSurprisal)
-				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
+			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, position_values, &dist_eval, interpreter, entity);
+
+			if(expand_to_first_nonzero_distance)
+				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,

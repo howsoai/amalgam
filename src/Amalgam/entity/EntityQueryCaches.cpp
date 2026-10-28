@@ -177,6 +177,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 	if(auto neighbors = std::get_if<EntityQuery::Distance::Neighbors>(&cond->target))
 	{
 		size_t exclusion_entity_index = container->GetContainedEntityIndex(neighbors->entityIdToExclude);
+		matching_entities.erase(exclusion_entity_index);
 
 		cond->distEvaluator.InitializeParametersAndFeatureParams(neighbors->populateOmittedFeatureValues);
 		//labels and values must have the same size if they're prepopulated
@@ -191,7 +192,6 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 			temp = matching_entities;
-			temp.erase(exclusion_entity_index);
 
 			matching_entities.clear();
 
@@ -211,14 +211,12 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
-				//TODO 26224: remove exclusion_entity_index as a parameter and move removal up above
 				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, exclusion_entity_index,
 					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
 					cond->interpreter, cond->entity, compute_results, cond->randomStream);
 			}
 			else
 			{
-				matching_entities.erase(exclusion_entity_index);
 				sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, neighbors->valuesToCompare,
 					distance_transform.GetNumToRetrieve(), cond->singleLabel,
 					matching_entities, false, cond->interpreter, cond->entity, compute_results,
@@ -227,7 +225,6 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		}
 		else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
-			matching_entities.erase(exclusion_entity_index);
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
 				sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,

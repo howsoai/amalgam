@@ -91,7 +91,7 @@ namespace EntityQueries
 
 	//calls function once with the borrowed or converted ID list and its accessor, before entity iteration
 	template<typename Function>
-	__forceinline void IterateOverFilteredEntities(const EntityQuery &query, Function function)
+	__forceinline void IterateOverEntityList(const EntityQuery &query, Function function)
 	{
 		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
 		{
@@ -125,7 +125,7 @@ namespace EntityQueries
 		}
 		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{
-			IterateOverFilteredEntities(queries[query_index], [&](const auto &ids, auto get_id) {
+			IterateOverEntityList(queries[query_index], [&](const auto &ids, auto get_id) {
 				for(auto item : ids)
 				{
 					if(auto id = get_id(item); id != StringInternPool::NOT_A_STRING_ID)

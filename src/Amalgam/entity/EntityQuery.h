@@ -24,6 +24,15 @@ struct EntityQuery
 	EntityQuery(const EntityQuery &) = delete;
 	EntityQuery &operator=(const EntityQuery &) = delete;
 
+	//helper function to allow a clean implementation of, for example:
+	//auto &selection = query.SetQueryType<EntityQuery::Select>(type);
+	template <typename T, typename... Args>
+	inline T &SetQueryType(EvaluableNodeType type, Args&&... args)
+	{
+		queryType = type;
+		return payload.emplace<T>(std::forward<Args>(args)...);
+	}
+
 	struct Filter
 	{
 		//the interpreter roots evaluated query arguments until execution finishes

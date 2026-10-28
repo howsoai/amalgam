@@ -167,11 +167,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	{
 		if(EvaluableNode::IsQuery(cond_node))
 		{
+			conditions.emplace_back();
+			auto &query = conditions.back();
+
 			EvaluableNodeType type = cond_node->GetType();
 			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, conditions, randomStream, this);
+				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, query, randomStream, this);
 			else
-				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, conditions, randomStream);
+				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, query, randomStream);
 		}
 		else if(cond_node->GetType() == ENT_LIST)
 		{
@@ -180,11 +183,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 				if(!EvaluableNode::IsQuery(cn))
 					continue;
 
+				conditions.emplace_back();
+				auto &query = conditions.back();
+
 				EvaluableNodeType type = cn->GetType();
 				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream, this);
+					EntityQueryBuilder::BuildDistanceCondition(cn, type, query, randomStream, this);
 				else
-					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditions, randomStream);
+					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, query, randomStream);
 			}
 		}
 	}

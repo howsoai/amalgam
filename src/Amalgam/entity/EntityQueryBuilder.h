@@ -570,39 +570,14 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		//TODO 26224: look into removing the following logic so that conditions do not need to be stored in a vector and can be processed one at a time
-
-		//reuse a single preceding NOT_IN ID as the nearest/within distance exclusion.
-		//an entity-ID target uses that slot to exclude itself, so retain its preceding exclusion filter separately.
-		StringInternPool::StringID excluded_id = StringInternPool::NOT_A_STRING_ID;
-		bool reuse_exclusion = false;
-		if((condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
-			&& (ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT] == nullptr
-				|| ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT]->GetType() != ENT_STRING)
-			&& !conditions.empty() && conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST)
-		{
-			EntityQueries::IterateOverEntityList(conditions.back(), [&](const auto &ids, auto get_id) {
-				if(ids.size() == 1)
-					excluded_id = get_id(ids.front());
-				reuse_exclusion = excluded_id != StringInternPool::NOT_A_STRING_ID;
-			});
-		}
-
-		if(!reuse_exclusion)
-			conditions.emplace_back(condition_type, std::in_place_type<EntityQuery::Distance>);
+		conditions.emplace_back(condition_type, std::in_place_type<EntityQuery::Distance>);
 		auto &query = conditions.back();
-		if(reuse_exclusion)
-		{
-			query.queryType = condition_type;
-			query.payload.emplace<EntityQuery::Distance>();
-		}
-		auto cur_condition = &std::get<EntityQuery::Distance>(query.payload);
-		auto neighbors = &std::get<EntityQuery::Distance::Neighbors>(cur_condition->target);
-		if(reuse_exclusion)
-			neighbors->entityIdToExclude = excluded_id;
 
+		auto cur_condition = &std::get<EntityQuery::Distance>(query.payload);
 		cur_condition->useConcurrency = cn->GetConcurrency();
 		cur_condition->interpreter = calling_interpreter;
+
+		auto neighbors = &std::get<EntityQuery::Distance::Neighbors>(cur_condition->target);
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();

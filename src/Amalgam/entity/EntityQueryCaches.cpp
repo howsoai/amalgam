@@ -880,7 +880,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_ents, enm, entity_index_to_id);
 }
 
-
 EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, Interpreter *interpreter,
 	std::vector<EvaluableNodeReference> &condition_nodes,
 	EvaluableNodeManager *enm, bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)

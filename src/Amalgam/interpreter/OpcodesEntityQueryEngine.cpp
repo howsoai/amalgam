@@ -102,7 +102,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	auto &ocn = en->GetOrderedChildNodesReference();
 	auto node_stack = CreateOpcodeStackStateSaver();
 
-//TODO 26224: investigate how hard it would be to just have this use node_stack with a view/span
 	//interpret and buffer nodes for querying conditions
 	//can't use node_stack as the buffer because need to know details of whether it is freeable
 	//since the condition nodes need to be kept around until after the query

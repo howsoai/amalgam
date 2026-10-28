@@ -153,8 +153,8 @@ public:
 	// if return_query_value is false, then returns a list of all IDs of matching contained entities
 	// if return_query_value is true, then returns whatever the appropriate structure is for the query type for the final query
 	// if immediate_result is true, will return an immediate value as the result
-	static EvaluableNodeReference GetEntitiesMatchingQuery(EntityReadReference &container,
-		std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
+	static EvaluableNodeReference GetEntitiesMatchingQuery(EntityReadReference &container, Interpreter *interpreter,
+		std::vector<EvaluableNodeReference> &condition_nodes, EvaluableNodeManager *enm,
 		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions

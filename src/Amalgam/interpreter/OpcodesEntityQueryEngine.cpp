@@ -1,5 +1,4 @@
 //project headers:
-#include "EntityQueryBuilder.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
 
@@ -103,10 +102,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	auto &ocn = en->GetOrderedChildNodesReference();
 	auto node_stack = CreateOpcodeStackStateSaver();
 
+//TODO 26224: investigate how hard it would be to just have this use node_stack with a view/span
 	//interpret and buffer nodes for querying conditions
 	//can't use node_stack as the buffer because need to know details of whether it is freeable
 	//since the condition nodes need to be kept around until after the query
 	std::vector<EvaluableNodeReference> condition_nodes;
+
 	for(size_t param_index = 0; param_index < ocn.size(); param_index++)
 	{
 		EvaluableNodeReference param_node = InterpretNodeForImmediateUse(ocn[param_index]);
@@ -154,47 +155,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		condition_nodes.push_back(param_node);
 	}
 
-	//build conditions from condition_nodes
-	//buffer to use as for parsing and querying conditions
-	//one per thread to reuse memory
-#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-#endif
-		static std::vector<EntityQuery> conditions;
-
-	conditions.clear();
-	for(auto &cond_node : condition_nodes)
-	{
-		if(EvaluableNode::IsQuery(cond_node))
-		{
-			conditions.emplace_back();
-			auto &query = conditions.back();
-
-			EvaluableNodeType type = cond_node->GetType();
-			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, query, randomStream, this);
-			else
-				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, query, randomStream);
-		}
-		else if(cond_node->GetType() == ENT_LIST)
-		{
-			for(auto cn : cond_node->GetOrderedChildNodesReference())
-			{
-				if(!EvaluableNode::IsQuery(cn))
-					continue;
-
-				conditions.emplace_back();
-				auto &query = conditions.back();
-
-				EvaluableNodeType type = cn->GetType();
-				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-					EntityQueryBuilder::BuildDistanceCondition(cn, type, query, randomStream, this);
-				else
-					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, query, randomStream);
-			}
-		}
-	}
-
 	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
 	evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
 	if(source_entity == nullptr)
@@ -205,7 +165,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	}
 
 	//if no query, just return all contained entities
-	if(conditions.size() == 0)
+	if(condition_nodes.size() == 0)
 	{
 		auto &contained_entities = source_entity->GetContainedEntities();
 
@@ -221,18 +181,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		//create the string references all at once and hand off
 		for(size_t i = 0; i < contained_entities.size(); i++)
 			result_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, contained_entities[i]->GetIdStringId());
-
-		//if not using SBFDS, make sure always return in the same order for consistency, regardless of cashing, hashing, etc.
-		//if using SBFDS, then the order is assumed to not matter for other queries, so don't pay the cost of sorting here
-		if(!_enable_SBF_datastore)
-			std::stable_sort(begin(result->GetOrderedChildNodes()), end(result->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
-
 		return result;
 	}
 
 	//perform query
-	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity,
-		conditions, evaluableNodeManager, return_query_value, immediate_result);
+	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, this,
+		condition_nodes, evaluableNodeManager, return_query_value, immediate_result);
 
 	for(auto &cond_node : condition_nodes)
 		evaluableNodeManager->FreeNodeTreeIfPossible(cond_node);

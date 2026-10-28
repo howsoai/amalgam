@@ -3,6 +3,7 @@
 //project headers:
 #include "EntityQueries.h"
 #include "EvaluableNode.h"
+#include "Interpreter.h"
 #include "PlatformSpecific.h"
 #include "StringInternPool.h"
 
@@ -560,7 +561,7 @@ namespace EntityQueryBuilder
 
 	//interpret evaluable node as a distance query
 	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,
-		EntityQuery &query, RandomStream &rs, Interpreter *calling_interpreter)
+		EntityQuery &query, Interpreter *calling_interpreter)
 	{
 		//can just get the reference because already know it's a distance query
 		auto &ocn = cn->GetOrderedChildNodesReference();
@@ -768,7 +769,7 @@ namespace EntityQueryBuilder
 		if(has_random_stream)
 			cur_condition.randomStream.SetState(EvaluableNode::ToString(ocn[RANDOM_SEED]));
 		else
-			cur_condition.randomStream = rs.CreateOtherStreamViaRand();
+			cur_condition.randomStream = calling_interpreter->randomStream.CreateOtherStreamViaRand();
 
 		//set radius label
 		if(ocn.size() > RADIUS_LABEL)
@@ -857,7 +858,8 @@ namespace EntityQueryBuilder
 	}
 
 	//builds a query condition from cn
-	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type, EntityQuery &query, RandomStream &rs)
+	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type, EntityQuery &query,
+		Interpreter *calling_interpreter)
 	{
 		auto &ocn = cn->GetOrderedChildNodes();
 
@@ -927,7 +929,8 @@ namespace EntityQueryBuilder
 			selection.hasStartOffset = ocn.size() > 1;
 			selection.startOffset = selection.hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
 			selection.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			selection.randomStream = selection.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2])) : rs.CreateOtherStreamViaRand();
+			selection.randomStream = selection.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
 
@@ -937,7 +940,8 @@ namespace EntityQueryBuilder
 			sample.count = ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
 			sample.valueLabel = ocn.size() > 1 ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : label_sid;
 			sample.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			sample.randomStream = sample.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2])) : rs.CreateOtherStreamViaRand();
+			sample.randomStream = sample.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
 

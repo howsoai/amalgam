@@ -3,10 +3,12 @@
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueriesDensityFunctions.h"
+#include "EntityQueryBuilder.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "HashMaps.h"
 #include "IntegerSet.h"
+#include "Interpreter.h"
 #include "KnnCache.h"
 #include "SeparableBoxFilterDataStore.h"
 #include "StringInternPool.h"
@@ -879,9 +881,51 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 }
 
 
-EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container,
-	std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm, bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, Interpreter *interpreter,
+	std::vector<EvaluableNodeReference> &condition_nodes,
+	EvaluableNodeManager *enm, bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	//build conditions from condition_nodes
+	//buffer to use as for parsing and querying conditions
+	//one per thread to reuse memory
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+#endif
+		static std::vector<EntityQuery> conditions;
+
+	conditions.clear();
+	for(auto &cond_node : condition_nodes)
+	{
+		if(EvaluableNode::IsQuery(cond_node))
+		{
+			conditions.emplace_back();
+			auto &query = conditions.back();
+
+			EvaluableNodeType type = cond_node->GetType();
+			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
+				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, query, interpreter);
+			else
+				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, query, interpreter);
+		}
+		else if(cond_node->GetType() == ENT_LIST)
+		{
+			for(auto cn : cond_node->GetOrderedChildNodesReference())
+			{
+				if(!EvaluableNode::IsQuery(cn))
+					continue;
+
+				conditions.emplace_back();
+				auto &query = conditions.back();
+
+				EvaluableNodeType type = cn->GetType();
+				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
+					EntityQueryBuilder::BuildDistanceCondition(cn, type, query, interpreter);
+				else
+					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, query, interpreter);
+			}
+		}
+	}
+
 	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
 	{
 		//if haven't built a cache before, need to build the cache container

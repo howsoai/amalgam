@@ -90,9 +90,12 @@ public:
 	inline void GetKnnWithoutCache(size_t index, size_t top_k, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &out)
 	{
+		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
+		possible_knn = *relevantIndices;
+
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
+			*positionLabelIds, index, top_k, radiusLabelId, possible_knn,
 			expand_to_first_nonzero_distance, interpreter, entity, out);
 	}
 
@@ -135,11 +138,15 @@ public:
 				return;
 		}
 
+		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
+		possible_knn = *relevantIndices;
+		possible_knn.erase(additional_holdout_index);
+
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
-			expand_to_first_nonzero_distance, interpreter, entity, out, additional_holdout_index);
+			*positionLabelIds, index, top_k, radiusLabelId, possible_knn,
+			expand_to_first_nonzero_distance, interpreter, entity, out);
 	}
 
 	//like the other GetKnn, but only considers from_indices
@@ -157,10 +164,13 @@ public:
 				return;
 		}
 
+		auto &possible_knn = SeparableBoxFilterDataStore::parametersAndBuffers.possibleNearestNeighborsSet;
+		possible_knn = from_indices;
+
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, expand_to_first_nonzero_distance,
+			*positionLabelIds, index, top_k, radiusLabelId, possible_knn, expand_to_first_nonzero_distance,
 			interpreter, entity, out);
 	}
 

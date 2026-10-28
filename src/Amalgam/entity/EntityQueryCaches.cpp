@@ -211,14 +211,10 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			if(cond->distEvaluator.populateOmittedFeatureValues)
 			{
-				//TODO 26224: update with the following code and move the erase above
-				//sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels,
-				//distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
-				//	cond->interpreter, cond->entity, compute_results, cond->randomStream);
+				//TODO 26224: remove exclusion_entity_index as a parameter and move removal up above
 				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, exclusion_entity_index,
-					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
-					cond->interpreter, cond->entity, compute_results,
-					std::numeric_limits<size_t>::max(), cond->randomStream);
+					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
+					cond->interpreter, cond->entity, compute_results, cond->randomStream);
 			}
 			else
 			{

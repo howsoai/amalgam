@@ -557,15 +557,14 @@ public:
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices
-	//will not modify enabled_indices, but instead will make a copy for any modifications
-	//assumes that enabled_indices only contains indices that have valid values for all the features
+	//assumes that possible_knn_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
 		size_t top_k, StringInternPool::StringID radius_label,
-		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
+		BitArrayIntegerSet &possible_knn_indices, bool expand_to_first_nonzero_distance,
 		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
-		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
+		RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		if(dist_eval.computeSurprisal)
@@ -575,39 +574,26 @@ public:
 			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
 				position_label_sids, search_index, &dist_eval, interpreter, entity);
 
-		//make a copy of the entities if enabled_indices is read-only
-		BitArrayIntegerSet *possible_knn_indices;
-		if(read_only_enabled_indices)
-		{
-			possible_knn_indices = &parametersAndBuffers.possibleNearestNeighborsSet;
-			*possible_knn_indices = enabled_indices;
-		}
-		else
-		{
-			possible_knn_indices = &enabled_indices;
-		}
-
 		//remove search_index so it doesn't find itself
-		possible_knn_indices->erase(search_index);
-		possible_knn_indices->erase(ignore_index);
+		possible_knn_indices.erase(search_index);
 
 		if(expand_to_first_nonzero_distance)
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 		else
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, *possible_knn_indices, distances_out, rand_stream);
+					radius_label, possible_knn_indices, distances_out, rand_stream);
 		}
 	}
 

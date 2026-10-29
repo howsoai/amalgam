@@ -981,6 +981,9 @@ namespace EntityQueryBuilder
 
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
+			//TODO 26245: implement this
+			return;
+
 		case ENT_QUERY_EQUALS:
 		case ENT_QUERY_NOT_EQUALS:
 		case ENT_QUERY_BETWEEN:
@@ -990,7 +993,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_AMONG:
 		case ENT_QUERY_NOT_AMONG:
 
-			query.SetQueryType<EntityQuery::Filter>(type, cn, label_sid);
+			query.SetQueryType<EntityQuery::ValueFilter>(type, cn, label_sid);
 			return;
 
 		case ENT_QUERY_IN_ENTITY_LIST:
@@ -1012,7 +1015,7 @@ namespace EntityQueryBuilder
 			}
 			else
 			{
-				query.SetQueryType<EntityQuery::Filter>(type, cn, label_sid);
+				query.SetQueryType<EntityQuery::ValueFilter>(type, cn, label_sid);
 			}
 			return;
 

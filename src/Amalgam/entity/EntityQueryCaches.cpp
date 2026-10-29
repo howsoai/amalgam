@@ -742,7 +742,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			break;
 		}
 
-		if(EntityQueries::GetFilterNode(query) != nullptr
+		if(EntityQueries::GetValueFilterNode(query) != nullptr
 			|| std::holds_alternative<EntityQuery::EntityIds>(query.payload))
 		{
 			//hold the cache lock across consecutive filters in the same group; inclusive comparisons join the BETWEEN group.
@@ -770,7 +770,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			if(type != ENT_NULL)
 			{
 				while(group_end < conditions.size()
-						&& EntityQueries::GetFilterNode(conditions[group_end]) != nullptr
+						&& EntityQueries::GetValueFilterNode(conditions[group_end]) != nullptr
 						&& group_type(conditions[group_end].queryType) == type)
 					group_end++;
 			}
@@ -937,7 +937,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		query_return_value = EvaluableNodeReference::Null();
 
 		auto &query = conditions[cond_index];
-		auto node = EntityQueries::GetFilterNode(query);
+		auto node = EntityQueries::GetValueFilterNode(query);
 		if(node != nullptr || std::holds_alternative<EntityQuery::EntityIds>(query.payload) || query.queryType == ENT_NULL)
 		{
 			EntityQueries::FilterEntities(query, container, matching_entities, first_condition);
@@ -1081,7 +1081,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	std::vector<StringInternPool::StringID> labels_to_add;
 	for(const auto &condition : queries)
 	{
-		auto label = EntityQueries::GetFilterLabel(condition);
+		auto label = EntityQueries::GetValueFilterLabel(condition);
 		if(!DoesHaveLabel(label))
 			labels_to_add.push_back(label);
 	}
@@ -1093,10 +1093,10 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 
 	for(const auto &condition : queries)
 	{
-		auto query = EntityQueries::GetFilterNode(condition);
+		auto query = EntityQueries::GetValueFilterNode(condition);
 		auto type = query->GetType();
 		auto &ocn = query->GetOrderedChildNodes();
-		auto label = EntityQueries::GetFilterLabel(condition);
+		auto label = EntityQueries::GetValueFilterLabel(condition);
 		auto &temp = buffers.tempMatchingEntityIndices;
 		switch(type)
 		{

@@ -33,9 +33,14 @@ struct EntityQuery
 		return payload.emplace<T>(std::forward<Args>(args)...);
 	}
 
-	struct Filter
+	struct LabelExistence
 	{
-		//the interpreter roots evaluated query arguments until execution finishes
+		EvaluableNode *node;
+		std::vector<StringInternPool::StringID> labels;
+	};
+
+	struct ValueFilter
+	{
 		EvaluableNode *node;
 		StringInternPool::StringID label;
 	};
@@ -188,7 +193,7 @@ struct EntityQuery
 
 	//ENT_NULL also marks invalid queries whose parsed payload is still present
 	EvaluableNodeType queryType = ENT_NULL;
-	std::variant<std::monostate, Filter, EntityIds, Aggregate, Quantile, Mean, Difference, Extremum, Select, Sample, Distance> payload;
+	std::variant<std::monostate, ValueFilter, EntityIds, Aggregate, Quantile, Mean, Difference, Extremum, Select, Sample, Distance> payload;
 
 	Aggregate GetAggregateLabels() const
 	{

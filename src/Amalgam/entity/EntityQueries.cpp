@@ -566,8 +566,14 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 		});
 		return;
 	}
+	else if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
+	{
+		//TODO 26245: finish this
+		//filter_entities([&](Entity *entity) { return entity->DoesLabelExist(label) == (type == ENT_QUERY_NOT_EXISTS); });
+		return;
+	}
 
-	auto &filter = std::get<EntityQuery::Filter>(query.payload);
+	auto &filter = std::get<EntityQuery::ValueFilter>(query.payload);
 	auto &ocn = filter.node->GetOrderedChildNodes();
 	//the builder has already validated this label as public
 	auto label = filter.label;
@@ -590,13 +596,6 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	switch(type)
 	{
-	case ENT_QUERY_EXISTS:
-	case ENT_QUERY_NOT_EXISTS:
-		filter_entities([&](Entity *entity) {
-			return entity->DoesLabelExist(label) == (type == ENT_QUERY_NOT_EXISTS);
-		});
-		break;
-
 	case ENT_QUERY_EQUALS:
 	case ENT_QUERY_NOT_EQUALS:
 	{

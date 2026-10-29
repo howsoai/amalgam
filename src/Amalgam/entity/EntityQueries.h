@@ -23,16 +23,16 @@ extern bool _enable_SBF_datastore;
 
 namespace EntityQueries
 {
-	inline EvaluableNode *GetFilterNode(const EntityQuery &query)
+	inline EvaluableNode *GetValueFilterNode(const EntityQuery &query)
 	{
-		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
+		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
 			return filter->node;
 		return nullptr;
 	}
 
-	inline StringInternPool::StringID GetFilterLabel(const EntityQuery &query)
+	inline StringInternPool::StringID GetValueFilterLabel(const EntityQuery &query)
 	{
-		return std::get<EntityQuery::Filter>(query.payload).label;
+		return std::get<EntityQuery::ValueFilter>(query.payload).label;
 	}
 
 	//converts range endpoints once per filter, outside the entity loop
@@ -93,7 +93,7 @@ namespace EntityQueries
 	template<typename Function>
 	__forceinline void IterateOverEntityList(const EntityQuery &query, Function function)
 	{
-		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
+		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
 		{
 			std::span<EvaluableNode *const> nodes;
 			auto &ocn = filter->node->GetOrderedChildNodes();
@@ -117,7 +117,8 @@ namespace EntityQueries
 		auto type = query.queryType;
 		if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
 		{
-			function(GetFilterLabel(query));
+			//TODO 26245: update this
+			function(GetValueFilterLabel(query));
 		}
 		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 		{

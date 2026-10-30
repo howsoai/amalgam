@@ -413,6 +413,9 @@
     <ClInclude Include="entity\EntityQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="evaluablenode\EvaluableNodeOrderedRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

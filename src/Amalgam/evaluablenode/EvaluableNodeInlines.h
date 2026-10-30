@@ -323,7 +323,7 @@ inline void EvaluableNode::SetTypeViaStringIdValue(std::string &v, bool clear_me
 		ClearMetadata();
 
 	SetType(ENT_STRING, false);
-	GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+	SetStringValue(v);
 }
 
 //changes the type by setting it to the string id value specified
@@ -339,7 +339,7 @@ inline void EvaluableNode::SetTypeViaStringIdValue(StringInternPool::StringID v,
 	else
 	{
 		SetType(ENT_STRING, false);
-		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+		SetStringID(v);
 	}
 }
 
@@ -357,7 +357,7 @@ inline void EvaluableNode::SetTypeViaStringIdValueWithReferenceHandoff(
 	else
 	{
 		SetType(ENT_STRING, false);
-		GetStringIDReference() = v;
+		SetStringIDWithReferenceHandoff(v);
 	}
 }
 

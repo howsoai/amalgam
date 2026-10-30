@@ -450,7 +450,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		return generalized_node;
 	}
 
-	EvaluableNode::OrderedType empty_vector;
+	EvaluableNode::LargeOrderedType empty_vector;
 
 	auto *tree1_ordered_childs = &empty_vector;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
@@ -499,9 +499,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			//start from a clean slate
 			generalized_node->ClearOrderedChildNodes();
 
-			EvaluableNode::OrderedType a1;
-			EvaluableNode::OrderedType a2;
-			EvaluableNode::OrderedType merged;
+			EvaluableNode::LargeOrderedType a1;
+			EvaluableNode::LargeOrderedType a2;
+			EvaluableNode::LargeOrderedType merged;
 			size_t tree1_ordered_size = tree1_ordered_childs->size();
 			size_t tree2_ordered_size = tree2_ordered_childs->size();
 
@@ -741,7 +741,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 					starting_index_2 = 1;
 			}
 
-			EvaluableNode::OrderedType a2(begin(ocn2) + starting_index_2, end(ocn2));
+			EvaluableNode::LargeOrderedType a2(begin(ocn2) + starting_index_2, end(ocn2));
 
 			//for every element in a1, check to see if there's any in a2
 			for(size_t i = starting_index_1; i < ocn1.size(); i++)
@@ -815,8 +815,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::ChildNodeStructureType::PAIRED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
-			EvaluableNode::OrderedType a1(tree1->GetOrderedChildNodesReference());
-			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::LargeOrderedType a1(tree1->GetOrderedChildNodesReference());
+			EvaluableNode::LargeOrderedType a2(tree2->GetOrderedChildNodesReference());
 
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 			{

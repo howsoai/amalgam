@@ -179,6 +179,7 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeInlines.h
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
+    src/Amalgam/evaluablenode/EvaluableNodeOrderedRef.h
     src/Amalgam/evaluablenode/EvaluableNodeReference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.h

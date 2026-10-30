@@ -14,7 +14,7 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode::LargeOrderedType EvaluableNode::emptyOrderedChildNodes;
 EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
@@ -285,7 +285,7 @@ void EvaluableNode::ConvertAssocToList()
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	OrderedType new_ocn;
+	LargeOrderedType new_ocn;
 
 	auto mcn = GetMappedChildNodesViewOnAssoc();
 	new_ocn.reserve(mcn.size());
@@ -320,7 +320,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		}
 		else
 		{
-			total_size += sizeof(OrderedType);
+			total_size += sizeof(LargeOrderedType);
 		}
 	}
 
@@ -666,7 +666,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
-			OrderedType new_ordered;
+			LargeOrderedType new_ordered;
 			auto mcn = GetMappedChildNodesViewOnAssoc();
 			new_ordered.reserve(mcn.size());
 			for(auto &[cn_id, cn] : mcn)
@@ -799,7 +799,7 @@ void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, 
 		SetIsIdempotent(is_idempotent);
 }
 
-void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(LargeOrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
@@ -1110,7 +1110,7 @@ void EvaluableNode::EnsureHasExtendedValue()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(value.orderedChildNodes);
+		LargeOrderedType temp_ocn = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
 		value.extendedOrderedChildNodes.Construct();
 		*value.extendedOrderedChildNodes.orderedChildNodes = std::move(temp_ocn);
@@ -1141,7 +1141,7 @@ void EvaluableNode::RemoveExtendedValueIfPossible()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
 		value.extendedOrderedChildNodes.orderedChildNodes.reset();
 
 		value.ConstructOrderedChildNodes();

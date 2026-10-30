@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::LargeOrderedType &params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity)
 {
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
@@ -888,7 +888,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	EvaluableNode::LargeOrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())

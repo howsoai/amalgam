@@ -43,8 +43,10 @@ public:
 	class AssocRef;
 
 	//EvaluableNode ordered storage
-	using OrderedType = std::vector<EvaluableNode *>;
-	using OrderedRef = OrderedType &;
+	using LargeOrderedType = std::vector<EvaluableNode *>;
+	static constexpr size_t smallOrderedTypeMaxSize = sizeof(LargeOrderedType) / sizeof(EvaluableNode *);
+	using SmallOrderedtype = std::array<EvaluableNode *, smallOrderedTypeMaxSize>;
+	using OrderedRef = LargeOrderedType &;
 
 	using AttributeStorageType = uint8_t;
 	enum class Attribute : AttributeStorageType
@@ -783,7 +785,7 @@ public:
 	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
-	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check = true, bool is_idempotent = false);
+	void SetOrderedChildNodes(LargeOrderedType &&ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	template<typename ContainerIterator>
 	inline void SetOrderedChildNodes(
 		ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent);
@@ -1065,12 +1067,12 @@ protected:
 
 		__forceinline void ConstructOrderedChildNodes()
 		{
-			new (&orderedChildNodes) OrderedType;
+			new (&orderedChildNodes) LargeOrderedType;
 		}
 
 		__forceinline void DestructOrderedChildNodes()
 		{
-			orderedChildNodes.~OrderedType();
+			orderedChildNodes.~LargeOrderedType();
 		}
 
 		__forceinline void ConstructMappedChildNodes()
@@ -1085,13 +1087,13 @@ protected:
 		}
 
 		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		OrderedType orderedChildNodes;
+		LargeOrderedType orderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		SmallAssocType mappedChildNodes;
 
 		//when type represents a string, holds the corresponding values
-		struct EvaluableNodeValueString
+		struct ValueString
 		{
 			//string value
 			StringInternPool::StringID stringID;
@@ -1101,7 +1103,7 @@ protected:
 
 		//when type represents a number, holds the corresponding value
 		//ENT_NULL also uses this with a NaN
-		struct EvaluableNodeValueNumber
+		struct ValueNumber
 		{
 			//number value
 			double numberValue;
@@ -1110,7 +1112,7 @@ protected:
 		} numberAndNullValueContainer;
 
 		//when type represents a bool, holds the corresponding value
-		struct EvaluableNodeValueBool
+		struct ValueBool
 		{
 			//bool value
 			bool boolValue;
@@ -1118,27 +1120,33 @@ protected:
 			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
-		struct EvaluableNodeValueOrderedChildNodesWithAnnotationsAndComments
+		struct SmallOrderedValue
+		{
+			SmallOrderedtype orderedChildNodes;
+			uint8_t numElements;
+		} smallOrderedChildNodes;
+
+		struct LargeOrderedChildNodesWithAnnotationsAndComments
 		{
 			__forceinline void Construct()
 			{
-				new (&orderedChildNodes) std::unique_ptr<OrderedType>(std::make_unique<OrderedType>());
+				new (&orderedChildNodes) std::unique_ptr<LargeOrderedType>(std::make_unique<LargeOrderedType>());
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
-				orderedChildNodes.~unique_ptr<OrderedType>();
+				orderedChildNodes.~unique_ptr<LargeOrderedType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			//external orderedChildNodes
-			std::unique_ptr<OrderedType> orderedChildNodes;
+			std::unique_ptr<LargeOrderedType> orderedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
 		} extendedOrderedChildNodes;
 
-		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
+		struct LargeMappedChildNodesWithAnnotationsAndComments
 		{
 			__forceinline void Construct()
 			{
@@ -1212,7 +1220,7 @@ protected:
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
-	static OrderedType emptyOrderedChildNodes;
+	static LargeOrderedType emptyOrderedChildNodes;
 	static EvaluableNode emptyMappedChildNodesNode;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 

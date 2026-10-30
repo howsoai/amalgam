@@ -213,9 +213,9 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
 		value.extendedOrderedChildNodes.Destruct();
-		new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
+		new (&value.orderedChildNodes) LargeOrderedType(std::move(temp_ocn));
 
 		SetExtendedValue(false);
 	}

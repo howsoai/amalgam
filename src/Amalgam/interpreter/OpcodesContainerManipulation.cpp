@@ -2309,7 +2309,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			else
 				absolute_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
 
-			EvaluableNode::OrderedType new_container_ocn;
+			EvaluableNode::LargeOrderedType new_container_ocn;
 
 			//if the position is valid, erase it
 			if(absolute_pos >= 0 && absolute_pos < container_ocn.size())
@@ -2390,7 +2390,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_remove);
 			indices_to_remove.erase(first_dupe, last_dupe);
 
-			EvaluableNode::OrderedType new_container_ocn;
+			EvaluableNode::LargeOrderedType new_container_ocn;
 
 			size_t j = 0;
 			for(size_t i = 0; i < container_ocn.size(); i++)

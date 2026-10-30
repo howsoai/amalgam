@@ -420,10 +420,10 @@ static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_L
 static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"labels", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS})
+		OpcodeDetails::ParameterGroup({"labels", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS}, true)
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
-	d.description = R"(When used as a query argument, selects entities which have the label or labels specified by `labels`.  The parameter `labels` can either be a single string label or a list of labels.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding labels and values.)";
+	d.description = R"(When used as a query argument, selects entities which have the label or labels specified by each parameter `labels`.  Each parameter `labels` can either be a single string label or a list of labels.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding labels and values.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -474,7 +474,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interprete
 		OpcodeDetails::ParameterGroup({"labels", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
-	d.description = R"(When used as a query argument, selects entities which do not have the label or labels specified by `labels`.  The parameter `labels` can either be a single string label or a list of labels.  )";
+	d.description = R"(When used as a query argument, selects entities which do not have the label or labels specified by each parameter `labels`.  Each parameter `labels` can either be a single string label or a list of labels.  )";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities

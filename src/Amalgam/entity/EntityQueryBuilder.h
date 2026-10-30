@@ -981,8 +981,52 @@ namespace EntityQueryBuilder
 
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
-			//TODO 26245: implement this
+		{
+			auto &existence = query.SetQueryType<EntityQuery::LabelExistence>(type, cn);
+			auto &labels = existence.labels;
+			for(auto &cn : ocn)
+			{
+				if(EvaluableNode::IsOrderedArray(cn))
+				{
+					for(auto &cn2 : cn->GetOrderedChildNodesReference())
+					{
+						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
+						if(exists)
+						{
+							labels.emplace_back(sid);
+						}
+						else
+						{
+							//only need to check if checking for existence
+							if(type == ENT_QUERY_EXISTS)
+							{
+								query.queryType = ENT_NULL;
+								return;
+							}
+						}
+					}
+				}
+				else //treat as an id itself
+				{
+					auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
+					if(exists)
+					{
+						labels.emplace_back(sid);
+					}
+					else
+					{
+						//only need to check if checking for existence
+						if(type == ENT_QUERY_EXISTS)
+						{
+							query.queryType = ENT_NULL;
+							return;
+						}
+					}
+				}
+
+			}
 			return;
+		}
 
 		case ENT_QUERY_EQUALS:
 		case ENT_QUERY_NOT_EQUALS:

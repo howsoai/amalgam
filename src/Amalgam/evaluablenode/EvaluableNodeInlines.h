@@ -606,7 +606,7 @@ inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
 	}
 	else //ordered
 	{
-		auto &node_ocn = node->GetOrderedChildNodesViewViewOnList();
+		auto node_ocn = node->GetOrderedChildNodesViewViewOnList();
 
 		for(size_t i = 0; i < node_ocn.size(); i++)
 			store_value(i, true, node_ocn[i]);

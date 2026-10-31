@@ -470,7 +470,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
 	EvaluableNodeReference digits(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
+	auto digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
 		size_t num_digits = static_cast<size_t>(std::floor(start_digit - end_digit + 1));
@@ -715,7 +715,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	double first_digit = std::numeric_limits<double>::quiet_NaN();
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
-	auto &digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
+	auto digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
 	size_t cur_digit_index = 0;
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
@@ -1152,7 +1152,7 @@ EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interprete
 	if(value_found)
 	{
 		EvaluableNodeReference index_list(enm->AllocNode(ENT_LIST), false);
-		auto &index_list_ocn = index_list->GetOrderedChildNodesViewViewOnList();
+		auto index_list_ocn = index_list->GetOrderedChildNodesViewViewOnList();
 		index_list_ocn.reserve(max_keys.size());
 
 		for(StringInternPool::StringID max_key : max_keys)

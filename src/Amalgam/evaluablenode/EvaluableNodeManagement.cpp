@@ -638,7 +638,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	}
 	else
 	{
-		auto &copy_ocn = copy->GetOrderedChildNodesView();
+		auto copy_ocn = copy->GetOrderedChildNodesView();
 		for(size_t i = 0; i < copy_ocn.size(); i++)
 		{
 			//get current item in list

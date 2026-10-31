@@ -253,7 +253,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_opcodes))
 	{
 		EvaluableNodeReference opcode_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &opcode_ocn = opcode_list->GetOrderedChildNodesViewViewOnList();
+		auto opcode_ocn = opcode_list->GetOrderedChildNodesViewViewOnList();
 		opcode_ocn.resize(NUM_VALID_ENT_OPCODES);
 
 		for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
@@ -314,7 +314,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value_str));
 
 		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesViewViewOnList();
+		auto examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesViewViewOnList();
 		examples_output_pairs_ocn.reserve(od.examples.size());
 		for(auto &example : od.examples)
 		{
@@ -665,7 +665,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateSignatureKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
 		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
@@ -676,7 +676,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateEncryptionKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
 		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
@@ -686,7 +686,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	else if(command == "debugging_info" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		EvaluableNode *debugger_info = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = debugger_info->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = debugger_info->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(Interpreter::GetDebuggingState());
 		list_ocn[1] = evaluableNodeManager->AllocNode(asset_manager.debugSources);

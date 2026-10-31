@@ -123,7 +123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	{
 		EvaluableNodeReference range_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-		auto &range_list_ocn = range_list->GetOrderedChildNodesViewViewOnList();
+		auto range_list_ocn = range_list->GetOrderedChildNodesViewViewOnList();
 		range_list_ocn.resize(num_nodes);
 		for(size_t i = 0; i < num_nodes; i++)
 			range_list_ocn[i] = evaluableNodeManager->AllocNode(i * range_step_size + range_start);
@@ -172,7 +172,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	if(en->GetConcurrency() && num_nodes > 1)
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+		auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 		result_ocn.resize(num_nodes);
 		node_stack.PushEvaluableNode(result);
 		//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
@@ -219,7 +219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+	auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 	result_ocn.resize(num_nodes);
 	PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -546,7 +546,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		if(list->IsOrderedArray())
 		{
-			auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+			auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 			size_t num_nodes = list_ocn.size();
 
 		#ifdef MULTITHREAD_SUPPORT
@@ -572,7 +572,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 					//create result_list as a copy of the current list, but without child nodes
 					result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
-					auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+					auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 					result_ocn.resize(num_nodes);
 					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 					result->SetNeedCycleCheck(true);
@@ -604,7 +604,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 						auto acc = operation.Init();
 
-						auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+						auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 						size_t num_nodes = list_ocn.size();
 						for(size_t i = 0; i < num_nodes; ++i)
 						{
@@ -627,7 +627,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			//create result_list as a copy of the current list, but without child nodes
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
-			auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+			auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 			result_ocn.resize(num_nodes);
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -868,7 +868,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
-				auto &is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
+				auto is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
 				is_ocn.resize(inputs.size());
 				for(size_t i = 0; i < inputs.size(); i++)
 				{
@@ -909,7 +909,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
-				auto &is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
+				auto is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
 				is_ocn.resize(inputs.size());
 				for(size_t i = 0; i < inputs.size(); i++)
 				{
@@ -955,7 +955,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
-				auto &is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
+				auto is_ocn = input_slice->GetOrderedChildNodesViewViewOnList();
 				is_ocn.resize(inputs.size());
 				for(size_t i = 0; i < inputs.size(); i++)
 				{
@@ -1206,7 +1206,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 						}
 						else if(list->IsOrderedArray())
 						{
-							auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+							auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 							for(auto &cn : list_ocn)
 							{
 								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
@@ -1259,8 +1259,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		{
 			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			result_list->CopyMetadataFrom(list);
-			auto &result_list_ocn = result_list->GetOrderedChildNodesViewViewOnList();
-			auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+			auto result_list_ocn = result_list->GetOrderedChildNodesViewViewOnList();
+			auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 
 			bool free_unkept_nodes = (list.unique && !list->GetNeedCycleCheck());
 
@@ -1306,8 +1306,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(list->IsOrderedArray())
 	{
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
-		auto &result_ocn = result_list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto result_ocn = result_list->GetOrderedChildNodesViewViewOnList();
 
 	#ifdef MULTITHREAD_SUPPORT
 		size_t num_nodes = list_ocn.size();
@@ -1916,7 +1916,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	}
 	else if(list->GetOrderedChildNodesView().size() >= 1)
 	{
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		//inform that the first result is not unique; if no side effects and unique result, can free all at once
 		previous_result = EvaluableNodeReference(list_ocn[0], false);
 
@@ -2173,7 +2173,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		//if combining collisions by addition, a common operation, use this fast path
 		if(function->GetType() == ENT_ADD)
 		{
-			auto &function_ocn = function->GetOrderedChildNodesViewViewOnList();
+			auto function_ocn = function->GetOrderedChildNodesViewViewOnList();
 			if(function_ocn.size() == 2)
 			{
 				bool current_value_with_0 = false;
@@ -2183,7 +2183,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 				{
 					if(function_ocn[i] != nullptr && function_ocn[i]->GetType() == ENT_CURRENT_VALUE)
 					{
-						auto &cv_ocn = function_ocn[i]->GetOrderedChildNodesViewViewOnList();
+						auto cv_ocn = function_ocn[i]->GetOrderedChildNodesViewViewOnList();
 						if(cv_ocn.size() >= 1 && EvaluableNode::ToNumber(cv_ocn[0]) == 1.0)
 							current_value_with_1 = true;
 						else if(cv_ocn.size() == 0 || EvaluableNode::ToNumber(cv_ocn[0]) == 0.0)
@@ -2212,7 +2212,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 			free_value_list_node = true;
 	}
 
-	auto &index_list_ocn = index_list->GetOrderedChildNodesView();
+	auto index_list_ocn = index_list->GetOrderedChildNodesView();
 	result->ReserveMappedChildNodes(index_list_ocn.size());
 	for(size_t i = 0; i < index_list_ocn.size(); i++)
 	{
@@ -2230,7 +2230,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		EvaluableNode *value = nullptr;
 		if(value_list_is_a_list)
 		{
-			auto &vl_ocn = value_list->GetOrderedChildNodesViewViewOnList();
+			auto vl_ocn = value_list->GetOrderedChildNodesViewViewOnList();
 			if(i < vl_ocn.size())
 				value = vl_ocn[i];
 		}
@@ -2335,7 +2335,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	if(EvaluableNode::IsNull(index_list)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-	auto &index_list_ocn = index_list->GetOrderedChildNodesView();
+	auto index_list_ocn = index_list->GetOrderedChildNodesView();
 
 	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
 	if(immediate_result.AnyComplexImmediateType() && index_list_ocn.size() > 0)
@@ -2365,7 +2365,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 				}
 				else if(zipped->IsOrderedArray())
 				{
-					auto &zipped_ocn = zipped->GetOrderedChildNodesView();
+					auto zipped_ocn = zipped->GetOrderedChildNodesView();
 					for(auto &index : index_list_ocn)
 					{
 						double index_value = EvaluableNode::ToNumber(index);
@@ -2400,7 +2400,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	if(num_indices > 1)
 		result.SetNeedCycleCheck(true);
 
-	auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+	auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 	result_ocn.reserve(num_indices);
 
 	if(EvaluableNode::IsAssociativeArray(zipped))
@@ -2424,7 +2424,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	}
 	else //ordered list
 	{
-		auto &zipped_ocn = zipped->GetOrderedChildNodesView();
+		auto zipped_ocn = zipped->GetOrderedChildNodesView();
 		for(auto &index : index_list_ocn)
 		{
 			double index_value = EvaluableNode::ToNumber(index);
@@ -2498,7 +2498,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 	}
 	else if(list->IsOrderedArray())
 	{
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		std::reverse(begin(list_ocn), end(list_ocn));
 	}
 
@@ -2993,7 +2993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 	}
 	else
 	{
-		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
+		auto list_ocn = list->GetOrderedChildNodesViewViewOnList();
 
 		if(function_type == ENT_BOOL)
 			process_sort(list_ocn,

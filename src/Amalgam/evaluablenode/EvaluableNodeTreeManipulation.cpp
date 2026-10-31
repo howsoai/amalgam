@@ -1611,7 +1611,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	case ENBISI_swap_elements:
 		if(n->GetOrderedChildNodesView().size() > 1)
 		{
-			auto &n_ocn = n->GetOrderedChildNodesViewViewOnList();
+			auto n_ocn = n->GetOrderedChildNodesViewViewOnList();
 
 			//choose two different indices
 			size_t num_child_nodes = n_ocn.size();
@@ -1729,7 +1729,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	if(n != nullptr)
 	{
 		//randomly clear excess nulls (with no child nodes) in lists
-		auto &n_ocn = n->GetOrderedChildNodesView();
+		auto n_ocn = n->GetOrderedChildNodesView();
 		size_t max_num_usable_nodes = GetOpcodeMinNumValidParameters(n->GetType());
 		while(n_ocn.size() > max_num_usable_nodes && EvaluableNode::IsNull(n_ocn.back()))
 		{

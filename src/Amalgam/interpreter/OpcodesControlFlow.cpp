@@ -721,10 +721,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	//prepend any params
 	if(source->IsOrderedArray())
 	{
-		auto &type_node_ocn = type_node->GetOrderedChildNodesView();
+		auto type_node_ocn = type_node->GetOrderedChildNodesView();
 		if(type_node_ocn.size() > 0)
 		{
-			auto &source_ocn = source->GetOrderedChildNodesViewViewOnList();
+			auto source_ocn = source->GetOrderedChildNodesViewViewOnList();
 			source_ocn.insert(
 				begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 			source.UpdatePropertiesBasedOnAttachedNode(type_node);
@@ -813,7 +813,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		else
 		{
 			EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesViewViewOnList();
+			auto sth_ocn = stack_top_holder->GetOrderedChildNodesViewViewOnList();
 			sth_ocn.reserve(opcodeStackNodes.size());
 			bool first_node = true;
 			for(auto iter = begin(opcodeStackNodes); iter != end(opcodeStackNodes); ++iter)

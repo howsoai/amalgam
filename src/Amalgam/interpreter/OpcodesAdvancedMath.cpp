@@ -674,7 +674,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
 				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
@@ -683,7 +683,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 	}
 	else //values->IsOrderedArray())
 	{
-		auto &values_ocn = values->GetOrderedChildNodesViewViewOnList();
+		auto values_ocn = values->GetOrderedChildNodesViewViewOnList();
 
 		if(EvaluableNode::IsNull(weights))
 		{
@@ -701,7 +701,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
 				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
@@ -829,7 +829,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			result = Quantile(size_t{ 0 }, weights_ocn.size(),
 				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
@@ -839,7 +839,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 	}
 	else //values->IsOrderedArray())
 	{
-		auto &values_ocn = values->GetOrderedChildNodesViewViewOnList();
+		auto values_ocn = values->GetOrderedChildNodesViewViewOnList();
 
 		if(EvaluableNode::IsNull(weights))
 		{
@@ -859,7 +859,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			result = Quantile(size_t{ 0 }, weights_ocn.size(),
 				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
@@ -1008,7 +1008,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			result = GeneralizedMean(size_t{ 0 }, weights_ocn.size(),
 				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
@@ -1018,7 +1018,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	}
 	else //values->IsOrderedArray())
 	{
-		auto &values_ocn = values->GetOrderedChildNodesViewViewOnList();
+		auto values_ocn = values->GetOrderedChildNodesViewViewOnList();
 
 		if(EvaluableNode::IsTerminal(weights))
 		{
@@ -1038,7 +1038,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		}
 		else //weights->IsOrderedArray())
 		{
-			auto &weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
+			auto weights_ocn = weights->GetOrderedChildNodesViewViewOnList();
 
 			result = GeneralizedMean(size_t{ 0 }, weights_ocn.size(),
 				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
@@ -1787,7 +1787,7 @@ inline static void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 		}
 		else //must be ordered
 		{
-			auto &node_ocn = node->GetOrderedChildNodesViewViewOnList();
+			auto node_ocn = node->GetOrderedChildNodesViewViewOnList();
 
 			out.resize(node_ocn.size());
 			for(size_t i = 0; i < node_ocn.size(); i++)
@@ -1862,7 +1862,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		if(!EvaluableNode::IsNull(value_names_node))
 		{
 			//extract the names for each value into value_names
-			auto &vnn_ocn = value_names_node->GetOrderedChildNodesView();
+			auto vnn_ocn = value_names_node->GetOrderedChildNodesView();
 			value_names.reserve(vnn_ocn.size());
 			for(auto &vn : vnn_ocn)
 			{
@@ -2017,7 +2017,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	}
 	else if(EvaluableNode::IsOrderedArray(p_node))
 	{
-		auto &p_node_ocn = p_node->GetOrderedChildNodesViewViewOnList();
+		auto p_node_ocn = p_node->GetOrderedChildNodesViewViewOnList();
 		p_num_elements = p_node_ocn.size();
 		p_values = &p_node_ocn;
 	}

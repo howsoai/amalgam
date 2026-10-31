@@ -323,7 +323,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		{
 			//want to generate multiple values, so return a list
 			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
+			auto retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
@@ -361,7 +361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		}
 
 		//shuffle ordered child nodes
-		auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
+		auto retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			//make sure to only shuffle things that haven't been shuffled before,

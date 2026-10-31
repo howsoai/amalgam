@@ -312,7 +312,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 	//copy the rest of the stack if there is more
 	if(!bottomOfScopeStack)
 	{
-		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesViewViewOnList();
+		auto stack_nodes_ocn = copied_stack->GetOrderedChildNodesViewViewOnList();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
 			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
@@ -996,7 +996,7 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsAndChangesIfNeeded(
 		return result;
 
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_tuple_ocn = result_tuple->GetOrderedChildNodesViewViewOnList();
+	auto result_tuple_ocn = result_tuple->GetOrderedChildNodesViewViewOnList();
 	result_tuple_ocn.push_back(result);
 	result_tuple.UpdatePropertiesBasedOnAttachedNode(result);
 

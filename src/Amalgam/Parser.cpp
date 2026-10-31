@@ -323,7 +323,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		}
 		else if(b_parent->IsOrderedArray())
 		{
-			auto &bp_ocn = b_parent->GetOrderedChildNodesViewViewOnList();
+			auto bp_ocn = b_parent->GetOrderedChildNodesViewViewOnList();
 			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), lowest_common_node);
 			auto index = std::distance(begin(bp_ocn), found);
 			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(static_cast<double>(index)));
@@ -871,7 +871,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		{
 			if(EvaluableNode::IsOrderedArray(top_node))
 			{
-				auto &top_node_ocn = top_node->GetOrderedChildNodesViewViewOnList();
+				auto top_node_ocn = top_node->GetOrderedChildNodesViewViewOnList();
 				if(top_node_ocn.size() > 0)
 					top_node_ocn.pop_back();
 			}
@@ -1236,7 +1236,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		}
 		else if(tree->IsOrderedArray())
 		{
-			auto &tree_ocn = tree->GetOrderedChildNodesViewViewOnList();
+			auto tree_ocn = tree->GetOrderedChildNodesViewViewOnList();
 			if(upd.sortKeys
 				&& (GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED
 					|| GetChildNodeStructureType(tree_type)
@@ -1367,7 +1367,7 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 
 	//otherwise treat the index as a number for a list
 	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
-	auto &node_ocn = node->GetOrderedChildNodesView();
+	auto node_ocn = node->GetOrderedChildNodesView();
 	if(index < node_ocn.size())
 		return node_ocn[index];
 
@@ -1384,7 +1384,7 @@ static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableN
 	if(walk_path != nullptr && walk_path->IsOrderedArray())
 	{
 		//traverse the nodes over each index to find the location
-		auto &walk_path_ocn = walk_path->GetOrderedChildNodesViewViewOnList();
+		auto walk_path_ocn = walk_path->GetOrderedChildNodesViewViewOnList();
 		for(auto &index_node : walk_path_ocn)
 		{
 			node = GetNodeRelativeToIndex(node, index_node);
@@ -1414,7 +1414,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 
 	case ENT_GET:
 	{
-		auto &path_ocn = path->GetOrderedChildNodesViewViewOnList();
+		auto path_ocn = path->GetOrderedChildNodesViewViewOnList();
 		if(path_ocn.size() < 2)
 			return nullptr;
 
@@ -1426,7 +1426,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		auto &path_ocn = path->GetOrderedChildNodesViewViewOnList();
+		auto path_ocn = path->GetOrderedChildNodesViewViewOnList();
 		if(path_ocn.size() == 0)
 			return path;
 

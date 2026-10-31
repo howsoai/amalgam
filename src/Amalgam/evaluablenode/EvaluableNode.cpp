@@ -507,7 +507,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	}
 	else if(!DoesEvaluableNodeTypeUseNullData(cur_type)) //ordered
 	{
-		auto &n_ocn = n->GetOrderedChildNodesViewViewOnList();
+		auto n_ocn = n->GetOrderedChildNodesViewViewOnList();
 		if(n_ocn.empty())
 			ClearOrderedChildNodes();
 		else

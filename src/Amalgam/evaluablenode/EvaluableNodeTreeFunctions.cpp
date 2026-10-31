@@ -213,7 +213,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		}
 		else if(b_ancestor_parent->IsOrderedArray())
 		{
-			auto &b_ancestor_parent_ocn = b_ancestor_parent->GetOrderedChildNodesViewViewOnList();
+			auto b_ancestor_parent_ocn = b_ancestor_parent->GetOrderedChildNodesViewViewOnList();
 			const auto &found = std::find(begin(b_ancestor_parent_ocn), end(b_ancestor_parent_ocn), b_ancestor);
 			auto index = std::distance(begin(b_ancestor_parent_ocn), found);
 			path_list->AppendOrderedChildNode(enm->AllocNode(static_cast<double>(index)));
@@ -413,7 +413,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 																+ variable_value_node->GetOrderedChildNodesView().size() / 2);
 
 				//iterate as long as pairs exist
-				auto &vvn_ocn = variable_value_node->GetOrderedChildNodesView();
+				auto vvn_ocn = variable_value_node->GetOrderedChildNodesView();
 				for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 				{
 					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
@@ -502,7 +502,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
 			//iterate as long as pairs exist
-			auto &vvn_ocn = variable_value_node->GetOrderedChildNodesView();
+			auto vvn_ocn = variable_value_node->GetOrderedChildNodesView();
 			for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);

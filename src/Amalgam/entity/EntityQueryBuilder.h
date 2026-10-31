@@ -579,7 +579,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *top_k_node = ocn[MAX_TO_FIND_OR_MAX_DISTANCE];
 			if(EvaluableNode::IsOrderedArray(top_k_node))
 			{
-				auto &top_k_ocn = top_k_node->GetOrderedChildNodesViewViewOnList();
+				auto top_k_ocn = top_k_node->GetOrderedChildNodesViewViewOnList();
 				size_t num_params = top_k_ocn.size();
 				//retrieve all the parameters from the list, clamping as appropriate
 				if(num_params >= 1)
@@ -623,7 +623,7 @@ namespace EntityQueryBuilder
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
-			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesViewViewOnList();
+			auto pos_labels_ocn = position_labels->GetOrderedChildNodesViewViewOnList();
 			cur_condition.positionLabels.reserve(pos_labels_ocn.size());
 			for(auto &pl : pos_labels_ocn)
 			{
@@ -646,7 +646,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
-				auto &entities_ocn = entities->GetOrderedChildNodesViewViewOnList();
+				auto entities_ocn = entities->GetOrderedChildNodesViewViewOnList();
 				statistics.entityIds.reserve(entities_ocn.size());
 				for(auto &entity_en : entities_ocn)
 				{

@@ -478,7 +478,7 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 //assumes result is of ENT_CONCLUDE or ENT_RETURN
 inline EvaluableNodeReference RemoveTopConcludeOrReturnNode(EvaluableNodeReference result, EvaluableNodeManager *enm)
 {
-	auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
+	auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 	if(result_ocn.size() == 0)
 	{
 		enm->FreeNodeIfPossible(result);

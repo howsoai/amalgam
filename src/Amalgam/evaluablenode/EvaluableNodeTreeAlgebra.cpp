@@ -103,7 +103,7 @@ struct FlattenAssociations final
 
 			//splice the child's child nodes in at the position the child occupied, so that opcodes that
 			//are associative but not commutative, such as concat, retain their original ordering
-			auto &child_ocn = child->GetOrderedChildNodesViewViewOnList();
+			auto child_ocn = child->GetOrderedChildNodesViewViewOnList();
 			ocn.erase(begin(ocn) + i);
 			ocn.insert(begin(ocn) + i, begin(child_ocn), end(child_ocn));
 

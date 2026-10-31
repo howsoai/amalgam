@@ -175,7 +175,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 					continue;
 
 				//get position from tree1
-				auto &tree1_node_ocn = tree1_node->GetOrderedChildNodesView();
+				auto tree1_node_ocn = tree1_node->GetOrderedChildNodesView();
 				auto position_in_merged = std::find(begin(tree1_node_ocn), end(tree1_node_ocn), tree1_cn);
 				size_t index = std::distance(begin(tree1_node_ocn), position_in_merged);
 				retrieval->AppendOrderedChildNode(enm->AllocNode(static_cast<double>(index)));
@@ -259,7 +259,7 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 			return;
 		}
 
-		auto &tree_ocn = tree->GetOrderedChildNodesView();
+		auto tree_ocn = tree->GetOrderedChildNodesView();
 		auto tree_mcn = tree->GetMappedChildNodesView();
 
 		if(matching->GetOrderedChildNodesView().size() != tree_ocn.size())

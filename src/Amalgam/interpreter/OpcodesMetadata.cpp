@@ -692,7 +692,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 	if(!EvaluableNode::IsAssociativeArray(vars))
 		return retval;
 
-	auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
+	auto retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 	retval_ocn.resize(2);
 
 	//deep_comments_or_annotations of label, so get the parameters and their respective labels
@@ -711,7 +711,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 	{
 		//create list with comment and default value
 		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &param_info_ocn = param_info->GetOrderedChildNodesViewViewOnList();
+		auto param_info_ocn = param_info->GetOrderedChildNodesViewViewOnList();
 		param_info_ocn.resize(2);
 		param_info_ocn[0] = evaluableNodeManager->AllocNode(
 			get_entity_comments ? EvaluableNode::GetCommentsString(cn) : EvaluableNode::GetAnnotationsString(cn));

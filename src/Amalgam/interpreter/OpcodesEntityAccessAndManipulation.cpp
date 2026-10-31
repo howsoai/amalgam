@@ -504,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		auto &lookup_ocn = to_lookup->GetOrderedChildNodesViewViewOnList();
+		auto lookup_ocn = to_lookup->GetOrderedChildNodesViewViewOnList();
 		for(size_t i = 0; i < lookup_ocn.size(); i++)
 		{
 			auto &cn = lookup_ocn[i];

@@ -795,7 +795,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 	EvaluableNodeReference warning_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	retval->AppendOrderedChildNode(warning_list);
 
-	auto &list_ocn = warning_list->GetOrderedChildNodesViewViewOnList();
+	auto list_ocn = warning_list->GetOrderedChildNodesViewViewOnList();
 	list_ocn.resize(warnings.size());
 	for(size_t i = 0; i < warnings.size(); i++)
 		list_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, warnings[i]);

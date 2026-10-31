@@ -561,6 +561,12 @@ inline void EvaluableNode::InitOrderedChildNodes()
 		value.extendedOrderedChildNodes.Construct();
 }
 
+inline void EvaluableNode::ReserveOrderedChildNodes(size_t to_reserve)
+{
+	if(IsOrderedArray())
+		GetOrderedChildNodesViewViewOnList().reserve(to_reserve);
+}
+
 __forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesView()
 {
 	if(IsOrderedArray())

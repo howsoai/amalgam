@@ -19,7 +19,7 @@ public:
 
 	//use raw pointers to unify the iterator type across array and vector storage
 	using iterator = EvaluableNode **;
-	using const_iterator = const EvaluableNode **;
+	using const_iterator = EvaluableNode * const *;
 
 	//--- Construction & Lifecycle ---
 
@@ -184,12 +184,12 @@ public:
 		{
 			if(en->numElementsWhenSmall < EvaluableNode::smallOrderedTypeMaxSize)
 			{
-				GetSmallNodes()[en->numElementsWhenSmall++] = std::forward<T>(args)...;
+				std::construct_at(&GetSmallNodes()[en->numElementsWhenSmall++], std::forward<Args>(args)...);
 				return;
 			}
 			PromoteToLarge();
 		}
-		GetLargeNodes().emplace_back(std::forward<T>(args)...);
+		GetLargeNodes().emplace_back(std::forward<Args>(args)...);
 	}
 
 	inline void insert(const_iterator pos, const value_type &val)
@@ -224,7 +224,7 @@ public:
 			for(size_type i = start; i + count <= en->numElementsWhenSmall; ++i)
 				GetSmallNodes()[i] = GetSmallNodes()[i + count];
 
-			en->numElementsWhenSmall -= count;
+			en->numElementsWhenSmall -= static_cast<uint8_t>(count);
 			return begin() + start;
 		}
 

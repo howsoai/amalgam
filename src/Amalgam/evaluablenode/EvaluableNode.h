@@ -744,11 +744,7 @@ public:
 	inline void InitOrderedChildNodes();
 
 	//preallocates to_reserve for appending, etc.
-	inline void ReserveOrderedChildNodes(size_t to_reserve)
-	{
-		if(IsOrderedArray())
-			GetOrderedChildNodesViewViewOnList().reserve(to_reserve);
-	}
+	inline void ReserveOrderedChildNodes(size_t to_reserve);
 
 	__forceinline OrderedRef GetOrderedChildNodesView();
 
@@ -764,11 +760,7 @@ public:
 		StoreValueFunction store_value);
 
 	//Note that ResizeOrderedChildNodes does not initialize new nodes, so they must be initialized by caller
-	inline void SetOrderedChildNodesSize(size_t new_size)
-	{
-		if(IsOrderedArray())
-			GetOrderedChildNodesViewViewOnList().resize(new_size);
-	}
+	inline void SetOrderedChildNodesSize(size_t new_size);
 
 	//sets the ordered child nodes and updates flags
 	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);

@@ -784,6 +784,12 @@ size_t EvaluableNode::GetNumChildNodes()
 	return 0;
 }
 
+inline void EvaluableNode::SetOrderedChildNodesSize(size_t new_size)
+{
+	if(IsOrderedArray())
+		GetOrderedChildNodesViewViewOnList().resize(new_size);
+}
+
 void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]

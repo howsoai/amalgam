@@ -454,11 +454,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 
 	auto *tree1_ordered_childs = &empty_vector;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
-		tree1_ordered_childs = &tree1->GetOrderedChildNodesReference();
+		tree1_ordered_childs = &tree1->GetOrderedChildNodesViewViewOnList();
 
 	auto *tree2_ordered_childs = &empty_vector;
 	if(tree2 != nullptr && tree2->IsOrderedArray())
-		tree2_ordered_childs = &tree2->GetOrderedChildNodesReference();
+		tree2_ordered_childs = &tree2->GetOrderedChildNodesViewViewOnList();
 
 	//see if both trees have ordered child nodes
 	if(tree1_ordered_childs->size() > 0 || tree2_ordered_childs->size() > 0)
@@ -520,7 +520,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 
 			//put on the first position
 			merged = mm->MergePositions(a1, a2);
-			generalized_node->GetOrderedChildNodes().insert(end(generalized_node->GetOrderedChildNodes()), begin(merged), end(merged));
+			generalized_node->GetOrderedChildNodesView().insert(end(generalized_node->GetOrderedChildNodesView()), begin(merged), end(merged));
 
 			//make new arrays without first position
 			a1.clear();
@@ -543,7 +543,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 				merged = mm->MergeSequences(a1, a2);
 			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 				merged = mm->MergeUnorderedSetsOfPairs(a1, a2);
-			generalized_node->GetOrderedChildNodes().insert(end(generalized_node->GetOrderedChildNodes()), begin(merged), end(merged));
+			generalized_node->GetOrderedChildNodesView().insert(end(generalized_node->GetOrderedChildNodesView()), begin(merged), end(merged));
 			break;
 		}
 
@@ -594,7 +594,7 @@ static void GetStringsFromTree(EvaluableNode *tree,
 	}
 	else //ordered
 	{
-		for(auto &cn : tree->GetOrderedChildNodesReference())
+		for(auto &cn : tree->GetOrderedChildNodesViewViewOnList())
 		{
 			if(cn != nullptr)
 				GetStringsFromTree(cn, strings_from_tree_data);
@@ -680,12 +680,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(EvaluableNode::IsAssociativeArray(tree1))
 		tree1_mapped_nodes_size = tree1->GetMappedChildNodesViewOnAssoc().size();
 	else if(EvaluableNode::IsOrderedArray(tree1))
-		tree1_ordered_nodes_size = tree1->GetOrderedChildNodesReference().size();
+		tree1_ordered_nodes_size = tree1->GetOrderedChildNodesViewViewOnList().size();
 
 	if(EvaluableNode::IsAssociativeArray(tree2))
 		tree2_mapped_nodes_size = tree2->GetMappedChildNodesViewOnAssoc().size();
 	else if(EvaluableNode::IsOrderedArray(tree2))
-		tree2_ordered_nodes_size = tree2->GetOrderedChildNodesReference().size();
+		tree2_ordered_nodes_size = tree2->GetOrderedChildNodesViewViewOnList().size();
 
 	if(tree1_ordered_nodes_size == 0 && tree2_ordered_nodes_size == 0
 		&& tree1_mapped_nodes_size == 0 && tree2_mapped_nodes_size == 0)
@@ -721,8 +721,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::ChildNodeStructureType::UNORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:
 		{
-			auto &ocn1 = tree1->GetOrderedChildNodesReference();
-			auto &ocn2 = tree2->GetOrderedChildNodesReference();
+			auto ocn1 = tree1->GetOrderedChildNodesViewViewOnList();
+			auto ocn2 = tree2->GetOrderedChildNodesViewViewOnList();
 			auto size1 = ocn1.size();
 			auto size2 = ocn2.size();
 
@@ -784,8 +784,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::ChildNodeStructureType::ORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED:
 		{
-			auto &ocn1 = tree1->GetOrderedChildNodesReference();
-			auto &ocn2 = tree2->GetOrderedChildNodesReference();
+			auto ocn1 = tree1->GetOrderedChildNodesViewViewOnList();
+			auto ocn2 = tree2->GetOrderedChildNodesViewViewOnList();
 			auto size1 = ocn1.size();
 			auto size2 = ocn2.size();
 
@@ -815,8 +815,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::ChildNodeStructureType::PAIRED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
-			EvaluableNode::LargeOrderedType a1(tree1->GetOrderedChildNodesReference());
-			EvaluableNode::LargeOrderedType a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::LargeOrderedType a1(tree1->GetOrderedChildNodesViewViewOnList());
+			EvaluableNode::LargeOrderedType a2(tree2->GetOrderedChildNodesViewViewOnList());
 
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 			{
@@ -882,8 +882,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 		case OpcodeDetails::ChildNodeStructureType::POSITION:
 		{
-			auto &ocn1 = tree1->GetOrderedChildNodesReference();
-			auto &ocn2 = tree2->GetOrderedChildNodesReference();
+			auto ocn1 = tree1->GetOrderedChildNodesViewViewOnList();
+			auto ocn2 = tree2->GetOrderedChildNodesViewViewOnList();
 			//use size of smallest list
 			auto smallest_list_size = std::min(ocn1.size(), ocn2.size());
 			for(size_t i = 0; i < smallest_list_size; i++)
@@ -919,7 +919,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			if(tree1_ordered_nodes_size > 0)
 			{
-				for(auto node : tree1->GetOrderedChildNodesReference())
+				for(auto node : tree1->GetOrderedChildNodesViewViewOnList())
 				{
 					auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
 
@@ -962,7 +962,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			if(tree2_ordered_nodes_size > 0)
 			{
-				for(auto node : tree2->GetOrderedChildNodesReference())
+				for(auto node : tree2->GetOrderedChildNodesViewViewOnList())
 				{
 					auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
 
@@ -1404,9 +1404,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	case ENBISI_remove:
 		//remove n itself
-		if(n->GetOrderedChildNodes().size() > 0)
+		if(n->GetOrderedChildNodesView().size() > 0)
 		{
-			auto &ocn = n->GetOrderedChildNodesReference();
+			auto ocn = n->GetOrderedChildNodesViewViewOnList();
 			size_t index = mp.interpreter->randomStream.RandSize(ocn.size());
 			n = ocn[index];
 		}
@@ -1456,17 +1456,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 
 		//copy one element over another
-		if(n->GetOrderedChildNodes().size() > 0)
+		if(n->GetOrderedChildNodesView().size() > 0)
 		{
 			//get source and destination; note that destination_index is drawn from
 			//num_children + 1 to include appending to the end / new value
-			size_t num_children = n->GetOrderedChildNodesReference().size();
+			size_t num_children = n->GetOrderedChildNodesViewViewOnList().size();
 			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
 
 			if(destination_index >= num_children)
 				n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(source_node));
 			else
-				n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(source_node);
+				n->GetOrderedChildNodesView()[destination_index] = mp.enm->DeepAllocCopy(source_node);
 		}
 		else if(n->GetMappedChildNodesView().size() > 0)
 		{
@@ -1512,7 +1512,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 		else if(n->IsOrderedArray())
 		{
-			auto &ocn = n->GetOrderedChildNodesReference();
+			auto ocn = n->GetOrderedChildNodesViewViewOnList();
 			auto ocnt = GetChildNodeStructureType(n->GetType());
 			if(ocnt == OpcodeDetails::ChildNodeStructureType::PAIRED)
 			{
@@ -1576,9 +1576,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				}
 			}
 		}
-		else if(n->GetOrderedChildNodes().size() > 0)
+		else if(n->GetOrderedChildNodesView().size() > 0)
 		{
-			auto &ocn = n->GetOrderedChildNodesReference();
+			auto ocn = n->GetOrderedChildNodesViewViewOnList();
 			auto ocnt = GetChildNodeStructureType(n->GetType());
 			if(ocnt == OpcodeDetails::ChildNodeStructureType::PAIRED && ocn.size() >= 2)
 			{
@@ -1609,9 +1609,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		break;
 
 	case ENBISI_swap_elements:
-		if(n->GetOrderedChildNodes().size() > 1)
+		if(n->GetOrderedChildNodesView().size() > 1)
 		{
-			auto &n_ocn = n->GetOrderedChildNodesReference();
+			auto &n_ocn = n->GetOrderedChildNodesViewViewOnList();
 
 			//choose two different indices
 			size_t num_child_nodes = n_ocn.size();
@@ -1707,7 +1707,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	else
 	{
 		//for any ordered children, copy and update
-		auto &ocn = n->GetOrderedChildNodes();
+		auto ocn = n->GetOrderedChildNodesView();
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
 			//get current item in list
@@ -1729,7 +1729,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	if(n != nullptr)
 	{
 		//randomly clear excess nulls (with no child nodes) in lists
-		auto &n_ocn = n->GetOrderedChildNodes();
+		auto &n_ocn = n->GetOrderedChildNodesView();
 		size_t max_num_usable_nodes = GetOpcodeMinNumValidParameters(n->GetType());
 		while(n_ocn.size() > max_num_usable_nodes && EvaluableNode::IsNull(n_ocn.back()))
 		{
@@ -1860,7 +1860,7 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 	}
 	else //ordered
 	{
-		for(auto cn : tree->GetOrderedChildNodesReference())
+		for(auto cn : tree->GetOrderedChildNodesViewViewOnList())
 			ReplaceStringsInTree(cn, to_replace, checked);
 	}
 }

@@ -529,7 +529,7 @@ __forceinline void EvaluableNode::UpdateAllFlagsBasedOnNoReferencingChildNodes()
 	}
 	else if(!IsTerminal())
 	{
-		for(auto cn : GetOrderedChildNodesReference())
+		for(auto cn : GetOrderedChildNodesViewViewOnList())
 		{
 			if(cn == nullptr)
 				continue;
@@ -559,6 +559,21 @@ inline void EvaluableNode::InitOrderedChildNodes()
 		value.ConstructOrderedChildNodes();
 	else
 		value.extendedOrderedChildNodes.Construct();
+}
+
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesView()
+{
+	if(IsOrderedArray())
+		return GetOrderedChildNodesViewViewOnList();
+
+	return emptyOrderedChildNodes.GetOrderedChildNodesViewViewOnList();
+}
+
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesView(EvaluableNode *en)
+{
+	if(en == nullptr || !en->IsOrderedArray())
+		return emptyOrderedChildNodes.GetOrderedChildNodesViewViewOnList();
+	return en->GetOrderedChildNodesViewViewOnList();
 }
 
 template<typename StoreValueFunction>
@@ -591,7 +606,7 @@ inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
 	}
 	else //ordered
 	{
-		auto &node_ocn = node->GetOrderedChildNodesReference();
+		auto &node_ocn = node->GetOrderedChildNodesViewViewOnList();
 
 		for(size_t i = 0; i < node_ocn.size(); i++)
 			store_value(i, true, node_ocn[i]);
@@ -605,7 +620,7 @@ inline void EvaluableNode::SetOrderedChildNodes(
 	if(!IsOrderedArray())
 		return;
 
-	auto &ocn = GetOrderedChildNodesReference();
+	auto ocn = GetOrderedChildNodesViewViewOnList();
 	ocn.assign(first, last);
 
 	SetNeedCycleCheck(need_cycle_check);
@@ -620,7 +635,7 @@ inline void EvaluableNode::SetOrderedChildNodes(
 inline void EvaluableNode::ReleaseOrderedChildNodesExtraMemory()
 {
 	if(IsOrderedArray())
-		GetOrderedChildNodesReference().shrink_to_fit();
+		GetOrderedChildNodesViewViewOnList().shrink_to_fit();
 }
 
 inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
@@ -721,12 +736,9 @@ __forceinline StringInternPool::StringID &EvaluableNode::GetStringIDReference()
 	return value.stringValueContainer.stringID;
 }
 
-__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesReference()
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesViewViewOnList()
 {
-	if(!HasExtendedValue())
-		return value.orderedChildNodes;
-	else
-		return *value.extendedOrderedChildNodes.orderedChildNodes.get();
+	return EvaluableNode::OrderedRef(this);
 }
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesViewOnAssoc()

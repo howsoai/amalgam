@@ -32,7 +32,7 @@ static OpcodeInitializer _ENT_IF(ENT_IF, &Interpreter::InterpretNode_ENT_IF, [](
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_cn = ocn.size();
 
 	//step every two parameters as condition-expression pairs
@@ -74,7 +74,7 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t ocn_size = ocn.size();
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -126,7 +126,7 @@ static OpcodeInitializer _ENT_LAMBDA(ENT_LAMBDA, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t ocn_size = ocn.size();
 	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
@@ -226,7 +226,7 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -362,7 +362,7 @@ static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_W
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t ocn_size = ocn.size();
 	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
@@ -513,7 +513,7 @@ static OpcodeInitializer _ENT_RETURN(ENT_RETURN, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 
 	//if no parameter, then return itself for performance
 	if(ocn.size() == 0)
@@ -566,7 +566,7 @@ static OpcodeInitializer _ENT_APPLY(ENT_APPLY, &Interpreter::InterpretNode_ENT_A
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -644,7 +644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 			{
 				double sum = result_value.number;
 				//if there are further parameters, need to add them to the sum
-				if(type_node->GetType() == ENT_ADD && type_node->GetOrderedChildNodesReference().size() > 0)
+				if(type_node->GetType() == ENT_ADD && type_node->GetOrderedChildNodesViewViewOnList().size() > 0)
 					sum += InterpretNodeIntoNumberValue(type_node);
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
@@ -655,7 +655,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 			{
 				double product = result_value.number;
 				//if there are further parameters, need to multiply them to the product
-				if(type_node->GetType() == ENT_MULTIPLY && type_node->GetOrderedChildNodesReference().size() > 0)
+				if(type_node->GetType() == ENT_MULTIPLY && type_node->GetOrderedChildNodesViewViewOnList().size() > 0)
 					product *= InterpretNodeIntoNumberValue(type_node);
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
@@ -666,7 +666,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 			{
 				double min = result_value.number;
 				//if there are further parameters, need to consider them
-				if(type_node->GetType() == ENT_MIN && type_node->GetOrderedChildNodesReference().size() > 0)
+				if(type_node->GetType() == ENT_MIN && type_node->GetOrderedChildNodesViewViewOnList().size() > 0)
 					min = std::min(min, InterpretNodeIntoNumberValue(type_node));
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
@@ -677,7 +677,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 			{
 				double max = result_value.number;
 				//if there are further parameters, need to consider them
-				if(type_node->GetType() == ENT_MAX && type_node->GetOrderedChildNodesReference().size() > 0)
+				if(type_node->GetType() == ENT_MAX && type_node->GetOrderedChildNodesViewViewOnList().size() > 0)
 					max = std::max(max, InterpretNodeIntoNumberValue(type_node));
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
@@ -721,10 +721,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	//prepend any params
 	if(source->IsOrderedArray())
 	{
-		auto &type_node_ocn = type_node->GetOrderedChildNodes();
+		auto &type_node_ocn = type_node->GetOrderedChildNodesView();
 		if(type_node_ocn.size() > 0)
 		{
-			auto &source_ocn = source->GetOrderedChildNodesReference();
+			auto &source_ocn = source->GetOrderedChildNodesViewViewOnList();
 			source_ocn.insert(
 				begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 			source.UpdatePropertiesBasedOnAttachedNode(type_node);
@@ -782,7 +782,7 @@ static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::Inter
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 
 	bool has_valid_depth = false;
 	int64_t depth = 0;
@@ -813,7 +813,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		else
 		{
 			EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
+			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesViewViewOnList();
 			sth_ocn.reserve(opcodeStackNodes.size());
 			bool first_node = true;
 			for(auto iter = begin(opcodeStackNodes); iter != end(opcodeStackNodes); ++iter)

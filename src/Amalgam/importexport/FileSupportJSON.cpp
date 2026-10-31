@@ -229,7 +229,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		json_str += '[';
 
 		bool first_cn = true;
-		for(auto &cn : en->GetOrderedChildNodesReference())
+		for(auto &cn : en->GetOrderedChildNodesViewViewOnList())
 		{
 			if(!first_cn)
 				json_str += ',';

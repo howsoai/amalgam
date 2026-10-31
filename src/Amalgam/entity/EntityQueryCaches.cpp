@@ -891,7 +891,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		}
 		else if(cond_node->GetType() == ENT_LIST)
 		{
-			for(auto cn : cond_node->GetOrderedChildNodesReference())
+			for(auto cn : cond_node->GetOrderedChildNodesViewViewOnList())
 			{
 				if(!EvaluableNode::IsQuery(cn))
 					continue;
@@ -1095,7 +1095,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	{
 		auto query = EntityQueries::GetFilterNode(condition);
 		auto type = query->GetType();
-		auto &ocn = query->GetOrderedChildNodes();
+		auto ocn = query->GetOrderedChildNodesView();
 		auto label = EntityQueries::GetFilterLabel(condition);
 		auto &temp = buffers.tempMatchingEntityIndices;
 		switch(type)
@@ -1170,7 +1170,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 			temp.clear();
 			auto &matches = is_first && type == ENT_QUERY_AMONG ? matching_entities : temp;
 			if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
-				for(auto node : ocn[1]->GetOrderedChildNodesReference())
+				for(auto node : ocn[1]->GetOrderedChildNodesViewViewOnList())
 					sbfds.UnionAllEntitiesWithValue(label, EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node), matches);
 			if(type == ENT_QUERY_NOT_AMONG)
 				matching_entities.erase(temp);

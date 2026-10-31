@@ -1512,7 +1512,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &calling_interpreter = *r_dist_eval.callingInterpreter;
 
-	auto &ocn = feature_attribs.callEntityOpcode->GetOrderedChildNodes();
+	auto ocn = feature_attribs.callEntityOpcode->GetOrderedChildNodesView();
 
 	InterpreterConstraints interpreter_constraints;
 	calling_interpreter.PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);

@@ -246,7 +246,7 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 		}
 		else if(param->IsOrderedArray())
 		{
-			auto &ocn = param->GetOrderedChildNodesReference();
+			auto ocn = param->GetOrderedChildNodesViewViewOnList();
 			size_t selection = random_stream.RandSize(ocn.size());
 			can_free_param = false;
 			return EvaluableNodeReference(ocn[selection], param.unique);
@@ -263,7 +263,7 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0)
 	{
 		double r = randomStream.RandFull();
@@ -323,7 +323,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		{
 			//want to generate multiple values, so return a list
 			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			auto &retval_ocn = retval->GetOrderedChildNodesReference();
+			auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
@@ -354,14 +354,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		else
 		{
 			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			retval->SetOrderedChildNodes(param->GetOrderedChildNodesReference(),
+			retval->SetOrderedChildNodes(param->GetOrderedChildNodesViewViewOnList(),
 				param->GetNeedCycleCheck(), param->GetIsIdempotent());
 
 			retval.UpdatePropertiesBasedOnAttachedNode(param, true);
 		}
 
 		//shuffle ordered child nodes
-		auto &retval_ocn = retval->GetOrderedChildNodesReference();
+		auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			//make sure to only shuffle things that haven't been shuffled before,
@@ -496,7 +496,7 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -545,7 +545,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	EntityReadReference entity;
 	if(ocn.size() > 0)
 		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
@@ -629,7 +629,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_params = ocn.size();
 	if(num_params < 1)
 		return EvaluableNodeReference::Null();

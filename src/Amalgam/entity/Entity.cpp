@@ -402,7 +402,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	}
 	else //remove all of the child nodes of the index
 	{
-		auto &indices_ocn = labels_to_remove->GetOrderedChildNodes();
+		auto &indices_ocn = labels_to_remove->GetOrderedChildNodesView();
 
 		FastHashSet<StringInternPool::StringID> labels_to_erase;
 		for(auto &cn : indices_ocn)

@@ -573,7 +573,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 			}
 			else //ordered, since immediates are not pushed in stack
 			{
-				for(auto &child : cur->GetOrderedChildNodesReference())
+				for(auto &child : cur->GetOrderedChildNodesViewViewOnList())
 				{
 					if(child == nullptr)
 						continue;
@@ -638,7 +638,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	}
 	else
 	{
-		auto &copy_ocn = copy->GetOrderedChildNodes();
+		auto &copy_ocn = copy->GetOrderedChildNodesView();
 		for(size_t i = 0; i < copy_ocn.size(); i++)
 		{
 			//get current item in list
@@ -692,7 +692,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 		}
 		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesViewViewOnList())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -738,7 +738,7 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		}
 		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesViewViewOnList())
 			{
 				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
@@ -925,7 +925,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	{
 		bool need_cycle_check = false;
 
-		for(auto cn : tree->GetOrderedChildNodesReference())
+		for(auto cn : tree->GetOrderedChildNodesViewViewOnList())
 		{
 			if(cn == nullptr)
 				continue;
@@ -992,7 +992,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	}
 	else if(!en->IsTerminal())
 	{
-		for(auto cn : en->GetOrderedChildNodesReference())
+		for(auto cn : en->GetOrderedChildNodesViewViewOnList())
 		{
 			if(cn == nullptr)
 				continue;

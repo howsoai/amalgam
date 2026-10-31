@@ -80,7 +80,7 @@ namespace EntityQueryBuilder
 		{
 			//a list indicates that it is a pair of a sparse deviation assoc followed by a default deviation
 			//the default being for when one of the values is found, but not the other
-			auto &ocn = value_deviation_node->GetOrderedChildNodesReference();
+			auto ocn = value_deviation_node->GetOrderedChildNodesViewViewOnList();
 			size_t ocn_size = ocn.size();
 
 			if(ocn_size > 0
@@ -149,7 +149,7 @@ namespace EntityQueryBuilder
 		{
 			//a list indicates that it is a pair of a sparse deviation matrix followed by a default deviation
 			//the default being for when the first value being compared is not found
-			auto &ocn = deviation_node->GetOrderedChildNodesReference();
+			auto ocn = deviation_node->GetOrderedChildNodesViewViewOnList();
 			if(ocn.size() > 0)
 				PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, ocn[0]);
 
@@ -336,7 +336,7 @@ namespace EntityQueryBuilder
 				//calling PopulateWeightsFromSelectionFeature will populate dist_eval.featureAttribs[i].weight,
 				//which will be accumulated into accumulated_feature_weights and then normalized
 				std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
-				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
+				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesViewViewOnList())
 				{
 					auto [valid, weights_selection_feature_sid] = EvaluableNode::ToStringIDIfExists(feature_id_node);
 					if(!valid) [[unlikely]]
@@ -504,7 +504,7 @@ namespace EntityQueryBuilder
 						{
 							if(en->EvaluableNode::IsOrderedArray())
 							{
-								auto &ocn = en->GetOrderedChildNodesReference();
+								auto ocn = en->GetOrderedChildNodesViewViewOnList();
 								size_t ocn_size = ocn.size();
 
 								if(ocn_size > 0)
@@ -528,7 +528,7 @@ namespace EntityQueryBuilder
 						{
 							if(en->EvaluableNode::IsOrderedArray())
 							{
-								auto &ocn = en->GetOrderedChildNodesReference();
+								auto ocn = en->GetOrderedChildNodesViewViewOnList();
 								size_t ocn_size = ocn.size();
 								if(ocn_size > 0)
 									dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(ocn[0]);
@@ -553,7 +553,7 @@ namespace EntityQueryBuilder
 		EntityQuery &query, Interpreter *calling_interpreter)
 	{
 		//can just get the reference because already know it's a distance query
-		auto &ocn = cn->GetOrderedChildNodesReference();
+		auto ocn = cn->GetOrderedChildNodesViewViewOnList();
 
 		//need to at least have position, otherwise not valid query
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
@@ -579,7 +579,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *top_k_node = ocn[MAX_TO_FIND_OR_MAX_DISTANCE];
 			if(EvaluableNode::IsOrderedArray(top_k_node))
 			{
-				auto &top_k_ocn = top_k_node->GetOrderedChildNodesReference();
+				auto &top_k_ocn = top_k_node->GetOrderedChildNodesViewViewOnList();
 				size_t num_params = top_k_ocn.size();
 				//retrieve all the parameters from the list, clamping as appropriate
 				if(num_params >= 1)
@@ -623,7 +623,7 @@ namespace EntityQueryBuilder
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
-			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesReference();
+			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesViewViewOnList();
 			cur_condition.positionLabels.reserve(pos_labels_ocn.size());
 			for(auto &pl : pos_labels_ocn)
 			{
@@ -646,7 +646,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
-				auto &entities_ocn = entities->GetOrderedChildNodesReference();
+				auto &entities_ocn = entities->GetOrderedChildNodesViewViewOnList();
 				statistics.entityIds.reserve(entities_ocn.size());
 				for(auto &entity_en : entities_ocn)
 				{
@@ -664,7 +664,7 @@ namespace EntityQueryBuilder
 				query.queryType = ENT_NULL;
 				return;
 			}
-			cur_condition.target.emplace<EntityQuery::Distance::Positions>(&positions->GetOrderedChildNodesReference());
+			cur_condition.target.emplace<EntityQuery::Distance::Positions>(&positions->GetOrderedChildNodesViewViewOnList());
 		}
 		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
@@ -677,7 +677,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *position = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition.positionLabels.size()))
 			{
-				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
+				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesViewViewOnList(),
 					neighbors.valuesToCompare);
 			}
 			else if(position != nullptr && position->GetType() == ENT_STRING)
@@ -801,7 +801,7 @@ namespace EntityQueryBuilder
 					}
 					else
 					{
-						for(auto label_node : list_param->GetOrderedChildNodes())
+						for(auto label_node : list_param->GetOrderedChildNodesView())
 						{
 							auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 							if(valid) [[likely]]
@@ -833,7 +833,7 @@ namespace EntityQueryBuilder
 						}
 						else
 						{
-							for(auto label_node : list_param->GetOrderedChildNodes())
+							for(auto label_node : list_param->GetOrderedChildNodesView())
 							{
 								auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
 								if(valid) [[likely]]
@@ -850,7 +850,7 @@ namespace EntityQueryBuilder
 	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type, EntityQuery &query,
 		Interpreter *calling_interpreter)
 	{
-		auto &ocn = cn->GetOrderedChildNodes();
+		auto ocn = cn->GetOrderedChildNodesView();
 
 		//validate number of parameters
 		switch(type)
@@ -997,11 +997,11 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
 			//coercing an ID can allocate; prepare those lists once to avoid repeated coercion during query execution.
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
-				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesReference()), end(ocn[0]->GetOrderedChildNodesReference()),
+				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesViewViewOnList()), end(ocn[0]->GetOrderedChildNodesViewViewOnList()),
 					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))
 			{
 				auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
-				auto &nodes = ocn[0]->GetOrderedChildNodesReference();
+				auto &nodes = ocn[0]->GetOrderedChildNodesViewViewOnList();
 				ids.reserve(nodes.size());
 				for(auto node : nodes)
 				{

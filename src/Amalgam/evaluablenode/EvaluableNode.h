@@ -46,7 +46,7 @@ public:
 	using LargeOrderedType = std::vector<EvaluableNode *>;
 	static constexpr size_t smallOrderedTypeMaxSize = sizeof(LargeOrderedType) / sizeof(EvaluableNode *);
 	using SmallOrderedtype = std::array<EvaluableNode *, smallOrderedTypeMaxSize>;
-	using OrderedRef = LargeOrderedType &;
+	class OrderedRef;
 
 	using AttributeStorageType = uint8_t;
 	enum class Attribute : AttributeStorageType
@@ -747,23 +747,12 @@ public:
 	inline void ReserveOrderedChildNodes(size_t to_reserve)
 	{
 		if(IsOrderedArray())
-			GetOrderedChildNodesReference().reserve(to_reserve);
+			GetOrderedChildNodesViewViewOnList().reserve(to_reserve);
 	}
 
-	__forceinline OrderedRef GetOrderedChildNodes()
-	{
-		if(IsOrderedArray())
-			return GetOrderedChildNodesReference();
+	__forceinline OrderedRef GetOrderedChildNodesView();
 
-		return emptyOrderedChildNodes;
-	}
-
-	static __forceinline OrderedRef GetOrderedChildNodes(EvaluableNode *en)
-	{
-		if(en == nullptr || !en->IsOrderedArray())
-			return emptyOrderedChildNodes;
-		return en->GetOrderedChildNodesReference();
-	}
+	static __forceinline OrderedRef GetOrderedChildNodesView(EvaluableNode *en);
 
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
 	// if node is mapped child nodes, it will use element_names to order populate out and use default_value if any given id is not found
@@ -778,7 +767,7 @@ public:
 	inline void SetOrderedChildNodesSize(size_t new_size)
 	{
 		if(IsOrderedArray())
-			GetOrderedChildNodesReference().resize(new_size);
+			GetOrderedChildNodesViewViewOnList().resize(new_size);
 	}
 
 	//sets the ordered child nodes and updates flags
@@ -870,7 +859,7 @@ public:
 	__forceinline StringInternPool::StringID &GetStringIDReference();
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline OrderedRef GetOrderedChildNodesReference();
+	__forceinline OrderedRef GetOrderedChildNodesViewViewOnList();
 
 	//assumes that the EvaluableNode is has mapped child nodes and returns the view
 	//(which means the receiving variables should not have an &)
@@ -1120,11 +1109,7 @@ protected:
 			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
-		struct SmallOrderedValue
-		{
-			SmallOrderedtype orderedChildNodes;
-			uint8_t numElements;
-		} smallOrderedChildNodes;
+		SmallOrderedtype smallOrderedChildNodes;
 
 		struct LargeOrderedChildNodesWithAnnotationsAndComments
 		{
@@ -1211,6 +1196,9 @@ protected:
 	AttributeStorageType attributes;
 #endif
 
+	//TODO 26256: document its behavior
+	uint8_t numElementsWhenSmall;
+
 	//when the number of elements in a SmallAssocType exceeds this value, it should be promoted to a LargeAssocType
 	//this value has been tuned by performance testing across a variety of workloads, so any change to this value
 	// should also be tuned by performance testing
@@ -1220,7 +1208,7 @@ protected:
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
-	static LargeOrderedType emptyOrderedChildNodes;
+	static EvaluableNode emptyOrderedChildNodes;
 	static EvaluableNode emptyMappedChildNodesNode;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
@@ -1240,4 +1228,5 @@ protected:
 };
 
 #include "EvaluableNodeAssocRef.h"
+#include "EvaluableNodeOrderedRef.h"
 #include "EvaluableNodeInlines.h"

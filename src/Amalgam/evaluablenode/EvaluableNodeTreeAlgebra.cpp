@@ -85,7 +85,7 @@ struct FlattenAssociations final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		bool any_changes = false;
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
@@ -103,7 +103,7 @@ struct FlattenAssociations final
 
 			//splice the child's child nodes in at the position the child occupied, so that opcodes that
 			//are associative but not commutative, such as concat, retain their original ordering
-			auto &child_ocn = child->GetOrderedChildNodesReference();
+			auto &child_ocn = child->GetOrderedChildNodesViewViewOnList();
 			ocn.erase(begin(ocn) + i);
 			ocn.insert(begin(ocn) + i, begin(child_ocn), end(child_ocn));
 
@@ -129,7 +129,7 @@ struct DeadCodeElimination final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		bool node_replaced = false;
 		bool any_changes = false;
 
@@ -198,7 +198,7 @@ struct ShortCircuitBooleans final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() == 0)
 		{
 			rc.NullifyNode(en);
@@ -261,7 +261,7 @@ struct FoldAdditionAndSubtraction final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() == 0)
 		{
 			if(en->GetType() == ENT_SUBTRACT)
@@ -413,7 +413,7 @@ struct FoldMultiplicationAndDivision final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() == 0)
 		{
 			if(en->GetType() == ENT_DIVIDE)
@@ -577,7 +577,7 @@ struct PowerSimplification final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() == 0)
 		{
 			rc.NullifyNode(en);
@@ -630,7 +630,7 @@ struct EulerExponentSimplification final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() < 1)
 			return false;
 
@@ -654,7 +654,7 @@ struct LogSimplification final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() != 1)
 			return false;
 
@@ -674,7 +674,7 @@ struct LogSimplification final
 		}
 
 		//ln(e) -> 1
-		if(child->GetType() == ENT_EXPONENT && child->GetOrderedChildNodesReference().size() == 0)
+		if(child->GetType() == ENT_EXPONENT && child->GetOrderedChildNodesViewViewOnList().size() == 0)
 		{
 			rc.FreeNodeChildNodesIfPossible(en);
 			en->SetTypeViaNumberValue(1.0);
@@ -696,7 +696,7 @@ struct ConsolidateConstantsForConcat final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(ocn.size() == 0)
 		{
 			rc.NullifyNode(en);
@@ -777,7 +777,7 @@ struct SimplifySelfContainedWithImmediates final
 		}
 		else if(!en->IsTerminal())
 		{
-			for(EvaluableNode *cn : en->GetOrderedChildNodesReference())
+			for(EvaluableNode *cn : en->GetOrderedChildNodesViewViewOnList())
 			{
 				if(cn != nullptr && !cn->IsImmediate())
 				{
@@ -806,13 +806,13 @@ struct TruncateToValidParameters final
 	bool Match(EvaluableNode *en) const noexcept
 	{
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
-		return (en->IsOrderedArray() && en->GetOrderedChildNodesReference().size() > max_num_params);
+		return (en->IsOrderedArray() && en->GetOrderedChildNodesViewViewOnList().size() > max_num_params);
 	}
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		bool extra_params = (ocn.size() >= max_num_params);
 		if(extra_params && rc.nodesFreeable)
 		{
@@ -836,7 +836,7 @@ struct SortParameters final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		auto &ocn = en->GetOrderedChildNodesReference();
+		auto ocn = en->GetOrderedChildNodesViewViewOnList();
 		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
 			std::stable_sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
 		else if(ocn.size() > 2)
@@ -932,7 +932,7 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(EvaluableNode *tree, Evalu
 			}
 			else if(!cur->IsTerminal())
 			{
-				for(EvaluableNode *cn : cur->GetOrderedChildNodesReference())
+				for(EvaluableNode *cn : cur->GetOrderedChildNodesViewViewOnList())
 				{
 					if(cn && !cn->IsTerminal())
 						node_stack.emplace_back(cn, false);

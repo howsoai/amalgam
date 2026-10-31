@@ -99,7 +99,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
 	EvaluableNodeReference entity_id_path = EvaluableNodeReference::Null();
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	auto node_stack = CreateOpcodeStackStateSaver();
 
 	//interpret and buffer nodes for querying conditions
@@ -124,7 +124,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 			{
 				if(param_node->GetType() == ENT_LIST)
 				{
-					auto &qp_ocn = param_node->GetOrderedChildNodesReference();
+					auto &qp_ocn = param_node->GetOrderedChildNodesViewViewOnList();
 					//an empty list has the same outcome, so early skip
 					if(qp_ocn.size() == 0)
 						continue;
@@ -174,7 +174,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 		//new list containing the contained entity ids to return
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &result_ocn = result->GetOrderedChildNodesReference();
+		auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
 		result_ocn.resize(contained_entities.size());
 
 		//create the string references all at once and hand off
@@ -2345,9 +2345,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNod
 	if(en->GetConcurrency())
 		query_command->SetConcurrency(true);
 
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	query_command->ReserveOrderedChildNodes(ocn.size());
-	auto &qc_ocn = query_command->GetOrderedChildNodesReference();
+	auto &qc_ocn = query_command->GetOrderedChildNodesViewViewOnList();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		auto value = InterpretNode(ocn[i], immediate_result.ToSimplestNodeValue());

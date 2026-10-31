@@ -27,8 +27,8 @@ EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableN
 	while(cur_position < file_size)
 	{
 		EvaluableNode *cur_row = enm->AllocNode(ENT_LIST);
-		auto &cur_row_ocn = cur_row->GetOrderedChildNodesReference();
-		data_top_node->GetOrderedChildNodesReference().push_back(cur_row);
+		auto &cur_row_ocn = cur_row->GetOrderedChildNodesViewViewOnList();
+		data_top_node->GetOrderedChildNodesViewViewOnList().push_back(cur_row);
 
 		//instantiate this once so the memory can be reused and start with a reasonable string size
 		std::string value;
@@ -163,7 +163,7 @@ bool FileSupportCSV::Store(EvaluableNode *code, const std::string &resource_path
 	if(code != nullptr)
 	{
 		//grab rows
-		for(auto &row_node : code->GetOrderedChildNodes())
+		for(auto &row_node : code->GetOrderedChildNodesView())
 		{
 			//if nothing, skip
 			if(row_node == nullptr)
@@ -173,7 +173,7 @@ bool FileSupportCSV::Store(EvaluableNode *code, const std::string &resource_path
 			}
 
 			bool is_first_column = true;
-			for(auto &column_node : row_node->GetOrderedChildNodes())
+			for(auto &column_node : row_node->GetOrderedChildNodesView())
 			{
 				//separate fields by commas
 				if(!is_first_column)

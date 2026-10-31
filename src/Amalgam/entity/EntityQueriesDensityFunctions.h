@@ -177,7 +177,7 @@ public:
 				return;
 			}
 			
-			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(), buffers.positionValues);
+			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesViewViewOnList(), buffers.positionValues);
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, true, buffers.neighbors);
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
@@ -278,7 +278,7 @@ public:
 				return;
 
 			CopyOrderedChildNodesToImmediateValuesAndTypes(
-				position->GetOrderedChildNodesReference(), buffers.positionValues);
+				position->GetOrderedChildNodesViewViewOnList(), buffers.positionValues);
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, false, buffers.neighbors);
 

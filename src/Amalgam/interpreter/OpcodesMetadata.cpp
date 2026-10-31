@@ -29,7 +29,7 @@ static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -75,7 +75,7 @@ static OpcodeInitializer _ENT_SET_ANNOTATIONS(ENT_SET_ANNOTATIONS, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -119,7 +119,7 @@ static OpcodeInitializer _ENT_GET_COMMENTS(ENT_GET_COMMENTS, &Interpreter::Inter
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -164,7 +164,7 @@ static OpcodeInitializer _ENT_SET_COMMENTS(ENT_SET_COMMENTS, &Interpreter::Inter
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -218,7 +218,7 @@ static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -270,7 +270,7 @@ static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -318,7 +318,7 @@ static OpcodeInitializer _ENT_GET_VALUE(ENT_GET_VALUE, &Interpreter::InterpretNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -363,7 +363,7 @@ static OpcodeInitializer _ENT_SET_VALUE(ENT_SET_VALUE, &Interpreter::InterpretNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -616,7 +616,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 
 	bool get_entity_comments = (en->GetType() == ENT_GET_ENTITY_COMMENTS);
 
@@ -681,18 +681,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 		return AllocReturn(get_entity_comments ? label_value->GetCommentsString() : label_value->GetAnnotationsString(), immediate_result);
 
 	//make sure a function based on declare that has parameters
-	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
+	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodesView().size() < 1)
 		return EvaluableNodeReference::Null();
 
 	//the first element is an assoc of the parameters, the second element is the return value
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	//if the vars are already initialized, then pull the comments or annotations from their values
-	EvaluableNode *vars = label_value->GetOrderedChildNodes()[0];
+	EvaluableNode *vars = label_value->GetOrderedChildNodesView()[0];
 	if(!EvaluableNode::IsAssociativeArray(vars))
 		return retval;
 
-	auto &retval_ocn = retval->GetOrderedChildNodesReference();
+	auto &retval_ocn = retval->GetOrderedChildNodesViewViewOnList();
 	retval_ocn.resize(2);
 
 	//deep_comments_or_annotations of label, so get the parameters and their respective labels
@@ -711,7 +711,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 	{
 		//create list with comment and default value
 		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
+		auto &param_info_ocn = param_info->GetOrderedChildNodesViewViewOnList();
 		param_info_ocn.resize(2);
 		param_info_ocn[0] = evaluableNodeManager->AllocNode(
 			get_entity_comments ? EvaluableNode::GetCommentsString(cn) : EvaluableNode::GetAnnotationsString(cn));

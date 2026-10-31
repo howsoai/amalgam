@@ -166,7 +166,7 @@ EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, 
 
 	//create list to address entity
 	EvaluableNode *id_list = enm->AllocNode(ENT_LIST);
-	auto &ocn = id_list->GetOrderedChildNodesReference();
+	auto ocn = id_list->GetOrderedChildNodesViewViewOnList();
 	while(b != nullptr && b != a)
 	{
 		ocn.push_back(enm->AllocNode(ENT_STRING, b->GetIdStringId()));
@@ -213,7 +213,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		}
 		else if(b_ancestor_parent->IsOrderedArray())
 		{
-			auto &b_ancestor_parent_ocn = b_ancestor_parent->GetOrderedChildNodesReference();
+			auto &b_ancestor_parent_ocn = b_ancestor_parent->GetOrderedChildNodesViewViewOnList();
 			const auto &found = std::find(begin(b_ancestor_parent_ocn), end(b_ancestor_parent_ocn), b_ancestor);
 			auto index = std::distance(begin(b_ancestor_parent_ocn), found);
 			path_list->AppendOrderedChildNode(enm->AllocNode(static_cast<double>(index)));
@@ -236,7 +236,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 	}
 
 	//reverse because assembled in reverse order
-	auto &ocn = path_list->GetOrderedChildNodesReference();
+	auto ocn = path_list->GetOrderedChildNodesViewViewOnList();
 	std::reverse(begin(ocn), end(ocn));
 	return path_list;
 }
@@ -315,7 +315,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 		}
 		else if(!addr_empty && EvaluableNode::IsOrderedArray(*destination))
 		{
-			auto &ocn = (*destination)->GetOrderedChildNodesReference();
+			auto ocn = (*destination)->GetOrderedChildNodesViewViewOnList();
 			double index = EvaluableNode::ToNumber(addr);
 			//if negative, start from end and wrap around if the negative index is larger than the size
 			if(index < 0)
@@ -410,10 +410,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 			{
 				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesViewOnAssoc().size()
-																+ variable_value_node->GetOrderedChildNodes().size() / 2);
+																+ variable_value_node->GetOrderedChildNodesView().size() / 2);
 
 				//iterate as long as pairs exist
-				auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
+				auto &vvn_ocn = variable_value_node->GetOrderedChildNodesView();
 				for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 				{
 					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
@@ -449,7 +449,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			if(EvaluableNode::IsAssociativeArray(variable_value_node))
 			{
 				//expand out into pairs
-				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size()
+				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodesView().size()
 																+ 2 * variable_value_node->GetMappedChildNodesViewOnAssoc().size());
 
 				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesViewOnAssoc())
@@ -464,9 +464,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			}
 			else if(EvaluableNode::IsOrderedArray(variable_value_node))
 			{
-				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size()
-																+ variable_value_node->GetOrderedChildNodesReference().size());
-				value_destination_node->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodesReference());
+				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodesView().size()
+																+ variable_value_node->GetOrderedChildNodesViewViewOnList().size());
+				value_destination_node->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodesViewViewOnList());
 
 				enm->FreeNodeIfPossible(variable_value_node);
 			}
@@ -502,7 +502,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
 			//iterate as long as pairs exist
-			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
+			auto &vvn_ocn = variable_value_node->GetOrderedChildNodesView();
 			for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
@@ -541,7 +541,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			auto vvn_mcn = variable_value_node->GetMappedChildNodesViewOnAssoc();
 			//expand out into pairs
-			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * vvn_mcn.size());
+			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodesView().size() + 2 * vvn_mcn.size());
 			for(auto &[cn_id, cn] : vvn_mcn)
 			{
 				EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
@@ -554,14 +554,14 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		}
 		else if(EvaluableNode::IsOrderedArray(variable_value_node))
 		{
-			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + variable_value_node->GetOrderedChildNodes().size());
-			new_list->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodes());
+			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodesView().size() + variable_value_node->GetOrderedChildNodesView().size());
+			new_list->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodesView());
 
 			enm->FreeNodeIfPossible(variable_value_node);
 		}
 		else //just append one value
 		{
-			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 1);
+			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodesView().size() + 1);
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 

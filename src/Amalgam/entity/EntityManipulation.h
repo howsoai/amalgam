@@ -282,7 +282,7 @@ public:
 		{
 			//build list of results
 			EvaluableNode *query_return = enm->AllocNode(ENT_LIST);
-			auto &qr_ocn = query_return->GetOrderedChildNodesReference();
+			auto &qr_ocn = query_return->GetOrderedChildNodesViewViewOnList();
 			//returning ids and computed values plus any additional values being retrieved
 			qr_ocn.resize(2 + additional_sorted_list_labels.size());
 
@@ -298,7 +298,7 @@ public:
 				//make a copy of the value at additionalSortedListLabel for each entity
 				EvaluableNode *list_of_values = enm->AllocNode(ENT_LIST);
 				qr_ocn[2 + label_offset] = list_of_values;
-				auto &list_ocn = list_of_values->GetOrderedChildNodesReference();
+				auto &list_ocn = list_of_values->GetOrderedChildNodesViewViewOnList();
 				list_ocn.resize(results.size());
 				for(size_t i = 0; i < results.size(); i++)
 				{

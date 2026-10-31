@@ -83,7 +83,7 @@ public:
 		}
 
 		//size of the entity list excluding trailing nulls
-		auto id_path_entries = &id_path->GetOrderedChildNodesReference();
+		auto id_path_entries = &id_path->GetOrderedChildNodesViewViewOnList();
 		size_t non_null_size = id_path_entries->size();
 		while(non_null_size > 0 && EvaluableNode::IsNull((*id_path_entries)[non_null_size - 1]))
 			non_null_size--;
@@ -433,7 +433,7 @@ inline EvaluableNodeReference CreateListOfNumbersFromIteratorAndFunction(ValueCo
 	EvaluableNodeManager *enm, GetNumberFunction get_number)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(value_container.size());
 
 	for(auto value_element : value_container)
@@ -449,7 +449,7 @@ inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(Stri
 	EvaluableNodeManager *enm, GetStringFunction get_string_id)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(string_container.size());
 
 	for(auto string_element : string_container)
@@ -465,7 +465,7 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 	EvaluableNodeManager *enm, GetStringFunction get_string)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(string_container.size());
 
 	for(auto string_element : string_container)
@@ -478,7 +478,7 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 //assumes result is of ENT_CONCLUDE or ENT_RETURN
 inline EvaluableNodeReference RemoveTopConcludeOrReturnNode(EvaluableNodeReference result, EvaluableNodeManager *enm)
 {
-	auto &result_ocn = result->GetOrderedChildNodesReference();
+	auto &result_ocn = result->GetOrderedChildNodesViewViewOnList();
 	if(result_ocn.size() == 0)
 	{
 		enm->FreeNodeIfPossible(result);

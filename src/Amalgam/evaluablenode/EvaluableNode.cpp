@@ -14,7 +14,7 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode::LargeOrderedType EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode EvaluableNode::emptyOrderedChildNodes(ENT_LIST);
 EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
@@ -266,7 +266,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 	}
 
 	//convert ordered child nodes into index number -> value
-	auto ocn = std::move(GetOrderedChildNodesReference());
+	auto ocn = std::move(GetOrderedChildNodesViewViewOnList());
 
 	InitMappedChildNodes(ocn.size());
 	type = ENT_ASSOC;
@@ -296,7 +296,7 @@ void EvaluableNode::ConvertAssocToList()
 	type = ENT_LIST;
 
 	//swap for efficiency
-	std::swap(GetOrderedChildNodesReference(), new_ocn);
+	std::swap(GetOrderedChildNodesViewViewOnList(), new_ocn);
 }
 
 size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
@@ -335,7 +335,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		comment_size++;
 	total_size += annotation_size + comment_size;
 
-	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
+	total_size += n->GetOrderedChildNodesView().capacity() * sizeof(EvaluableNode *);
 	total_size += n->GetMappedChildNodesView().size() * extended_assoc_multiplier * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
 
 	return total_size;
@@ -377,7 +377,7 @@ bool EvaluableNode::IsNodeValid()
 	}
 	else //ordered
 	{
-		auto &ocn = GetOrderedChildNodesReference();
+		auto ocn = GetOrderedChildNodesViewViewOnList();
 		return (ocn.size() < max_size);
 	}
 
@@ -456,7 +456,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	else //ordered
 	{
 		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = n->GetOrderedChildNodesReference();
+		value.orderedChildNodes = n->GetOrderedChildNodesViewViewOnList();
 	}
 
 	if(copy_metadata)
@@ -507,7 +507,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	}
 	else if(!DoesEvaluableNodeTypeUseNullData(cur_type)) //ordered
 	{
-		auto &n_ocn = n->GetOrderedChildNodesReference();
+		auto &n_ocn = n->GetOrderedChildNodesViewViewOnList();
 		if(n_ocn.empty())
 			ClearOrderedChildNodes();
 		else
@@ -640,7 +640,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
-			auto ocn = std::move(GetOrderedChildNodesReference());
+			auto ocn = std::move(GetOrderedChildNodesViewViewOnList());
 
 			InitMappedChildNodes(ocn.size());
 			type = new_type;
@@ -674,7 +674,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 
 			InitOrderedChildNodes();
 			//swap for efficiency
-			std::swap(GetOrderedChildNodesReference(), new_ordered);
+			std::swap(GetOrderedChildNodesViewViewOnList(), new_ordered);
 		}
 		else //just set up empty ordered
 		{
@@ -779,7 +779,7 @@ size_t EvaluableNode::GetNumChildNodes()
 	if(IsAssociativeArray())
 		return GetMappedChildNodesViewOnAssoc().size();
 	else
-		return GetOrderedChildNodesReference().size();
+		return GetOrderedChildNodesViewViewOnList().size();
 
 	return 0;
 }
@@ -789,7 +789,7 @@ void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, 
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference() = ocn;
+	GetOrderedChildNodesViewViewOnList() = ocn;
 
 	SetNeedCycleCheck(need_cycle_check);
 
@@ -804,7 +804,7 @@ void EvaluableNode::SetOrderedChildNodes(LargeOrderedType &&ocn, bool need_cycle
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference() = std::move(ocn);
+	GetOrderedChildNodesViewViewOnList() = std::move(ocn);
 
 	SetNeedCycleCheck(need_cycle_check);
 
@@ -819,7 +819,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference().clear();
+	GetOrderedChildNodesViewViewOnList().clear();
 
 	SetNeedCycleCheck(false);
 
@@ -831,7 +831,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference().emplace_back(cn);
+	GetOrderedChildNodesViewViewOnList().emplace_back(cn);
 
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
@@ -841,7 +841,7 @@ void EvaluableNode::AppendOrderedChildNodes(OrderedRef ocn_to_append)
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	auto &ocn = GetOrderedChildNodesReference();
+	auto ocn = GetOrderedChildNodesViewViewOnList();
 	ocn.insert(end(ocn), begin(ocn_to_append), end(ocn_to_append));
 
 	//if cycles, propagate upward
@@ -1215,8 +1215,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 	}
 
 	//if made it here, then both types are ordered, since immediates and nulls are not passed in
-	auto &a_ocn = a->GetOrderedChildNodesReference();
-	auto &b_ocn = b->GetOrderedChildNodesReference();
+	auto a_ocn = a->GetOrderedChildNodesViewViewOnList();
+	auto b_ocn = b->GetOrderedChildNodesViewViewOnList();
 	size_t a_size = a_ocn.size();
 	if(a_size != b_ocn.size())
 		return false;
@@ -1369,7 +1369,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	}
 	else if(!n->IsTerminal())
 	{
-		for(auto &e : n->GetOrderedChildNodesReference())
+		for(auto &e : n->GetOrderedChildNodesViewViewOnList())
 		{
 			if(e == nullptr)
 				continue;
@@ -1419,7 +1419,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 		}
 		else //must be ordered, since immediate are not recursed
 		{
-			for(EvaluableNode *e : cur->GetOrderedChildNodesReference())
+			for(EvaluableNode *e : cur->GetOrderedChildNodesViewViewOnList())
 			{
 				if(e == nullptr)
 				{
@@ -1468,7 +1468,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 		}
 		else //must be ordered, since immediate are not recursed
 		{
-			auto &ocn = cur->GetOrderedChildNodesReference();
+			auto ocn = cur->GetOrderedChildNodesViewViewOnList();
 			total += ocn.size();
 			for(EvaluableNode *e : ocn)
 			{

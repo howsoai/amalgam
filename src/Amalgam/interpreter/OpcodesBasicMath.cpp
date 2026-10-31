@@ -25,7 +25,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0)
 		return AllocReturn(0.0, immediate_result);
 
@@ -72,7 +72,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -123,7 +123,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0)
 		return AllocReturn(1.0, immediate_result);
 
@@ -170,7 +170,7 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -253,7 +253,7 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -434,7 +434,7 @@ static inline void NormalizeStartAndEndDigitToZerosPlace(double value, double ba
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_params = ocn.size();
 	if(num_params == 0)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -470,7 +470,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
 	EvaluableNodeReference digits(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &digits_ocn = digits->GetOrderedChildNodesReference();
+	auto &digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
 		size_t num_digits = static_cast<size_t>(std::floor(start_digit - end_digit + 1));
@@ -669,7 +669,7 @@ static OpcodeInitializer _ENT_SET_DIGITS(ENT_SET_DIGITS, &Interpreter::Interpret
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_params = ocn.size();
 	if(num_params == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
@@ -715,7 +715,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	double first_digit = std::numeric_limits<double>::quiet_NaN();
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
-	auto &digits_ocn = digits->GetOrderedChildNodesReference();
+	auto &digits_ocn = digits->GetOrderedChildNodesViewViewOnList();
 	size_t cur_digit_index = 0;
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
@@ -804,7 +804,7 @@ static OpcodeInitializer _ENT_FLOOR(ENT_FLOOR, &Interpreter::InterpretNode_ENT_F
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -830,7 +830,7 @@ static OpcodeInitializer _ENT_CEILING(ENT_CEILING, &Interpreter::InterpretNode_E
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -878,7 +878,7 @@ static OpcodeInitializer _ENT_ROUND(ENT_ROUND, &Interpreter::InterpretNode_ENT_R
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_params = ocn.size();
 	if(num_params == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
@@ -947,7 +947,7 @@ static OpcodeInitializer _ENT_ABS(ENT_ABS, &Interpreter::InterpretNode_ENT_ABS, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -978,7 +978,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1046,7 +1046,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1152,7 +1152,7 @@ EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interprete
 	if(value_found)
 	{
 		EvaluableNodeReference index_list(enm->AllocNode(ENT_LIST), false);
-		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		auto &index_list_ocn = index_list->GetOrderedChildNodesViewViewOnList();
 		index_list_ocn.reserve(max_keys.size());
 
 		for(StringInternPool::StringID max_key : max_keys)
@@ -1176,7 +1176,7 @@ EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, EvaluableNodeMa
 	double result_value = compare_limit;
 	std::vector<size_t> max_indices;
 
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -1217,7 +1217,7 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 	std::vector<size_t> max_indices;
 	bool value_found = false;
 
-	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+	auto &orderedChildNodes = en->GetOrderedChildNodesViewViewOnList();
 
 	if(orderedChildNodes.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -1260,7 +1260,7 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1310,7 +1310,7 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 

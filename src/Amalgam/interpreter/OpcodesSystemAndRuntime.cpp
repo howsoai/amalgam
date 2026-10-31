@@ -233,7 +233,7 @@ Integer modulo is `(mod a b)`; there is no `%` operator. Division with `/` retur
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0 || EvaluableNode::IsNull(ocn[0]))
 		return AllocReturn(_help_options, immediate_result);
 
@@ -253,7 +253,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_opcodes))
 	{
 		EvaluableNodeReference opcode_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &opcode_ocn = opcode_list->GetOrderedChildNodesReference();
+		auto &opcode_ocn = opcode_list->GetOrderedChildNodesViewViewOnList();
 		opcode_ocn.resize(NUM_VALID_ENT_OPCODES);
 
 		for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
@@ -314,7 +314,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value_str));
 
 		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesReference();
+		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesViewViewOnList();
 		examples_output_pairs_ocn.reserve(od.examples.size());
 		for(auto &example : od.examples)
 		{
@@ -366,7 +366,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 	if(!permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	for(auto &cn : en->GetOrderedChildNodesReference())
+	for(auto &cn : en->GetOrderedChildNodesViewViewOnList())
 	{
 		auto cur = InterpretNodeForImmediateUse(cn);
 
@@ -524,7 +524,7 @@ static std::string GetEntityMemorySizeDiagnostics(Entity *e)
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -665,7 +665,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateSignatureKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = list->GetOrderedChildNodesReference();
+		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
 		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
@@ -676,7 +676,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateEncryptionKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = list->GetOrderedChildNodesReference();
+		auto &list_ocn = list->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
 		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
@@ -686,7 +686,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	else if(command == "debugging_info" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		EvaluableNode *debugger_info = evaluableNodeManager->AllocNode(ENT_LIST);
-		auto &list_ocn = debugger_info->GetOrderedChildNodesReference();
+		auto &list_ocn = debugger_info->GetOrderedChildNodesViewViewOnList();
 		list_ocn.resize(2);
 		list_ocn[0] = evaluableNodeManager->AllocNode(Interpreter::GetDebuggingState());
 		list_ocn[1] = evaluableNodeManager->AllocNode(asset_manager.debugSources);
@@ -761,7 +761,7 @@ static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpre
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -815,7 +815,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 			e->ReclaimResources(clear_all_query_caches, collect_garbage, force_free_memory);
 			if(clear_select_query_caches)
 			{
-				for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
+				for(auto cn : clear_query_caches_node->GetOrderedChildNodesViewViewOnList())
 				{
 					auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(cn);
 					if(!valid) [[unlikely]]
@@ -831,7 +831,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 		target_entity->ReclaimResources(clear_all_query_caches, collect_garbage, force_free_memory);
 		if(clear_select_query_caches)
 		{
-			for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
+			for(auto cn : clear_query_caches_node->GetOrderedChildNodesViewViewOnList())
 			{
 				auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(cn);
 				if(!valid) [[unlikely]]

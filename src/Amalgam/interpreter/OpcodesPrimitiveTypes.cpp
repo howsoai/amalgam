@@ -188,11 +188,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	size_t num_nodes = ocn.size();
 	if(num_nodes > 0)
 	{
-		auto &new_list_ocn = new_list->GetOrderedChildNodesReference();
+		auto &new_list_ocn = new_list->GetOrderedChildNodesViewViewOnList();
 		new_list_ocn.resize(num_nodes);
 
 	#ifdef MULTITHREAD_SUPPORT

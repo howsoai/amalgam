@@ -37,6 +37,39 @@ public:
 		return *this;
 	}
 
+	template<class InputIt>
+	inline void assign(InputIt first, InputIt last)
+	{
+		auto n = std::distance(first, last);
+		clear();
+		reserve(static_cast<size_type>(n));
+		for(; first != last; ++first)
+			push_back(*first);
+	}
+
+	OrderedRef &operator=(OrderedRef &&other) noexcept
+	{
+		en = other.en;
+		return *this;
+	}
+
+	inline OrderedRef &operator=(const std::vector<value_type> &other)
+	{
+		assign(other.begin(), other.end());
+		return *this;
+	}
+
+	inline OrderedRef &operator=(std::vector<value_type> &&other)
+	{
+		assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+		return *this;
+	}
+
+	inline const pointer data() const
+	{
+		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+	}
+
 	//--- Iterators ---
 
 	inline iterator begin() noexcept
@@ -79,6 +112,58 @@ public:
 	inline size_type capacity() const noexcept
 	{
 		return IsSmall() ? EvaluableNode::smallOrderedTypeMaxSize : GetLargeNodes().capacity();
+	}
+
+	inline void resize(size_type count)
+	{
+		if(IsSmall())
+		{
+			if(count > EvaluableNode::smallOrderedTypeMaxSize)
+			{
+				PromoteToLarge();
+				GetLargeNodes().resize(count);
+			}
+			else
+			{
+				size_type current_size = en->numElementsWhenSmall;
+				if(count > current_size)
+				{
+					for(size_type i = current_size; i < count; ++i)
+						GetSmallNodes()[i] = nullptr;
+				}
+				en->numElementsWhenSmall = static_cast<uint8_t>(count);
+			}
+		}
+		else
+		{
+			GetLargeNodes().resize(count);
+		}
+	}
+
+	inline void resize(size_type count, const value_type &val)
+	{
+		if(IsSmall())
+		{
+			if(count > EvaluableNode::smallOrderedTypeMaxSize)
+			{
+				PromoteToLarge();
+				GetLargeNodes().assign(count, val);
+			}
+			else
+			{
+				size_type current_size = en->numElementsWhenSmall;
+				if(count > current_size)
+				{
+					for(size_type i = current_size; i < count; ++i)
+						GetSmallNodes()[i] = val;
+				}
+				en->numElementsWhenSmall = static_cast<uint8_t>(count);
+			}
+		}
+		else
+		{
+			GetLargeNodes().resize(count, val);
+		}
 	}
 
 	inline void shrink_to_fit() noexcept
@@ -211,6 +296,18 @@ public:
 		// Convert iterator to offset and insert into the current large storage
 		size_type index = std::distance(cbegin(), pos);
 		GetLargeNodes().insert(GetLargeNodes().begin() + index, val);
+	}
+
+	template<class InputIt>
+	inline void insert(const_iterator pos, InputIt first, InputIt last)
+	{
+		//TODO 26256: make more efficient for batch inserts
+		size_type index = std::distance(cbegin(), pos);
+		for(; first != last; ++first)
+		{
+			insert(begin() + index, *first);
+			index++;
+		}
 	}
 
 	inline iterator erase(const_iterator first, const_iterator last)

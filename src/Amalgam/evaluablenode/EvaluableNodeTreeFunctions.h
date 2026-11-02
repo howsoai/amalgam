@@ -83,9 +83,9 @@ public:
 		}
 
 		//size of the entity list excluding trailing nulls
-		auto id_path_entries = &id_path->GetOrderedChildNodesViewViewOnList();
-		size_t non_null_size = id_path_entries->size();
-		while(non_null_size > 0 && EvaluableNode::IsNull((*id_path_entries)[non_null_size - 1]))
+		auto id_path_entries = id_path->GetOrderedChildNodesViewViewOnList();
+		size_t non_null_size = id_path_entries.size();
+		while(non_null_size > 0 && EvaluableNode::IsNull(id_path_entries[non_null_size - 1]))
 			non_null_size--;
 
 		//if no entities, nothing to traverse

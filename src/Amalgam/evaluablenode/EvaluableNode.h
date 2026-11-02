@@ -74,22 +74,31 @@ public:
 	__forceinline EvaluableNode()
 	{
 		InitializeUnallocated();
+		isSlabStart = false;
 	}
+
 	__forceinline EvaluableNode(EvaluableNodeType type, const std::string &string_value)
 	{
 		InitializeType(type, string_value);
+		isSlabStart = false;
 	}
+
 	__forceinline EvaluableNode(double value)
 	{
 		InitializeType(value);
+		isSlabStart = false;
 	}
+
 	__forceinline EvaluableNode(EvaluableNodeType type)
 	{
 		InitializeType(type);
+		isSlabStart = false;
 	}
+
 	__forceinline EvaluableNode(EvaluableNode *n, bool copy_metadata = true)
 	{
 		InitializeType(n, copy_metadata);
+		isSlabStart = false;
 	}
 
 	__forceinline ~EvaluableNode()
@@ -884,6 +893,18 @@ public:
 	// will only return valid results if HasCompactAnnotationsAndCommentsStorage() is true, so that should be called first
 	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage();
 
+	//returns whether it is the start of a slab of EvaluableNode allocations
+	__forceinline bool GetIsSlabStart()
+	{
+		return isSlabStart;
+	}
+
+	//sets whether it is the start of a slab of EvaluableNode allocations
+	__forceinline void SetIsSlabStart(bool is_slab_start)
+	{
+		isSlabStart = is_slab_start;
+	}
+
 	//registers and unregisters an EvaluableNode for debug watching
 	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
@@ -1051,9 +1072,6 @@ protected:
 		std::unique_ptr<char[]> buffer;
 	};
 
-	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
-	// while maintaining some alignment
-#pragma pack(push, 2)
 	union EvaluableNodeValue
 	{
 		//take care of all setup and cleanup outside of the union
@@ -1159,7 +1177,6 @@ protected:
 			AnnotationsAndComments annotationsAndComments;
 		} extendedMappedChildNodes;
 	};
-#pragma pack(pop)
 
 	//makes sure that the data structure has an extended value so that it can be used to hold additional data
 	void EnsureHasExtendedValue();
@@ -1202,6 +1219,9 @@ protected:
 #else
 	AttributeStorageType attributes;
 #endif
+
+	//true if this node is the first node of a slab of some number of EvaluableNodes allocated together
+	bool isSlabStart;
 
 	//when the number of elements in a SmallAssocType exceeds this value, it should be promoted to a LargeAssocType
 	//this value has been tuned by performance testing across a variety of workloads, so any change to this value

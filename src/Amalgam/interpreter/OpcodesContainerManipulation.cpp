@@ -2309,23 +2309,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			else
 				absolute_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
 
-			EvaluableNode::LargeOrderedType new_container_ocn;
 
 			//if the position is valid, erase it
 			if(absolute_pos >= 0 && absolute_pos < container_ocn.size())
 			{
 				removed_node.SetReference(container_ocn[absolute_pos]);
 
+				EvaluableNode::LargeOrderedType new_container_ocn;
 				new_container_ocn.reserve(container_ocn.size() - 1);
 				new_container_ocn.insert(end(new_container_ocn), begin(container_ocn), begin(container_ocn) + absolute_pos);
 				new_container_ocn.insert(end(new_container_ocn), begin(container_ocn) + absolute_pos + 1, end(container_ocn));
+
+				new_container->GetOrderedChildNodesViewViewOnList() = std::move(new_container_ocn);
 			}
 			else //just copy the whole thing
 			{
-				new_container_ocn = container_ocn;
+				new_container->GetOrderedChildNodesViewViewOnList() = container_ocn;
 			}
-
-			new_container->GetOrderedChildNodesViewViewOnList() = std::move(new_container_ocn);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);

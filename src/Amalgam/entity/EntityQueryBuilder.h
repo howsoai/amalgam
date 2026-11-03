@@ -997,11 +997,11 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
 			//coercing an ID can allocate; prepare those lists once to avoid repeated coercion during query execution.
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
-				&& std::any_of(ocn[0]->GetOrderedChildNodesViewViewOnList().begin(), ocn[0]->GetOrderedChildNodesViewViewOnList().end()),
+				&& std::any_of(ocn[0]->GetOrderedChildNodesViewViewOnList().begin(), ocn[0]->GetOrderedChildNodesViewViewOnList().end(),
 					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))
 			{
 				auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
-				auto &nodes = ocn[0]->GetOrderedChildNodesViewViewOnList();
+				auto nodes = ocn[0]->GetOrderedChildNodesViewViewOnList();
 				ids.reserve(nodes.size());
 				for(auto node : nodes)
 				{

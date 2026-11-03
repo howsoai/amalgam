@@ -23,15 +23,15 @@ public:
 
 	//--- Construction & Lifecycle ---
 
-	OrderedRef() noexcept
+	inline OrderedRef() noexcept
 		: en(nullptr)
 	{}
 
-	OrderedRef(EvaluableNode *_en) noexcept
+	inline OrderedRef(EvaluableNode *_en) noexcept
 		: en(_en)
 	{}
 
-	OrderedRef(const OrderedRef &other) noexcept
+	inline OrderedRef(const OrderedRef &other) noexcept
 		: en(other.en)
 	{}
 
@@ -45,14 +45,13 @@ public:
 			push_back(*first);
 	}
 
-	OrderedRef &operator=(const OrderedRef &other)
+	inline OrderedRef &operator=(const OrderedRef &other)
 	{
-		//TODO 26256: fix this -- make a copy
 		en = other.en;
 		return *this;
 	}
 
-	OrderedRef &operator=(OrderedRef &&other) noexcept
+	inline OrderedRef &operator=(OrderedRef &&other) noexcept
 	{
 		//TODO 26256: fix this -- needs to move the ordered ref contents
 		en = other.en;
@@ -391,6 +390,7 @@ private:
 
 	inline void PromoteToLarge()
 	{
+		//TODO 26256: don't need to ensure has extended value unless has metadata
 		en->EnsureHasExtendedValue();
 		size_type current_size = en->numElementsWhenSmall;
 		auto &large_nodes = GetLargeNodes();

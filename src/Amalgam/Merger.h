@@ -220,7 +220,8 @@ public:
 	virtual bool AreMergeable(T a, T b) = 0;
 
 	//Merges two unordered lists based on the specified MergeMethods
-	LargeOrderedType MergeUnorderedSets(LargeOrderedType &list_a, LargeOrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeUnorderedSets(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
@@ -321,7 +322,8 @@ public:
 	}
 
 	//Merges two lists that are comprised of unordered sets of pairs based on the specified MergeMethods
-	LargeOrderedType MergeUnorderedSetsOfPairs(LargeOrderedType &list_a, LargeOrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeUnorderedSetsOfPairs(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
@@ -449,7 +451,8 @@ public:
 	}
 
 	//Merges two ordered (sequence) lists based on the specified MergeMethods
-	LargeOrderedType MergeSequences(LargeOrderedType &list_a, LargeOrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeSequences(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
@@ -556,7 +559,8 @@ public:
 	}
 
 	//Merges two position-based ordered lists based on the specified MergeMethods
-	LargeOrderedType MergePositions(LargeOrderedType &list_a, LargeOrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergePositions(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())

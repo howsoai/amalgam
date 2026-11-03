@@ -769,7 +769,7 @@ protected:
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
 	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset
-	void PopulateInterpreterConstraintsFromParams(EvaluableNode::LargeOrderedType &params,
+	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedRef params,
 		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter

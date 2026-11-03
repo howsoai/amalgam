@@ -763,7 +763,9 @@ public:
 	inline void SetOrderedChildNodesSize(size_t new_size);
 
 	//sets the ordered child nodes and updates flags
+	void SetOrderedChildNodes(LargeOrderedType &ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);
+
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
 	void SetOrderedChildNodes(LargeOrderedType &&ocn, bool need_cycle_check = true, bool is_idempotent = false);

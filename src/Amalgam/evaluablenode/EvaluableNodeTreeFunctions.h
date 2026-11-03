@@ -96,7 +96,7 @@ public:
 		idPathEntries = id_path_entries;
 
 		//find first index
-		while(curIndex < non_null_size && EvaluableNode::IsNull((*idPathEntries)[curIndex]))
+		while(curIndex < non_null_size && EvaluableNode::IsNull(idPathEntries[curIndex]))
 			curIndex++;
 
 		lastIdIndex = non_null_size - 1;
@@ -105,7 +105,7 @@ public:
 		if(destSidReference != nullptr)
 		{
 			//walk down to find the entity id
-			while(entityIdIndex > curIndex && EvaluableNode::IsNull((*idPathEntries)[entityIdIndex - 1]))
+			while(entityIdIndex > curIndex && EvaluableNode::IsNull(idPathEntries[entityIdIndex - 1]))
 				entityIdIndex--;
 		}
 
@@ -116,7 +116,7 @@ public:
 		if(entityIdIndex > curIndex)
 		{
 			containerIdIndex = entityIdIndex - 1;
-			while(containerIdIndex > curIndex && EvaluableNode::IsNull((*idPathEntries)[containerIdIndex - 1]))
+			while(containerIdIndex > curIndex && EvaluableNode::IsNull(idPathEntries[containerIdIndex - 1]))
 				containerIdIndex--;
 		}
 	}
@@ -142,13 +142,13 @@ public:
 		{
 			//advance to next step
 			curIndex++;
-		} while(curIndex < entityIdIndex && EvaluableNode::IsNull((*idPathEntries)[curIndex]));
+		} while(curIndex < entityIdIndex && EvaluableNode::IsNull(idPathEntries[curIndex]));
 	}
 
 	//gets the current ID, nullptr if out of ids
 	inline EvaluableNode *GetCurId()
 	{
-		if(idPathEntries == nullptr)
+		if(!idPathEntries.HasValidNode())
 		{
 			if(curIndex == 0)
 				return idPath;
@@ -157,12 +157,12 @@ public:
 
 		if(curIndex > entityIdIndex)
 			return nullptr;
-		return (*idPathEntries)[curIndex];
+		return idPathEntries[curIndex];
 	}
 
 	//the node for the id path and a pointer to its ordered child nodes
 	EvaluableNode *idPath;
-	EvaluableNode::LargeOrderedType *idPathEntries;
+	EvaluableNode::OrderedRef idPathEntries;
 
 	//current index in idPath
 	size_t curIndex;

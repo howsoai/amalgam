@@ -1049,7 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 				if(new_list->GetType() == ENT_LIST)
 				{
 					new_list->GetOrderedChildNodesViewViewOnList().insert(
-						end(new_list->GetOrderedChildNodesViewViewOnList()), begin(new_elements_ocn), end(new_elements_ocn));
+						new_list->GetOrderedChildNodesViewViewOnList().end(), begin(new_elements_ocn), end(new_elements_ocn));
 				}
 				else
 				{

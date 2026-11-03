@@ -450,18 +450,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		return generalized_node;
 	}
 
-	EvaluableNode::LargeOrderedType empty_vector;
-
-	auto *tree1_ordered_childs = &empty_vector;
+	EvaluableNode::OrderedRef tree1_ordered_childs;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
-		tree1_ordered_childs = &tree1->GetOrderedChildNodesViewViewOnList();
+		tree1_ordered_childs = tree1->GetOrderedChildNodesViewViewOnList();
 
-	auto *tree2_ordered_childs = &empty_vector;
+	EvaluableNode::OrderedRef tree2_ordered_childs;
 	if(tree2 != nullptr && tree2->IsOrderedArray())
-		tree2_ordered_childs = &tree2->GetOrderedChildNodesViewViewOnList();
+		tree2_ordered_childs = tree2->GetOrderedChildNodesViewViewOnList();
 
 	//see if both trees have ordered child nodes
-	if(tree1_ordered_childs->size() > 0 || tree2_ordered_childs->size() > 0)
+	if((tree1_ordered_childs.HasValidNode() && tree1_ordered_childs.size() > 0)
+		|| (tree2_ordered_childs.HasValidNode() && tree2_ordered_childs.size() > 0))
 	{
 		auto cnst = GetChildNodeStructureType(generalized_node->GetType());
 
@@ -469,7 +468,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		//just use OpcodeDetails::ChildNodeStructureType::POSITION because it's more efficient
 		if((cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED
 				|| cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
-					&& tree1_ordered_childs->size() <= 2 && tree2_ordered_childs->size() <= 2)
+					&& tree1_ordered_childs.size() <= 2 && tree2_ordered_childs.size() <= 2)
 			cnst = OpcodeDetails::ChildNodeStructureType::POSITION;
 
 		switch(cnst)
@@ -477,11 +476,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		case OpcodeDetails::ChildNodeStructureType::NONE:
 			break;
 		case OpcodeDetails::ChildNodeStructureType::UNORDERED:
-			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSets(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSets(tree1_ordered_childs, tree2_ordered_childs));
 			break;
 
 		case OpcodeDetails::ChildNodeStructureType::ORDERED:
-			generalized_node->SetOrderedChildNodes(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(mm->MergeSequences(tree1_ordered_childs, tree2_ordered_childs));
 			break;
 
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:
@@ -489,10 +488,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
 			//if can operate simply on position, then exit early
-			if(tree1_ordered_childs->size() <= 1 && tree2_ordered_childs->size() <= 1)
+			if(tree1_ordered_childs.size() <= 1 && tree2_ordered_childs.size() <= 1)
 			{
-				generalized_node->SetOrderedChildNodes(
-					mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs));
+				generalized_node->SetOrderedChildNodes(mm->MergePositions(tree1_ordered_childs, tree2_ordered_childs));
 				break;
 			}
 
@@ -502,8 +500,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			EvaluableNode::LargeOrderedType a1;
 			EvaluableNode::LargeOrderedType a2;
 			EvaluableNode::LargeOrderedType merged;
-			size_t tree1_ordered_size = tree1_ordered_childs->size();
-			size_t tree2_ordered_size = tree2_ordered_childs->size();
+			size_t tree1_ordered_size = tree1_ordered_childs.size();
+			size_t tree2_ordered_size = tree2_ordered_childs.size();
 
 			//merge first as position unless one of the positions is special and needs to be compared with unordered
 			//note that if both nodes need the special handling, then that is handled above if each only has one node
@@ -514,27 +512,27 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			
 			//make arrays of just the first node
 			if(tree1_ordered_size > 0 && !tree1_first_in_unordered)
-				a1.emplace_back((*tree1_ordered_childs)[0]);
+				a1.emplace_back(tree1_ordered_childs[0]);
 			if(tree2_ordered_size > 0 && !tree2_first_in_unordered)
-				a2.emplace_back((*tree2_ordered_childs)[0]);
+				a2.emplace_back(tree2_ordered_childs[0]);
 
 			//put on the first position
 			merged = mm->MergePositions(a1, a2);
-			generalized_node->GetOrderedChildNodesView().insert(end(generalized_node->GetOrderedChildNodesView()), begin(merged), end(merged));
+			generalized_node->GetOrderedChildNodesView().insert(generalized_node->GetOrderedChildNodesView().end(), begin(merged), end(merged));
 
 			//make new arrays without first position
 			a1.clear();
 			a2.clear();
 
 			if(tree1_first_in_unordered)
-				a1.push_back((*tree1_ordered_childs)[0]);
-			else if(tree1_ordered_childs->size() > 1)
-				a1.insert(end(a1), begin(*tree1_ordered_childs) + 1, end(*tree1_ordered_childs));
+				a1.push_back(tree1_ordered_childs[0]);
+			else if(tree1_ordered_childs.size() > 1)
+				a1.insert(end(a1), begin(tree1_ordered_childs) + 1, end(tree1_ordered_childs));
 
 			if(tree2_first_in_unordered)
-				a2.push_back((*tree2_ordered_childs)[0]);
-			else if(tree2_ordered_childs->size() > 1)
-				a2.insert(end(a2), begin(*tree2_ordered_childs) + 1, end(*tree2_ordered_childs));
+				a2.push_back(tree2_ordered_childs[0]);
+			else if(tree2_ordered_childs.size() > 1)
+				a2.insert(end(a2), begin(tree2_ordered_childs) + 1, end(tree2_ordered_childs));
 			
 			//append the rest
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
@@ -543,16 +541,16 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 				merged = mm->MergeSequences(a1, a2);
 			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 				merged = mm->MergeUnorderedSetsOfPairs(a1, a2);
-			generalized_node->GetOrderedChildNodesView().insert(end(generalized_node->GetOrderedChildNodesView()), begin(merged), end(merged));
+			generalized_node->GetOrderedChildNodesView().insert(generalized_node->GetOrderedChildNodesView().end(), begin(merged), end(merged));
 			break;
 		}
 
 		case OpcodeDetails::ChildNodeStructureType::PAIRED:
-			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSetsOfPairs(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSetsOfPairs(tree1_ordered_childs, tree2_ordered_childs));
 			break;
 
 		case OpcodeDetails::ChildNodeStructureType::POSITION:
-			generalized_node->SetOrderedChildNodes(mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(mm->MergePositions(tree1_ordered_childs, tree2_ordered_childs));
 			break;
 
 		default:
@@ -815,8 +813,10 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::ChildNodeStructureType::PAIRED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
-			EvaluableNode::LargeOrderedType a1(tree1->GetOrderedChildNodesViewViewOnList());
-			EvaluableNode::LargeOrderedType a2(tree2->GetOrderedChildNodesViewViewOnList());
+			EvaluableNode::LargeOrderedType a1(tree1->GetOrderedChildNodesViewViewOnList().begin(),
+				tree1->GetOrderedChildNodesViewViewOnList().end());
+			EvaluableNode::LargeOrderedType a2(tree2->GetOrderedChildNodesViewViewOnList().begin(),
+				tree2->GetOrderedChildNodesViewViewOnList().end());
 
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 			{

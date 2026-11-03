@@ -165,7 +165,7 @@ public:
 		);
 	}
 
-	inline void ComputeDistanceContributionsOnPositions(EvaluableNode::LargeOrderedType &positions_to_compare, std::vector<double> &contribs_out)
+	inline void ComputeDistanceContributionsOnPositions(EvaluableNode::OrderedRef positions_to_compare, std::vector<double> &contribs_out)
 	{
 		contribs_out.resize(positions_to_compare.size());
 		IterateOverConcurrentlyIfPossible(positions_to_compare,

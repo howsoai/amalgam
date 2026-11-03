@@ -23,6 +23,10 @@ public:
 
 	//--- Construction & Lifecycle ---
 
+	OrderedRef() noexcept
+		: en(nullptr)
+	{}
+
 	OrderedRef(EvaluableNode *_en) noexcept
 		: en(_en)
 	{}
@@ -68,6 +72,11 @@ public:
 	inline const pointer data() const
 	{
 		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+	}
+
+	inline bool HasValidNode() const noexcept
+	{
+		return (en != nullptr);
 	}
 
 	//--- Iterators ---
@@ -301,13 +310,27 @@ public:
 	template<class InputIt>
 	inline void insert(const_iterator pos, InputIt first, InputIt last)
 	{
-		//TODO 26256: make more efficient for batch inserts
 		size_type index = std::distance(cbegin(), pos);
-		for(; first != last; ++first)
+		auto n = std::distance(first, last);
+
+		if(IsSmall())
 		{
-			insert(begin() + index, *first);
-			index++;
+			if(en->numElementsWhenSmall + n <= EvaluableNode::smallOrderedTypeMaxSize)
+			{
+				//shift any elements necessary
+				size_type current_size = en->numElementsWhenSmall;
+				auto &small_nodes = GetSmallNodes();
+				for(size_type i = current_size + n; i > index + n; --i)
+					small_nodes[i] = small_nodes[i - n];
+
+				std::copy(first, last, small_nodes.begin() + index);
+				en->numElementsWhenSmall += static_cast<uint8_t>(n);
+				return;
+			}
+			PromoteToLarge();
 		}
+
+		GetLargeNodes().insert(GetLargeNodes().begin() + index, first, last);
 	}
 
 	inline iterator erase(const_iterator first, const_iterator last)
@@ -422,4 +445,9 @@ inline auto end(EvaluableNode::OrderedRef &m)
 inline auto cend(const EvaluableNode::OrderedRef &m)
 {
 	return m.cend();
+}
+
+namespace std::ranges
+{
+	template<> inline constexpr bool enable_borrowed_range<EvaluableNode::OrderedRef> = true;
 }

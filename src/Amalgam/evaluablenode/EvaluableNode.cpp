@@ -790,6 +790,21 @@ inline void EvaluableNode::SetOrderedChildNodesSize(size_t new_size)
 		GetOrderedChildNodesViewViewOnList().resize(new_size);
 }
 
+void EvaluableNode::SetOrderedChildNodes(LargeOrderedType &ocn, bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsOrderedArray()) [[unlikely]]
+		return;
+
+	GetOrderedChildNodesViewViewOnList() = ocn;
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
 void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]

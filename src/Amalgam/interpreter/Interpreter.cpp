@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::LargeOrderedType &params,
+void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedRef params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity)
 {
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;

@@ -304,7 +304,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 
 		if(query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			conviction_processor.ComputeDistanceContributionsOnPositions(*std::get<EntityQuery::Distance::Positions>(cond->target).nodes, results_buffer);
+			conviction_processor.ComputeDistanceContributionsOnPositions(std::get<EntityQuery::Distance::Positions>(cond->target).nodes, results_buffer);
 		}
 		else if(query_type == ENT_QUERY_ENTITY_CONVICTIONS)
 		{

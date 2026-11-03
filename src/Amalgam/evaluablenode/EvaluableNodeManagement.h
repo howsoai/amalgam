@@ -276,6 +276,14 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(EvaluableNode::LargeOrderedType &child_nodes,
+		bool need_cycle_check = true, bool is_idempotent = false)
+	{
+		EvaluableNode *n = AllocNode(ENT_LIST);
+		n->SetOrderedChildNodes(child_nodes, need_cycle_check, is_idempotent);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNode::OrderedRef child_nodes,
 		bool need_cycle_check = true, bool is_idempotent = false)
 	{

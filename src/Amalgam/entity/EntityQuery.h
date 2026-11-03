@@ -120,8 +120,7 @@ struct EntityQuery
 
 		struct Positions
 		{
-			//borrows the ordered children of a rooted query argument.
-			EvaluableNode::LargeOrderedType *nodes = nullptr;
+			EvaluableNode::OrderedRef nodes;
 		};
 
 		struct Clusters

@@ -664,7 +664,7 @@ namespace EntityQueryBuilder
 				query.queryType = ENT_NULL;
 				return;
 			}
-			cur_condition.target.emplace<EntityQuery::Distance::Positions>(&positions->GetOrderedChildNodesViewViewOnList());
+			cur_condition.target.emplace<EntityQuery::Distance::Positions>(positions->GetOrderedChildNodesViewViewOnList());
 		}
 		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
@@ -997,7 +997,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
 			//coercing an ID can allocate; prepare those lists once to avoid repeated coercion during query execution.
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
-				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesViewViewOnList()), end(ocn[0]->GetOrderedChildNodesViewViewOnList()),
+				&& std::any_of(ocn[0]->GetOrderedChildNodesViewViewOnList().begin(), ocn[0]->GetOrderedChildNodesViewViewOnList().end()),
 					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))
 			{
 				auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);

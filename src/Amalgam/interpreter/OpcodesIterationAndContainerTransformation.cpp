@@ -803,7 +803,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		EvaluableNodeReference inputs_list_node(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		//set to need cycle check because don't know what will be attached
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
-		auto &inputs = inputs_list_node->GetOrderedChildNodesViewViewOnList();
+		auto inputs = inputs_list_node->GetOrderedChildNodesViewViewOnList();
 
 		//track references separately so they can be freed accordingly
 		std::vector<EvaluableNodeReference> input_references;

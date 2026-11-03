@@ -35,12 +35,6 @@ public:
 		: en(other.en)
 	{}
 
-	OrderedRef &operator=(const OrderedRef &other)
-	{
-		en = other.en;
-		return *this;
-	}
-
 	template<class InputIt>
 	inline void assign(InputIt first, InputIt last)
 	{
@@ -51,8 +45,16 @@ public:
 			push_back(*first);
 	}
 
+	OrderedRef &operator=(const OrderedRef &other)
+	{
+		//TODO 26256: fix this -- make a copy
+		en = other.en;
+		return *this;
+	}
+
 	OrderedRef &operator=(OrderedRef &&other) noexcept
 	{
+		//TODO 26256: fix this -- needs to move the ordered ref contents
 		en = other.en;
 		return *this;
 	}
@@ -65,6 +67,7 @@ public:
 
 	inline OrderedRef &operator=(std::vector<value_type> &&other)
 	{
+		//TODO 26256: if of large type, just move
 		assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
 		return *this;
 	}

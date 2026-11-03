@@ -228,8 +228,8 @@ public:
 			return LargeOrderedType();
 
 		//copy over lists
-		LargeOrderedType a1(list_a);
-		LargeOrderedType a2(list_b);
+		LargeOrderedType a1(begin(list_a), end(list_a));
+		LargeOrderedType a2(begin(list_b), end(list_b));
 
 		LargeOrderedType merged;
 
@@ -330,8 +330,8 @@ public:
 			return LargeOrderedType();
 
 		//copy over lists
-		LargeOrderedType a1(list_a);
-		LargeOrderedType a2(list_b);
+		LargeOrderedType a1(begin(list_a), end(list_a));
+		LargeOrderedType a2(begin(list_b), end(list_b));
 
 		LargeOrderedType merged;
 

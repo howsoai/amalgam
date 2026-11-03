@@ -294,9 +294,7 @@ void EvaluableNode::ConvertAssocToList()
 
 	InitOrderedChildNodes();
 	type = ENT_LIST;
-
-	//swap for efficiency
-	std::swap(GetOrderedChildNodesViewViewOnList(), new_ocn);
+	GetOrderedChildNodesViewViewOnList() = std::move(new_ocn);
 }
 
 size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
@@ -673,8 +671,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 				new_ordered.emplace_back(cn);
 
 			InitOrderedChildNodes();
-			//swap for efficiency
-			std::swap(GetOrderedChildNodesViewViewOnList(), new_ordered);
+			GetOrderedChildNodesViewViewOnList() = std::move(new_ordered);
 		}
 		else //just set up empty ordered
 		{

@@ -412,7 +412,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	}
 	else //container->IsOrderedArray()
 	{
-		NormalizeVector(container->GetOrderedChildNodesViewViewOnList(), p_value,
+		auto ocn = container->GetOrderedChildNodesViewViewOnList();
+		NormalizeVector(ocn, p_value,
 			[](const auto &cn) { return EvaluableNode::ToNumber(cn); },
 			[this, allocate_child_nodes](auto &cn, double new_val)
 		{

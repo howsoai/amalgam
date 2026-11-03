@@ -454,7 +454,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	else //ordered
 	{
 		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = n->GetOrderedChildNodesViewViewOnList();
+		GetOrderedChildNodesViewViewOnList() = n->GetOrderedChildNodesViewViewOnList();
 	}
 
 	if(copy_metadata)

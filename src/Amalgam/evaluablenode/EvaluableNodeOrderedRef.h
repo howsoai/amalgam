@@ -47,6 +47,7 @@ public:
 
 	inline OrderedRef &operator=(const OrderedRef &other)
 	{
+		//TODO 26256: fix this -- needs to move the ordered ref contents
 		en = other.en;
 		return *this;
 	}
@@ -224,14 +225,10 @@ public:
 
 	inline void clear()
 	{
-		if(IsSmall())
-		{
-			en->numElementsWhenSmall = 0;
-		}
-		else
-		{
+		if(!IsSmall())
 			GetLargeNodes().clear();
-		}
+
+		en->numElementsWhenSmall = 0;
 	}
 
 	inline void reserve(size_type n)

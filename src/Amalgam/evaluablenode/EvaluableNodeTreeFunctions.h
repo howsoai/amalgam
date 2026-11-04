@@ -54,7 +54,7 @@ public:
 	void AnalyzeIDPath(EvaluableNode *id_path, StringRef *dest_sid_ref)
 	{
 		idPath = nullptr;
-		idPathEntries = nullptr;
+		idPathEntries.SetEvaluableNodePointer(nullptr);
 		curIndex = 0;
 		containerIdIndex = 0;
 		entityIdIndex = 0;
@@ -93,7 +93,7 @@ public:
 			return;
 
 		idPath = id_path;
-		idPathEntries = id_path_entries;
+		idPathEntries.SetEvaluableNodePointer(id_path);
 
 		//find first index
 		while(curIndex < non_null_size && EvaluableNode::IsNull(idPathEntries[curIndex]))

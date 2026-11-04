@@ -1148,8 +1148,21 @@ protected:
 	};
 #pragma pack(pop)
 
+	inline bool HasLargeOrderedType()
+	{
+		return (numElementsWhenSmall == smallOrderedTypeMaxSize + 1);
+	}
+
+	inline void SetHasLargeOrderedType()
+	{
+		numElementsWhenSmall = smallOrderedTypeMaxSize + 1;
+	}
+
 	//makes sure that the data structure has an extended value so that it can be used to hold additional data
 	void EnsureHasExtendedValue();
+
+	void EnsureHasLargeOrderedType();
+	void ReduceToSmallOrderedTypeIfPossible();
 
 	//removes the extended value data structure if it is no longer needed
 	void RemoveExtendedValueIfPossible();

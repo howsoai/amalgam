@@ -35,6 +35,11 @@ public:
 		: en(other.en)
 	{}
 
+	inline void SetEvaluableNodePointer(EvaluableNode *_en)
+	{
+		en = _en;
+	}
+
 	template<class InputIt>
 	inline void assign(InputIt first, InputIt last)
 	{
@@ -45,17 +50,26 @@ public:
 			push_back(*first);
 	}
 
-	inline OrderedRef &operator=(const OrderedRef &other)
+	inline OrderedRef &operator=(OrderedRef &other)
 	{
-		//TODO 26256: fix this -- needs to move the ordered ref contents
-		en = other.en;
+		if(this == &other)
+			return *this;
+
+		assign(other.begin(), other.end());
+
 		return *this;
 	}
 
 	inline OrderedRef &operator=(OrderedRef &&other) noexcept
 	{
-		//TODO 26256: fix this -- needs to move the ordered ref contents
-		en = other.en;
+		if(this == &other)
+			return *this;
+
+		if(!IsSmall() && !other.IsSmall())
+			GetLargeNodes().swap(other.GetLargeNodes());
+		else
+			assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+
 		return *this;
 	}
 
@@ -67,8 +81,16 @@ public:
 
 	inline OrderedRef &operator=(std::vector<value_type> &&other)
 	{
-		//TODO 26256: if of large type, just move
-		assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+		if(other.size() > EvaluableNode::smallOrderedTypeMaxSize)
+		{
+			PromoteToLarge();
+			GetLargeNodes() = std::move(other);
+		}
+		else
+		{
+			assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+		}
+
 		return *this;
 	}
 
@@ -382,33 +404,17 @@ public:
 private:
 	inline bool IsSmall() const
 	{
-		return !en->HasExtendedValue() && (en->numElementsWhenSmall <= EvaluableNode::smallOrderedTypeMaxSize);
+		return (!en->HasExtendedValue() && !en->HasLargeOrderedType());
 	}
 
 	inline void PromoteToLarge()
 	{
-		//TODO 26256: don't need to ensure has extended value unless has metadata
-		en->EnsureHasExtendedValue();
-		size_type current_size = en->numElementsWhenSmall;
-		auto &large_nodes = GetLargeNodes();
-		auto &small_nodes = GetSmallNodes();
-		large_nodes.reserve(current_size);
-		for(size_type i = 0; i < current_size; i++)
-			large_nodes.push_back(small_nodes[i]);
+		en->EnsureHasLargeOrderedType();
 	}
 
 	inline void ReduceToSmallIfPossible()
 	{
-		if(GetLargeNodes().size() <= EvaluableNode::smallOrderedTypeMaxSize)
-		{
-			auto &large_nodes = GetLargeNodes();
-			auto &small_nodes = GetSmallNodes();
-			for(size_type i = 0; i < large_nodes.size(); ++i)
-				small_nodes[i] = large_nodes[i];
-
-			en->numElementsWhenSmall = static_cast<uint8_t>(large_nodes.size());
-			en->RemoveExtendedValueIfPossible();
-		}
+		en->ReduceToSmallOrderedTypeIfPossible();
 	}
 
 	inline EvaluableNode::SmallOrderedtype &GetSmallNodes() const

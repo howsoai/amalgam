@@ -452,11 +452,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 
 	EvaluableNode::OrderedRef tree1_ordered_childs;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
-		tree1_ordered_childs = tree1->GetOrderedChildNodesViewViewOnList();
+		tree1_ordered_childs.SetEvaluableNodePointer(tree1);
 
 	EvaluableNode::OrderedRef tree2_ordered_childs;
 	if(tree2 != nullptr && tree2->IsOrderedArray())
-		tree2_ordered_childs = tree2->GetOrderedChildNodesViewViewOnList();
+		tree2_ordered_childs.SetEvaluableNodePointer(tree2);
 
 	//see if both trees have ordered child nodes
 	if((tree1_ordered_childs.HasValidNode() && tree1_ordered_childs.size() > 0)

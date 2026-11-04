@@ -1999,28 +1999,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//if the evaluable node for p is a list, then p_values will reference its list,
 	// otherwise if it is an assoc array, it will populate p_copied_values and have p_values point to it
-	EvaluableNode::LargeOrderedType *p_values = nullptr;
-	EvaluableNode::LargeOrderedType p_copied_values;
+	EvaluableNode::AssocRef assoc_p_values;
+	EvaluableNode::OrderedRef ordered_p_values;
 
 	auto p_node = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(p_node);
 
 	if(EvaluableNode::IsAssociativeArray(p_node))
 	{
-		auto p_node_mcn = p_node->GetMappedChildNodesViewOnAssoc();
+		assoc_p_values.SetEvaluableNodePointer(p_node);
 		p_is_assoc = true;
-		p_num_elements = p_node_mcn.size();
-
-		p_values = &p_copied_values;
-		p_copied_values.reserve(p_num_elements);
-		for(auto &ce : p_node_mcn | std::views::values)
-			p_copied_values.push_back(ce);
+		p_num_elements = assoc_p_values.size();
 	}
 	else if(EvaluableNode::IsOrderedArray(p_node))
 	{
-		auto p_node_ocn = p_node->GetOrderedChildNodesViewViewOnList();
-		p_num_elements = p_node_ocn.size();
-		p_values = &p_node_ocn;
+		ordered_p_values.SetEvaluableNodePointer(p_node);
+		p_num_elements = ordered_p_values.size();
 	}
 	else //not an assoc or list, so treat as a constant probability instead
 	{

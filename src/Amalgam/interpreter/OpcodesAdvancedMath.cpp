@@ -1992,13 +1992,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//get first list of probabilities, p
 	bool p_is_constant = false;
-	double p_constant_value = 0.0;
-
 	bool p_is_assoc = false;
 	size_t p_num_elements = std::numeric_limits<size_t>::max();
 
-	//if the evaluable node for p is a list, then p_values will reference its list,
-	// otherwise if it is an assoc array, it will populate p_copied_values and have p_values point to it
+	//only one of these three will be populated
+	double p_constant_value = 0.0;
 	EvaluableNode::AssocRef assoc_p_values;
 	EvaluableNode::OrderedRef ordered_p_values;
 
@@ -2027,14 +2025,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//get second list of probabilities q
 	bool q_is_constant = false;
-	double q_constant_value = 0.0;
 
 	size_t q_num_elements = std::numeric_limits<size_t>::max();
 
-	//if the evaluable node for q is a list, then q_values will reference its list,
-	// otherwise if it is an assoc array, it will populate q_copied_values and have q_values point to it
-	EvaluableNode::LargeOrderedType *q_values = nullptr;
-	EvaluableNode::LargeOrderedType q_copied_values;
+	//only one of these three will be populated
+	double q_constant_value = 0.0;
+	EvaluableNode::AssocRef assoc_q_values;
+	EvaluableNode::OrderedRef ordered_q_values;
+
+	//TODO 26256: finish updating from here down
 
 	auto q_node = EvaluableNodeReference::Null();
 	if(ocn.size() >= 2)

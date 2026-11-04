@@ -1161,7 +1161,10 @@ protected:
 	//makes sure that the data structure has an extended value so that it can be used to hold additional data
 	void EnsureHasExtendedValue();
 
+	//assumes type has ordered child nodes, but ensures that it has large storage
 	void EnsureHasLargeOrderedType();
+
+	//assumes type has ordered child nodes, and attempts to reduce to small storage if possible
 	void ReduceToSmallOrderedTypeIfPossible();
 
 	//removes the extended value data structure if it is no longer needed

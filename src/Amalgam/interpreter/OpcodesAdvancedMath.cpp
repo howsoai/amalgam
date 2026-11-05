@@ -537,7 +537,7 @@ inline static bool GetValueFromIter(EvaluableNode::AssocRef::iterator iter, std:
 	return true;
 };
 
-inline static bool GetValueFromIndex(EvaluableNode::LargeOrderedType &ocn, size_t i, double &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedRef &ocn, size_t i, double &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -546,7 +546,7 @@ inline static bool GetValueFromIndex(EvaluableNode::LargeOrderedType &ocn, size_
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromIndex(EvaluableNode::LargeOrderedType &ocn, size_t i, std::string &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedRef &ocn, size_t i, std::string &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -577,7 +577,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocRef values_mcn,
 	return true;
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::LargeOrderedType &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedRef &values_ocn,
 	EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -591,7 +591,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::LargeOrderedType &valu
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::LargeOrderedType &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedRef &values_ocn,
 	EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -2036,6 +2036,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//TODO 26256: finish updating from here down
 
 	auto q_node = EvaluableNodeReference::Null();
+	std::vector<EvaluableNode *> q_aligned_values;
 	if(ocn.size() >= 2)
 	{
 		//comparison so use positive sign
@@ -2047,47 +2048,45 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 		{
 			q_num_elements = q_node->GetMappedChildNodesViewOnAssoc().size();
 
-			q_values = &q_copied_values;
-
 			//because p is the parameter in front and if it is 0, then none of the rest of the term matters,
 			// we should use p's index list to populate q's values
 			if(p_is_assoc)
 			{
-				q_copied_values.reserve(p_num_elements);
+				q_aligned_values.reserve(p_num_elements);
 				for(auto &pce_id : p_node->GetMappedChildNodesViewOnAssoc() | std::views::keys)
 				{
 					auto mcn = q_node->GetMappedChildNodesViewOnAssoc();
 					auto q_i = mcn.find(pce_id);
 					if(q_i == end(mcn))
 						continue;
-					q_copied_values.push_back(q_i->second);
+					q_aligned_values.push_back(q_i->second);
 				}
 			}
 			else if(p_is_constant)
 			{
-				q_copied_values.reserve(q_num_elements);
+				q_aligned_values.reserve(q_num_elements);
 				for(auto &ce : q_node->GetMappedChildNodesViewOnAssoc() | std::views::values)
-					q_copied_values.push_back(ce);
+					q_aligned_values.push_back(ce);
 			}
 			else //p must be a list
 			{
-				q_copied_values.reserve(p_num_elements);
+				q_aligned_values.reserve(p_num_elements);
 				for(size_t index = 0; index < p_num_elements; index++)
 				{
-					auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists((*p_values)[index], true);
+					auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists(ordered_p_values[index], true);
 					if(valid) [[likely]]
 					{
 						EvaluableNode **found = q_node->GetMappedChildNode(key_sid);
 						if(found != nullptr)
-							q_copied_values.push_back(*found);
+							q_aligned_values.push_back(*found);
 					}
 				}
 			}
 		}
 		else if(EvaluableNode::IsOrderedArray(q_node))
 		{
-			q_values = &q_node->GetOrderedChildNodesViewViewOnList();
-			q_num_elements = q_values->size();
+			ordered_q_values.SetEvaluableNodePointer(q_node);
+			q_num_elements = ordered_q_values.size();
 		}
 		else //not an assoc or list, so treat as a constant probability instead
 		{
@@ -2097,8 +2096,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	}
 
 	//if both are constants, then have no entropy (no probability mass), so return 0
-	if((p_is_constant || p_num_elements == std::numeric_limits<size_t>::max())
-		&& (q_is_constant || q_num_elements == std::numeric_limits<size_t>::max()))
+	if((p_is_constant || p_num_elements == std::numeric_limits<size_t>::max()) &&
+		(q_is_constant || q_num_elements == std::numeric_limits<size_t>::max()))
 		return AllocReturn(0.0, immediate_result);
 
 	//now that have the size of both p and q, can compute constant values if applicable
@@ -2155,9 +2154,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 		//get the original p_i value to multiply out in front
 		double p_i_first_term;
 		if(p_is_constant)
+		{
 			p_i_first_term = p_constant_value;
+		}
+		else if(p_is_assoc)
+		{
+			auto it = assoc_p_values.begin() + i;
+			p_i_first_term = EvaluableNode::ToNumber(it->second);
+		}
 		else
-			p_i_first_term = EvaluableNode::ToNumber((*p_values)[i]);
+		{
+			p_i_first_term = EvaluableNode::ToNumber(ordered_p_values[i]);
+		}
 
 		//in entropy calculations, always exit early if p_i is 0 even if the subsequent terms blow up
 		if(p_i_first_term <= 0)
@@ -2172,9 +2180,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 		double q_i;
 		if(q_is_constant)
+		{
 			q_i = q_constant_value;
+		}
+		else if(EvaluableNode::IsAssociativeArray(q_node))
+		{
+			q_i = (i < q_aligned_values.size()) ? EvaluableNode::ToNumber(q_aligned_values[i]) : 0.0;
+		}
 		else
-			q_i = EvaluableNode::ToNumber((*q_values)[i]);
+		{
+			q_i = EvaluableNode::ToNumber(ordered_q_values[i]);
+		}
 
 		//exponentiate q_i if applicable (note that exponent of 0 is covered earlier in the code)
 		if(q_exponent == 0)
@@ -2192,9 +2208,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//negate
 	accumulated_entropy = -accumulated_entropy;
 
-	//in rare cases where the values in either p or q may not add up exactly to 1 due to floating point precision, and where the values in q
-	//are larger than the values in p, the resulting value may wind up being a tiny negative, but since information gain cannot be negative,
-	//we take the max of the result and 0
+	//in rare cases where the values in either p or q may not add up exactly to 1 due to floating point precision, and
+	//where the values in q are larger than the values in p, the resulting value may wind up being a tiny negative, but
+	//since information gain cannot be negative, we take the max of the result and 0
 	accumulated_entropy = std::max(0.0, accumulated_entropy);
 	evaluableNodeManager->FreeNodeTreeIfPossible(p_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(q_node);

@@ -7,6 +7,7 @@ inline void EvaluableNode::Invalidate()
 
 	type = ENT_DEALLOCATED;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	//use a value that is more apparent that something went wrong
@@ -26,6 +27,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, const std::st
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 	AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 
@@ -41,6 +43,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, const std::st
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 	AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 
@@ -55,6 +58,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, StringInternP
 #endif
 
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(string_id == StringInternPool::NOT_A_STRING_ID)
 	{
 		type = ENT_NULL;
@@ -78,6 +82,7 @@ inline void EvaluableNode::InitializeTypeWithReferenceHandoff(EvaluableNodeType 
 #endif
 
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(string_id == StringInternPool::NOT_A_STRING_ID)
 	{
 		type = ENT_NULL;
@@ -97,6 +102,7 @@ inline void EvaluableNode::InitializeTypeWithReferenceHandoff(EvaluableNodeType 
 inline void EvaluableNode::InitializeType(double number_value)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.numberAndNullValueContainer.numberValue = number_value;
 	AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 
@@ -113,6 +119,7 @@ inline void EvaluableNode::InitializeType(double number_value)
 inline void EvaluableNode::InitializeType(bool bool_value)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	type = ENT_BOOL;
 	value.boolValueContainer.boolValue = bool_value;
 	AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
@@ -124,6 +131,7 @@ inline void EvaluableNode::InitializeType(bool bool_value)
 __forceinline constexpr void EvaluableNode::InitializeUnallocated()
 {
 	type = ENT_UNINITIALIZED;
+	numElementsWhenSmall = 0;
 }
 
 inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
@@ -134,6 +142,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
 
 	if(DoesEvaluableNodeTypeUseNullData(_type))
@@ -635,13 +644,6 @@ inline void EvaluableNode::SetOrderedChildNodes(
 		SetIsIdempotent(false);
 	else
 		SetIsIdempotent(is_idempotent);
-}
-
-//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
-inline void EvaluableNode::ReleaseOrderedChildNodesExtraMemory()
-{
-	if(IsOrderedArray())
-		GetOrderedChildNodesViewViewOnList().shrink_to_fit();
 }
 
 inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)

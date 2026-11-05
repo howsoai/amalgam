@@ -759,9 +759,6 @@ public:
 		std::vector<StringInternPool::StringID> &element_names, size_t num_expected_elements,
 		StoreValueFunction store_value);
 
-	//Note that ResizeOrderedChildNodes does not initialize new nodes, so they must be initialized by caller
-	inline void SetOrderedChildNodesSize(size_t new_size);
-
 	//sets the ordered child nodes and updates flags
 	void SetOrderedChildNodes(LargeOrderedType &ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);
@@ -776,9 +773,6 @@ public:
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
 	void AppendOrderedChildNodes(OrderedRef ocn_to_append);
-
-	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
-	inline void ReleaseOrderedChildNodesExtraMemory();
 
 	//sets up mapped child nodes
 	//optionally can pass in the number of elements so it can

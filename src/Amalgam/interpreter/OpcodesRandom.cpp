@@ -378,8 +378,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		}
 
 		//get rid of unneeded extra nodes
-		retval->SetOrderedChildNodesSize(number_to_generate);
-		retval->ReleaseOrderedChildNodesExtraMemory();
+		retval_ocn.resize(number_to_generate);
+		retval_ocn.shrink_to_fit();
 
 		return retval;
 	}

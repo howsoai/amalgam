@@ -675,13 +675,13 @@ __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 	if(IsAssociativeArray())
 		return GetMappedChildNodesViewOnAssoc();
 
-	return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
+	return emptyMappedChildNodesNodes.GetMappedChildNodesViewOnAssoc();
 }
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView(EvaluableNode *en)
 {
 	if(en == nullptr || !en->IsAssociativeArray())
-		return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
+		return emptyMappedChildNodesNodes.GetMappedChildNodesViewOnAssoc();
 	return en->GetMappedChildNodesViewOnAssoc();
 }
 

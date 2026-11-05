@@ -1213,7 +1213,7 @@ protected:
 	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static EvaluableNode emptyOrderedChildNodes;
-	static EvaluableNode emptyMappedChildNodesNode;
+	static EvaluableNode emptyMappedChildNodesNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
 public:

@@ -24,7 +24,7 @@ public:
 	//--- Construction & Lifecycle ---
 
 	inline OrderedRef() noexcept
-		: en(nullptr)
+		: en(&EvaluableNode::emptyOrderedChildNodes)
 	{}
 
 	inline OrderedRef(EvaluableNode *_en) noexcept
@@ -92,6 +92,15 @@ public:
 		}
 
 		return *this;
+	}
+
+	//extracts the data into a LargeOrderedType, reusing memory if possible
+	inline LargeOrderedType ExtractLargeOrderedType()
+	{
+		if(IsSmall())
+			return LargeOrderedType(begin(), end());
+		else
+			return std::move(GetLargeNodes());
 	}
 
 	inline const pointer data() const
@@ -336,12 +345,12 @@ public:
 
 		if(IsSmall())
 		{
-			if(en->numElementsWhenSmall + n <= EvaluableNode::smallOrderedTypeMaxSize)
+			if(en->numElementsWhenSmall + n < EvaluableNode::smallOrderedTypeMaxSize)
 			{
 				//shift any elements necessary
 				size_type current_size = en->numElementsWhenSmall;
 				auto &small_nodes = GetSmallNodes();
-				for(size_type i = current_size + n; i > index + n; --i)
+				for(size_type i = current_size + n; i > index + n; i--)
 					small_nodes[i] = small_nodes[i - n];
 
 				std::copy(first, last, small_nodes.begin() + index);
@@ -361,9 +370,10 @@ public:
 			size_type start = std::distance(cbegin(), first);
 			size_type end = std::distance(cbegin(), last);
 			size_type count = end - start;
+			auto &small_nodes = GetSmallNodes();
 
-			for(size_type i = start; i + count <= en->numElementsWhenSmall; ++i)
-				GetSmallNodes()[i] = GetSmallNodes()[i + count];
+			for(size_type i = start; i + count < en->numElementsWhenSmall; i++)
+				small_nodes[i] = small_nodes[i + count];
 
 			en->numElementsWhenSmall -= static_cast<uint8_t>(count);
 			return begin() + start;
@@ -371,7 +381,8 @@ public:
 
 		size_type start = std::distance(cbegin(), first);
 		size_type end = std::distance(cbegin(), last);
-		GetLargeNodes().erase(GetLargeNodes().begin() + start, GetLargeNodes().begin() + end);
+		auto &large_nodes = GetLargeNodes();
+		large_nodes.erase(large_nodes.begin() + start, large_nodes.begin() + end);
 		return begin() + start;
 	}
 

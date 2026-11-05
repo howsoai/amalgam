@@ -15,7 +15,7 @@ bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode EvaluableNode::emptyOrderedChildNodes(ENT_LIST);
-EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
+EvaluableNode EvaluableNode::emptyMappedChildNodesNodes(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging
@@ -266,7 +266,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 	}
 
 	//convert ordered child nodes into index number -> value
-	auto ocn = std::move(GetOrderedChildNodesViewViewOnList());
+	auto ocn = GetOrderedChildNodesViewViewOnList().ExtractLargeOrderedType();
 
 	InitMappedChildNodes(ocn.size());
 	type = ENT_ASSOC;
@@ -638,7 +638,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
-			auto ocn = std::move(GetOrderedChildNodesViewViewOnList());
+			LargeOrderedType ocn = GetOrderedChildNodesViewViewOnList().ExtractLargeOrderedType();
 
 			InitMappedChildNodes(ocn.size());
 			type = new_type;

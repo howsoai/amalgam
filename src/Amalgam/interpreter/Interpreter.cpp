@@ -888,7 +888,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-	EvaluableNode::LargeOrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	EvaluableNode::OrderedRef &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())

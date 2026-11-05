@@ -318,12 +318,12 @@ public:
 
 	inline void insert(const_iterator pos, const value_type &val)
 	{
+		size_type index = std::distance(cbegin(), pos);
 		if(IsSmall())
 		{
-			size_type index = std::distance(cbegin(), pos);
 			if(en->numElementsWhenSmall < EvaluableNode::smallOrderedTypeMaxSize)
 			{
-				for(size_type i = en->numElementsWhenSmall; i > index; --i)
+				for(size_type i = en->numElementsWhenSmall; i > index; i--)
 					GetSmallNodes()[i] = GetSmallNodes()[i - 1];
 				GetSmallNodes()[index] = val;
 				en->numElementsWhenSmall++;
@@ -332,10 +332,38 @@ public:
 			PromoteToLarge();
 		}
 
-		// Convert iterator to offset and insert into the current large storage
-		size_type index = std::distance(cbegin(), pos);
 		GetLargeNodes().insert(GetLargeNodes().begin() + index, val);
 	}
+
+	inline void insert(const_iterator pos, size_type count, const value_type &val)
+	{
+		size_type index = std::distance(cbegin(), pos);
+		if(count == 0)
+			return;
+
+		if(IsSmall())
+		{
+			size_type current_size = en->numElementsWhenSmall;
+			if(count <= EvaluableNode::smallOrderedTypeMaxSize - current_size)
+			{
+				auto &small_nodes = GetSmallNodes();
+
+				for(size_type i = current_size; i > index; i--)
+					small_nodes[i + count - 1] = small_nodes[i - 1];
+
+				for(size_type i = 0; i < count; ++i)
+					small_nodes[index + i] = val;
+
+				en->numElementsWhenSmall += static_cast<uint8_t>(count);
+				return;
+			}
+
+			PromoteToLarge();
+		}
+
+		GetLargeNodes().insert(GetLargeNodes().begin() + index, count, val);
+	}
+
 
 	template<class InputIt>
 	inline void insert(const_iterator pos, InputIt first, InputIt last)

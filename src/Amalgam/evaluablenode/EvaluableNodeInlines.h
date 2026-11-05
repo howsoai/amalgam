@@ -811,7 +811,8 @@ inline void EvaluableNode::DestructValue()
 	default:
 		if(!HasExtendedValue())
 		{
-			value.DestructOrderedChildNodes();
+			if(HasLargeOrderedType())
+				value.DestructOrderedChildNodes();
 		}
 		else
 		{

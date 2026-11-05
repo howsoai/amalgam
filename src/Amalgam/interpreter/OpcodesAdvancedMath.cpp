@@ -2033,8 +2033,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	EvaluableNode::AssocRef assoc_q_values;
 	EvaluableNode::OrderedRef ordered_q_values;
 
-	//TODO 26256: finish updating from here down
-
 	auto q_node = EvaluableNodeReference::Null();
 	std::vector<EvaluableNode *> q_aligned_values;
 	if(ocn.size() >= 2)

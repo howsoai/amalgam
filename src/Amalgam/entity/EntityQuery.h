@@ -193,7 +193,8 @@ struct EntityQuery
 
 	//ENT_NULL also marks invalid queries whose parsed payload is still present
 	EvaluableNodeType queryType = ENT_NULL;
-	std::variant<std::monostate, ValueFilter, EntityIds, Aggregate, Quantile, Mean, Difference, Extremum, Select, Sample, Distance> payload;
+	std::variant<std::monostate, LabelExistence, ValueFilter, EntityIds, Aggregate, Quantile, Mean, Difference,
+		Extremum, Select, Sample, Distance> payload;
 
 	Aggregate GetAggregateLabels() const
 	{

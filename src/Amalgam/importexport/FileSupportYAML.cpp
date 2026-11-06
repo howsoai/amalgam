@@ -116,7 +116,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		}
 
 		built_element.set_seq();
-		for(auto &cn : en->GetOrderedChildNodesReference())
+		for(auto &cn : en->GetOrderedChildNodesViewViewOnList())
 		{
 			auto new_element = built_element.append_child();
 			EvaluableNodeToYamlStringRecurse(cn, new_element, sort_keys);

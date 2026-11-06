@@ -22,7 +22,7 @@ static OpcodeInitializer _ENT_SIN(ENT_SIN, &Interpreter::InterpretNode_ENT_SIN, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -48,7 +48,7 @@ static OpcodeInitializer _ENT_ASIN(ENT_ASIN, &Interpreter::InterpretNode_ENT_ASI
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -74,7 +74,7 @@ static OpcodeInitializer _ENT_COS(ENT_COS, &Interpreter::InterpretNode_ENT_COS, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -100,7 +100,7 @@ static OpcodeInitializer _ENT_ACOS(ENT_ACOS, &Interpreter::InterpretNode_ENT_ACO
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -126,7 +126,7 @@ static OpcodeInitializer _ENT_TAN(ENT_TAN, &Interpreter::InterpretNode_ENT_TAN, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -153,7 +153,7 @@ static OpcodeInitializer _ENT_ATAN(ENT_ATAN, &Interpreter::InterpretNode_ENT_ATA
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -189,7 +189,7 @@ static OpcodeInitializer _ENT_SINH(ENT_SINH, &Interpreter::InterpretNode_ENT_SIN
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -215,7 +215,7 @@ static OpcodeInitializer _ENT_ASINH(ENT_ASINH, &Interpreter::InterpretNode_ENT_A
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -241,7 +241,7 @@ static OpcodeInitializer _ENT_COSH(ENT_COSH, &Interpreter::InterpretNode_ENT_COS
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -267,7 +267,7 @@ static OpcodeInitializer _ENT_ACOSH(ENT_ACOSH, &Interpreter::InterpretNode_ENT_A
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -293,7 +293,7 @@ static OpcodeInitializer _ENT_TANH(ENT_TANH, &Interpreter::InterpretNode_ENT_TAN
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -319,7 +319,7 @@ static OpcodeInitializer _ENT_ATANH(ENT_ATANH, &Interpreter::InterpretNode_ENT_A
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ATANH(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 

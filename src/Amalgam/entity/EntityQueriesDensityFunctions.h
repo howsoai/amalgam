@@ -165,7 +165,7 @@ public:
 		);
 	}
 
-	inline void ComputeDistanceContributionsOnPositions(EvaluableNode::OrderedType &positions_to_compare, std::vector<double> &contribs_out)
+	inline void ComputeDistanceContributionsOnPositions(EvaluableNode::OrderedRef positions_to_compare, std::vector<double> &contribs_out)
 	{
 		contribs_out.resize(positions_to_compare.size());
 		IterateOverConcurrentlyIfPossible(positions_to_compare,
@@ -177,7 +177,7 @@ public:
 				return;
 			}
 			
-			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(), buffers.positionValues);
+			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesViewViewOnList(), buffers.positionValues);
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, true, buffers.neighbors);
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
@@ -259,7 +259,7 @@ public:
 
 	//computes cumulative neighbor influence weights for all positions_to_compare and returns the
 	//neighbor weights in neighbors_with_weights
-	inline void ComputeNeighborWeightsOnPositions(EvaluableNode::OrderedType &positions_to_compare,
+	inline void ComputeNeighborWeightsOnPositions(EvaluableNode::LargeOrderedType &positions_to_compare,
 		std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
 	{
 		neighbors_with_weights.clear();
@@ -278,7 +278,7 @@ public:
 				return;
 
 			CopyOrderedChildNodesToImmediateValuesAndTypes(
-				position->GetOrderedChildNodesReference(), buffers.positionValues);
+				position->GetOrderedChildNodesViewViewOnList(), buffers.positionValues);
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, false, buffers.neighbors);
 

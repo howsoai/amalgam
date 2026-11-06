@@ -276,6 +276,14 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(EvaluableNode::LargeOrderedType &child_nodes,
+		bool need_cycle_check = true, bool is_idempotent = false)
+	{
+		EvaluableNode *n = AllocNode(ENT_LIST);
+		n->SetOrderedChildNodes(child_nodes, need_cycle_check, is_idempotent);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNode::OrderedRef child_nodes,
 		bool need_cycle_check = true, bool is_idempotent = false)
 	{
@@ -292,7 +300,7 @@ public:
 		n->SetNeedCycleCheck(need_cycle_check);
 		n->SetIsIdempotent(is_idempotent);
 
-		auto &ocn = n->GetOrderedChildNodesReference();
+		auto ocn = n->GetOrderedChildNodesViewViewOnList();
 		ocn = std::vector<EvaluableNode *>(first, last);
 		return n;
 	}
@@ -386,7 +394,7 @@ public:
 		}
 		else if(!tree->IsTerminal())
 		{
-			for(auto cn : tree->GetOrderedChildNodesReference())
+			for(auto cn : tree->GetOrderedChildNodesViewViewOnList())
 			{
 				if(cn == nullptr)
 					continue;
@@ -535,7 +543,7 @@ public:
 				}
 				else if(!cur->IsTerminal())
 				{
-					for(auto &child : cur->GetOrderedChildNodesReference())
+					for(auto &child : cur->GetOrderedChildNodesViewViewOnList())
 					{
 						if(child != nullptr)
 							node_stack.push_back(child);
@@ -577,7 +585,7 @@ public:
 				}
 				else if(!cur->IsTerminal())
 				{
-					for(auto &e : cur->GetOrderedChildNodesReference())
+					for(auto &e : cur->GetOrderedChildNodesViewViewOnList())
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							node_stack.push_back(e);
@@ -620,7 +628,7 @@ public:
 		}
 		else if(tree->IsOrderedArray())
 		{
-			for(auto &e : tree->GetOrderedChildNodesReference())
+			for(auto &e : tree->GetOrderedChildNodesViewViewOnList())
 			{
 				if(e != nullptr)
 					node_stack.push_back(e);
@@ -648,7 +656,7 @@ public:
 			}
 			else if(!cur->IsTerminal())
 			{
-				for(auto &child : cur->GetOrderedChildNodesReference())
+				for(auto &child : cur->GetOrderedChildNodesViewViewOnList())
 				{
 					if(child != nullptr)
 						node_stack.push_back(child);

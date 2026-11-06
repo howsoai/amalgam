@@ -672,6 +672,7 @@
     <ClInclude Include="evaluablenode\EvaluableNodeAssocRef.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeInlines.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeOrderedRef.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeDifference.h" />

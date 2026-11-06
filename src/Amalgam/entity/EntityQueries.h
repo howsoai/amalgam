@@ -96,9 +96,9 @@ namespace EntityQueries
 		if(auto filter = std::get_if<EntityQuery::Filter>(&query.payload))
 		{
 			std::span<EvaluableNode *const> nodes;
-			auto &ocn = filter->node->GetOrderedChildNodes();
+			auto ocn = filter->node->GetOrderedChildNodesView();
 			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
-				nodes = ocn[0]->GetOrderedChildNodesReference();
+				nodes = ocn[0]->GetOrderedChildNodesViewViewOnList();
 
 			function(nodes, [](auto node) {
 				return EvaluableNode::IsNull(node) ? StringInternPool::NOT_A_STRING_ID : node->GetStringIDReference();

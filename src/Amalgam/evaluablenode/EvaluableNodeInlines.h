@@ -7,6 +7,7 @@ inline void EvaluableNode::Invalidate()
 
 	type = ENT_DEALLOCATED;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	//use a value that is more apparent that something went wrong
@@ -26,6 +27,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, const std::st
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 	AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 
@@ -41,6 +43,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, const std::st
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 	AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 
@@ -55,6 +58,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type, StringInternP
 #endif
 
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(string_id == StringInternPool::NOT_A_STRING_ID)
 	{
 		type = ENT_NULL;
@@ -78,6 +82,7 @@ inline void EvaluableNode::InitializeTypeWithReferenceHandoff(EvaluableNodeType 
 #endif
 
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(string_id == StringInternPool::NOT_A_STRING_ID)
 	{
 		type = ENT_NULL;
@@ -97,6 +102,7 @@ inline void EvaluableNode::InitializeTypeWithReferenceHandoff(EvaluableNodeType 
 inline void EvaluableNode::InitializeType(double number_value)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	value.numberAndNullValueContainer.numberValue = number_value;
 	AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 
@@ -113,6 +119,7 @@ inline void EvaluableNode::InitializeType(double number_value)
 inline void EvaluableNode::InitializeType(bool bool_value)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	type = ENT_BOOL;
 	value.boolValueContainer.boolValue = bool_value;
 	AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
@@ -124,6 +131,7 @@ inline void EvaluableNode::InitializeType(bool bool_value)
 __forceinline constexpr void EvaluableNode::InitializeUnallocated()
 {
 	type = ENT_UNINITIALIZED;
+	numElementsWhenSmall = 0;
 }
 
 inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
@@ -134,6 +142,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
 
 	type = _type;
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
 
 	if(DoesEvaluableNodeTypeUseNullData(_type))
@@ -213,9 +222,9 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
 		value.extendedOrderedChildNodes.Destruct();
-		new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
+		new (&value.orderedChildNodes) LargeOrderedType(std::move(temp_ocn));
 
 		SetExtendedValue(false);
 	}
@@ -529,7 +538,7 @@ __forceinline void EvaluableNode::UpdateAllFlagsBasedOnNoReferencingChildNodes()
 	}
 	else if(!IsTerminal())
 	{
-		for(auto cn : GetOrderedChildNodesReference())
+		for(auto cn : GetOrderedChildNodesViewViewOnList())
 		{
 			if(cn == nullptr)
 				continue;
@@ -559,6 +568,27 @@ inline void EvaluableNode::InitOrderedChildNodes()
 		value.ConstructOrderedChildNodes();
 	else
 		value.extendedOrderedChildNodes.Construct();
+}
+
+inline void EvaluableNode::ReserveOrderedChildNodes(size_t to_reserve)
+{
+	if(IsOrderedArray())
+		GetOrderedChildNodesViewViewOnList().reserve(to_reserve);
+}
+
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesView()
+{
+	if(IsOrderedArray())
+		return GetOrderedChildNodesViewViewOnList();
+
+	return emptyOrderedChildNodes.GetOrderedChildNodesViewViewOnList();
+}
+
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesView(EvaluableNode *en)
+{
+	if(en == nullptr || !en->IsOrderedArray())
+		return emptyOrderedChildNodes.GetOrderedChildNodesViewViewOnList();
+	return en->GetOrderedChildNodesViewViewOnList();
 }
 
 template<typename StoreValueFunction>
@@ -591,7 +621,7 @@ inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
 	}
 	else //ordered
 	{
-		auto &node_ocn = node->GetOrderedChildNodesReference();
+		auto node_ocn = node->GetOrderedChildNodesViewViewOnList();
 
 		for(size_t i = 0; i < node_ocn.size(); i++)
 			store_value(i, true, node_ocn[i]);
@@ -605,7 +635,7 @@ inline void EvaluableNode::SetOrderedChildNodes(
 	if(!IsOrderedArray())
 		return;
 
-	auto &ocn = GetOrderedChildNodesReference();
+	auto ocn = GetOrderedChildNodesViewViewOnList();
 	ocn.assign(first, last);
 
 	SetNeedCycleCheck(need_cycle_check);
@@ -614,13 +644,6 @@ inline void EvaluableNode::SetOrderedChildNodes(
 		SetIsIdempotent(false);
 	else
 		SetIsIdempotent(is_idempotent);
-}
-
-//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
-inline void EvaluableNode::ReleaseOrderedChildNodesExtraMemory()
-{
-	if(IsOrderedArray())
-		GetOrderedChildNodesReference().shrink_to_fit();
 }
 
 inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
@@ -652,13 +675,13 @@ __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 	if(IsAssociativeArray())
 		return GetMappedChildNodesViewOnAssoc();
 
-	return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
+	return emptyMappedChildNodesNodes.GetMappedChildNodesViewOnAssoc();
 }
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView(EvaluableNode *en)
 {
 	if(en == nullptr || !en->IsAssociativeArray())
-		return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
+		return emptyMappedChildNodesNodes.GetMappedChildNodesViewOnAssoc();
 	return en->GetMappedChildNodesViewOnAssoc();
 }
 
@@ -721,12 +744,9 @@ __forceinline StringInternPool::StringID &EvaluableNode::GetStringIDReference()
 	return value.stringValueContainer.stringID;
 }
 
-__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesReference()
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesViewViewOnList()
 {
-	if(!HasExtendedValue())
-		return value.orderedChildNodes;
-	else
-		return *value.extendedOrderedChildNodes.orderedChildNodes.get();
+	return EvaluableNode::OrderedRef(this);
 }
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesViewOnAssoc()
@@ -791,7 +811,8 @@ inline void EvaluableNode::DestructValue()
 	default:
 		if(!HasExtendedValue())
 		{
-			value.DestructOrderedChildNodes();
+			if(HasLargeOrderedType())
+				value.DestructOrderedChildNodes();
 		}
 		else
 		{

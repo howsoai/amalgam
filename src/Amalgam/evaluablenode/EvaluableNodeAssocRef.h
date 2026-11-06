@@ -22,6 +22,10 @@ public:
 
 	//--- Construction & Lifecycle ---
 
+	AssocRef() noexcept
+		: en(&EvaluableNode::emptyMappedChildNodesNodes)
+	{}
+
 	AssocRef(EvaluableNode *_en)  noexcept
 		: en(_en)
 	{ }
@@ -30,9 +34,23 @@ public:
 		: en(other.en)
 	{ }
 
+	inline void SetEvaluableNodePointer(EvaluableNode *_en)
+	{
+		en = _en;
+	}
+
 	AssocRef &operator=(const AssocRef &other)
 	{
-		en = other.en;
+		if(other.size() < EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			GetSmallMap() = other;
+		else
+			GetLargeMap() = other;
+
 		return *this;
 	}
 

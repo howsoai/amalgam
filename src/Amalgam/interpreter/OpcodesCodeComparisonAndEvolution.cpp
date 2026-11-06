@@ -33,7 +33,7 @@ static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::Interpret
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -201,7 +201,7 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -321,7 +321,7 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	//get the string key
@@ -471,7 +471,7 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -605,7 +605,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -827,7 +827,7 @@ static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1071,7 +1071,7 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1455,7 +1455,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -1846,7 +1846,7 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -2101,7 +2101,7 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
+	auto ocn = en->GetOrderedChildNodesViewViewOnList();
 	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 

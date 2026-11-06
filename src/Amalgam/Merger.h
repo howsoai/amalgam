@@ -173,7 +173,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 // *AssocType should be some map where the variables are pointers to T
 template<typename T,
 	T NullValue = nullptr,
-	typename OrderedType = std::vector<T>,
+	typename LargeOrderedType = std::vector<T>,
 	typename InputAssocType = CompactHashMap<StringInternPool::StringID, T *>,
 	typename OutputAssocType = CompactHashMap<StringInternPool::StringID, T *>>
 class Merger
@@ -220,19 +220,20 @@ public:
 	virtual bool AreMergeable(T a, T b) = 0;
 
 	//Merges two unordered lists based on the specified MergeMethods
-	OrderedType MergeUnorderedSets(OrderedType &list_a, OrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeUnorderedSets(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return OrderedType();
+			return LargeOrderedType();
 
 		//copy over lists
-		OrderedType a1(list_a);
-		OrderedType a2(list_b);
+		LargeOrderedType a1(begin(list_a), end(list_a));
+		LargeOrderedType a2(begin(list_b), end(list_b));
 
-		OrderedType merged;
+		LargeOrderedType merged;
 
-		OrderedType unmatched_a1;
+		LargeOrderedType unmatched_a1;
 		if(KeepAllNonMergeableValues())
 		{
 			merged.reserve(std::max(a1.size(), a2.size()));
@@ -321,19 +322,20 @@ public:
 	}
 
 	//Merges two lists that are comprised of unordered sets of pairs based on the specified MergeMethods
-	OrderedType MergeUnorderedSetsOfPairs(OrderedType &list_a, OrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeUnorderedSetsOfPairs(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return OrderedType();
+			return LargeOrderedType();
 
 		//copy over lists
-		OrderedType a1(list_a);
-		OrderedType a2(list_b);
+		LargeOrderedType a1(begin(list_a), end(list_a));
+		LargeOrderedType a2(begin(list_b), end(list_b));
 
-		OrderedType merged;
+		LargeOrderedType merged;
 
-		OrderedType unmatched_a1;
+		LargeOrderedType unmatched_a1;
 		if(KeepAllNonMergeableValues())
 		{
 			merged.reserve(std::max(a1.size(), a2.size()));
@@ -449,11 +451,12 @@ public:
 	}
 
 	//Merges two ordered (sequence) lists based on the specified MergeMethods
-	OrderedType MergeSequences(OrderedType &list_a, OrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergeSequences(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return OrderedType();
+			return LargeOrderedType();
 
 		//build sequence commonality matrix
 		FlatMatrix<MergeMetricResults<T>> sequence_commonality;
@@ -465,7 +468,7 @@ public:
 			});
 
 		//build a new list, in reverse
-		OrderedType merged;
+		LargeOrderedType merged;
 		if(KeepAllNonMergeableValues())
 			merged.reserve(std::max(list_a.size(), list_b.size()));
 
@@ -556,14 +559,15 @@ public:
 	}
 
 	//Merges two position-based ordered lists based on the specified MergeMethods
-	OrderedType MergePositions(OrderedType &list_a, OrderedType &list_b)
+	template<typename InputOrderedType>
+	LargeOrderedType MergePositions(InputOrderedType &list_a, InputOrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return OrderedType();
+			return LargeOrderedType();
 
 		//accumulate the array
-		OrderedType merged;
+		LargeOrderedType merged;
 		if(KeepAllNonMergeableValues())
 			merged.reserve(std::max(list_a.size(), list_b.size()));
 

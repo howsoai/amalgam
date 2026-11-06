@@ -373,7 +373,7 @@ public:
 
 		if(IsSmall())
 		{
-			if(en->numElementsWhenSmall + n < EvaluableNode::smallOrderedTypeMaxSize)
+			if(static_cast<size_t>(en->numElementsWhenSmall + n) < EvaluableNode::smallOrderedTypeMaxSize)
 			{
 				//shift any elements necessary
 				size_type current_size = en->numElementsWhenSmall;

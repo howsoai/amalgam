@@ -378,13 +378,13 @@ public:
 
 		if(IsSmall())
 		{
-			if(static_cast<size_t>(en->numElementsWhenSmall + n) < EvaluableNode::smallOrderedTypeMaxSize)
+			if(static_cast<size_t>(en->numElementsWhenSmall + n) <= EvaluableNode::smallOrderedTypeMaxSize)
 			{
 				//shift any elements necessary
 				size_type current_size = en->numElementsWhenSmall;
 				auto &small_nodes = GetSmallNodes();
-				for(size_type i = current_size + n; i > index + n; i--)
-					small_nodes[i] = small_nodes[i - n];
+				for(size_type i = current_size; i > index; i--)
+					small_nodes[i + n - 1] = small_nodes[i - 1];
 
 				std::copy(first, last, small_nodes.begin() + index);
 				en->numElementsWhenSmall += static_cast<uint8_t>(n);

@@ -738,48 +738,11 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_MAX_DIFFERENCE:
 			return enm->AllocIfNotImmediate(
 				entity_caches->ComputeNumericAggregate(query, matching_ents, is_first), immediate_result);
+
 		default:
-			break;
-		}
-
-		if(EntityQueries::GetValueFilterNode(query) != nullptr
-			|| std::holds_alternative<EntityQuery::EntityIds>(query.payload))
-		{
-			//hold the cache lock across consecutive filters in the same group; inclusive comparisons join the BETWEEN group.
-			auto group_type = [](EvaluableNodeType type) {
-				switch(type)
-				{
-				case ENT_QUERY_LESS_OR_EQUAL_TO:
-				case ENT_QUERY_GREATER_OR_EQUAL_TO:
-					return ENT_QUERY_BETWEEN;
-				case ENT_QUERY_EXISTS:
-				case ENT_QUERY_NOT_EXISTS:
-				case ENT_QUERY_EQUALS:
-				case ENT_QUERY_NOT_EQUALS:
-				case ENT_QUERY_BETWEEN:
-				case ENT_QUERY_NOT_BETWEEN:
-					return type;
-				default:
-					return ENT_NULL;
-				}
-			};
-
-			auto type = group_type(query.queryType);
-			size_t group_end = cond_index + 1;
-
-			if(type != ENT_NULL)
-			{
-				while(group_end < conditions.size()
-						&& EntityQueries::GetValueFilterNode(conditions[group_end]) != nullptr
-						&& group_type(conditions[group_end].queryType) == type)
-					group_end++;
-			}
-
+			//TODO 26245: make this not take in a span
 			entity_caches->GetMatchingEntities(
-				std::span<const EntityQuery>(conditions.data() + cond_index, group_end - cond_index), matching_ents, is_first);
-
-			cond_index = group_end - 1;
-			continue;
+				std::span<const EntityQuery>(conditions.data() + cond_index, 1), matching_ents, is_first);
 		}
 	}
 
@@ -841,22 +804,31 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			EvaluableNode *query_return = enm->AllocNode(ENT_ASSOC);
 			query_return->ReserveMappedChildNodes(matching_ents.size());
 
-			size_t num_labels = 0;
-			//TODO 26224: the use of ForEachQueryLabel here and below needs to be reexamined
-			EntityQueries::ForEachQueryLabel(conditions.back(), [&](auto) { ++num_labels; });
-			for(const auto &entity_index : matching_ents)
+			if(last_query_type == ENT_EXISTS)
 			{
-				EvaluableNode *entity_values = nullptr;
-				if(num_labels > 0)
+				auto &condition = conditions.back();
+				auto &labels = std::get<EntityQuery::LabelExistence>(condition.payload).labels;
+
+				//create string reference for each entity's labels
+				string_intern_pool.CreateMultipleStringReferences(labels, matching_ents.size());
+
+				for(const auto &entity_index : matching_ents)
 				{
-					entity_values = enm->AllocNode(ENT_ASSOC);
-					entity_values->ReserveMappedChildNodes(num_labels);
-					EntityQueries::ForEachQueryLabel(conditions.back(),
-						[&](auto label_sid) {
-							entity_values->SetMappedChildNode(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
-						});
+					//create assoc for values for each entity
+					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
+					entity_values->ReserveMappedChildNodes(labels.size());
+					for(auto &label_sid : labels)
+						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
+
+					//append to query_return after building to ensure all flags are propagated
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);
 				}
-				query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);
+			}
+			else
+			{
+				//create a null for every entry, since nothing requested
+				for(const auto &entity_index : matching_ents)
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), nullptr);
 			}
 
 			return EvaluableNodeReference(query_return, true);
@@ -943,16 +915,23 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			EntityQueries::FilterEntities(query, container, matching_entities, first_condition);
 			if(last_condition && return_query_value && node != nullptr && node->GetType() == ENT_QUERY_EXISTS)
 			{
-				auto result = enm->AllocNode(ENT_ASSOC);
-				result->ReserveMappedChildNodes(matching_entities.size());
+				auto &labels = std::get<EntityQuery::LabelExistence>(query.payload).labels;
+
+				auto query_return = enm->AllocNode(ENT_ASSOC);
+				query_return->ReserveMappedChildNodes(matching_entities.size());
 				for(auto entity : matching_entities)
 				{
-					auto values = enm->AllocNode(ENT_ASSOC);
-					EntityQueries::ForEachQueryLabel(query,
-						[&](auto label) { values->SetMappedChildNode(label, entity->GetValueAtLabel(label, enm).first); });
-					result->SetMappedChildNode(entity->GetIdStringId(), values);
+
+					//create assoc for values for each entity
+					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
+					entity_values->ReserveMappedChildNodes(labels.size());
+					for(auto &label_sid : labels)
+						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
+
+					//append to query_return after building to ensure all flags are propagated
+					query_return->SetMappedChildNode(entity->GetIdStringId(), entity_values);
 				}
-				query_return_value = EvaluableNodeReference(result, true);
+				query_return_value = EvaluableNodeReference(query_return, true);
 			}
 			continue;
 		}
@@ -1081,9 +1060,19 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	std::vector<StringInternPool::StringID> labels_to_add;
 	for(const auto &condition : queries)
 	{
-		auto label = EntityQueries::GetValueFilterLabel(condition);
-		if(!DoesHaveLabel(label))
-			labels_to_add.push_back(label);
+		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&condition.payload))
+		{
+			if(!DoesHaveLabel(filter->label))
+				labels_to_add.push_back(filter->label);
+		}
+		else if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&condition.payload))
+		{
+			for(auto &l : exist_filter->labels)
+			{
+				if(!DoesHaveLabel(l))
+					labels_to_add.push_back(l);
+			}
+		}
 	}
 #if defined(MULTITHREAD_SUPPORT)
 	EnsureLabelsAreCached(labels_to_add, lock);
@@ -1093,6 +1082,42 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 
 	for(const auto &condition : queries)
 	{
+		if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&condition.payload))
+		{
+			if(exist_filter->node->GetType() == ENT_QUERY_EXISTS)
+			{
+				for(auto &l : exist_filter->labels)
+				{
+					if(is_first)
+					{
+						sbfds.FindAllEntitiesWithFeature(l, matching_entities);
+						is_first = false;
+					}
+					else
+					{
+						sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
+					}
+				}
+			}
+			else
+			{
+				for(auto &l : exist_filter->labels)
+				{
+					if(is_first)
+					{
+						sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
+						is_first = false;
+					}
+					else
+					{
+						sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
+					}
+				}
+			}
+
+			continue;
+		}
+
 		auto query = EntityQueries::GetValueFilterNode(condition);
 		auto type = query->GetType();
 		auto &ocn = query->GetOrderedChildNodes();
@@ -1100,22 +1125,6 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		auto &temp = buffers.tempMatchingEntityIndices;
 		switch(type)
 		{
-		case ENT_QUERY_EXISTS:
-			if(is_first)
-				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
-			else
-				sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
-
-			break;
-
-		case ENT_QUERY_NOT_EXISTS:
-			if(is_first)
-				sbfds.FindAllEntitiesWithoutFeature(label, matching_entities);
-			else
-				sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
-
-			break;
-
 		case ENT_QUERY_EQUALS:
 		case ENT_QUERY_NOT_EQUALS:
 		{

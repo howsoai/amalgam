@@ -93,6 +93,7 @@ namespace EntityQueries
 	template<typename Function>
 	__forceinline void IterateOverEntityList(const EntityQuery &query, Function function)
 	{
+		//TODO 26245: get rid of this method and inline it
 		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
 		{
 			std::span<EvaluableNode *const> nodes;
@@ -107,28 +108,6 @@ namespace EntityQueries
 		else
 		{
 			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
-		}
-	}
-
-	//iterates over consecutive existence filters of the same type
-	template<typename Function>
-	void ForEachQueryLabel(EntityQuery &query, Function function)
-	{
-		auto type = query.queryType;
-		if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
-		{
-			//TODO 26245: update this
-			function(GetValueFilterLabel(query));
-		}
-		else if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
-		{
-			IterateOverEntityList(query, [&](const auto &ids, auto get_id) {
-				for(auto item : ids)
-				{
-					if(auto id = get_id(item); id != StringInternPool::NOT_A_STRING_ID)
-						function(id);
-				}
-			});
 		}
 	}
 }

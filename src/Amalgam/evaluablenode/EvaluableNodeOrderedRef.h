@@ -54,15 +54,20 @@ public:
 		{
 			if(!IsSmall())
 				ReduceToSmallIfPossible();
-
-			std::copy(first, last, GetSmallNodes().begin());
-			en->numElementsWhenSmall = static_cast<uint8_t>(n);
 		}
 		else
 		{
 			if(IsSmall())
 				PromoteToLarge();
+		}
 
+		if(IsSmall())
+		{
+			std::copy(first, last, GetSmallNodes().begin());
+			en->numElementsWhenSmall = static_cast<uint8_t>(n);
+		}
+		else
+		{
 			GetLargeNodes().assign(first, last);
 		}
 	}
@@ -128,7 +133,15 @@ public:
 
 	inline std::span<EvaluableNode *> GetNodes() const
 	{
-		return IsSmall() ? std::span{GetSmallNodes()} : std::span{GetLargeNodes()};
+		if(IsSmall())
+		{
+			auto &small_nodes = GetSmallNodes();
+			return std::span{small_nodes.begin(), small_nodes.begin() + en->numElementsWhenSmall};
+		}
+		else
+		{
+			return std::span{ GetLargeNodes() };
+		}
 	}
 
 	inline const pointer data() const

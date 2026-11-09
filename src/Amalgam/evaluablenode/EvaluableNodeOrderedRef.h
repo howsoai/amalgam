@@ -103,9 +103,14 @@ public:
 			return std::move(GetLargeNodes());
 	}
 
+	inline std::span<EvaluableNode *> GetNodes() const
+	{
+		return IsSmall() ? std::span{GetSmallNodes()} : std::span{GetLargeNodes()};
+	}
+
 	inline const pointer data() const
 	{
-		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+		return GetNodes().data();
 	}
 
 	inline bool HasValidNode() const noexcept
@@ -117,12 +122,12 @@ public:
 
 	inline iterator begin() noexcept
 	{
-		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+		return GetNodes().data();
 	}
 
 	inline const_iterator cbegin() const noexcept
 	{
-		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+		return GetNodes().data();
 	}
 
 	inline iterator end() noexcept
@@ -219,37 +224,27 @@ public:
 
 	inline reference operator[](size_type pos)
 	{
-		return IsSmall() ? GetSmallNodes()[pos] : GetLargeNodes()[pos];
+		return GetNodes()[pos];
 	}
 
 	inline const_reference operator[](size_type pos) const
 	{
-		return IsSmall() ? GetSmallNodes()[pos] : GetLargeNodes()[pos];
-	}
-
-	inline reference at(size_type pos)
-	{
-		return IsSmall() ? GetSmallNodes().at(pos) : GetLargeNodes().at(pos);
-	}
-
-	inline const_reference at(size_type pos) const
-	{
-		return IsSmall() ? GetSmallNodes().at(pos) : GetLargeNodes().at(pos);
+		return GetNodes()[pos];
 	}
 
 	inline reference front()
 	{
-		return IsSmall() ? GetSmallNodes()[0] : GetLargeNodes().front();
+		return GetNodes().front();
 	}
 
 	inline reference back()
 	{
-		return IsSmall() ? GetSmallNodes()[size() - 1] : GetLargeNodes().back();
+		return GetNodes().back();
 	}
 
 	inline pointer data()
 	{
-		return IsSmall() ? GetSmallNodes().data() : GetLargeNodes().data();
+		return GetNodes().data();
 	}
 
 	//--- Modifiers ---

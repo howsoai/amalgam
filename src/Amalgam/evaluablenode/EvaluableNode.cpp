@@ -1165,7 +1165,7 @@ void EvaluableNode::EnsureHasLargeOrderedType()
 
 void EvaluableNode::ReduceToSmallOrderedTypeIfPossible()
 {
-	if(HasExtendedValue() || !HasLargeOrderedType())
+	if(HasExtendedValue() || !HasLargeOrderedType() || value.orderedChildNodes.size() > smallOrderedTypeMaxSize)
 		return;
 
 	auto large_nodes =

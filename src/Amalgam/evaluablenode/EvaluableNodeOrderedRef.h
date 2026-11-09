@@ -190,7 +190,7 @@ public:
 			if(count > EvaluableNode::smallOrderedTypeMaxSize)
 			{
 				PromoteToLarge();
-				GetLargeNodes().assign(count, val);
+				GetLargeNodes().resize(count, val);
 			}
 			else
 			{

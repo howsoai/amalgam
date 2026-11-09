@@ -464,7 +464,7 @@ public:
 
 					//need to fetch again after lock in case object has changed
 					cur_context = scopeStack[scope_stack_index - 1];
-					mcn = cur_context->GetMappedChildNodesViewOnAssoc();
+					mcn.SetEvaluableNodePointer(cur_context);
 					found = mcn.find(symbol_sid);
 
 					//if the symbol happened to be removed before lock was acquired, keep descending

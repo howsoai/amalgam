@@ -386,6 +386,7 @@ bool EvaluableNode::IsNodeValid()
 void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
@@ -453,8 +454,9 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	}
 	else //ordered
 	{
-		value.ConstructOrderedChildNodes();
-		GetOrderedChildNodesViewViewOnList() = n->GetOrderedChildNodesViewViewOnList();
+		//ensure a copy is made, not a move, since the method returns an r value
+		auto other_ocn = n->GetOrderedChildNodesViewViewOnList();
+		GetOrderedChildNodesViewViewOnList() = other_ocn;
 	}
 
 	if(copy_metadata)
@@ -1131,12 +1133,12 @@ void EvaluableNode::EnsureHasExtendedValue()
 		}
 		else
 		{
-			temp_ocn = std::move(value.orderedChildNodes);
-			value.DestructOrderedChildNodes();
+			temp_ocn = std::move(value.largeOrderedChildNodes);
+			value.DestructLargeOrderedChildNodes();
 		}
 		
 		value.extendedOrderedChildNodes.Construct();
-		*value.extendedOrderedChildNodes.orderedChildNodes = std::move(temp_ocn);
+		*value.extendedOrderedChildNodes.largeOrderedChildNodes = std::move(temp_ocn);
 	}
 
 	SetExtendedValue(true);
@@ -1153,23 +1155,23 @@ void EvaluableNode::EnsureHasLargeOrderedType()
 
 	if(!HasExtendedValue())
 	{
-		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = std::move(large_nodes);
+		value.ConstructLargeOrderedChildNodes();
+		value.largeOrderedChildNodes = std::move(large_nodes);
 	}
 	else
 	{
 		value.extendedOrderedChildNodes.Construct();
-		*value.extendedOrderedChildNodes.orderedChildNodes = std::move(large_nodes);
+		*value.extendedOrderedChildNodes.largeOrderedChildNodes = std::move(large_nodes);
 	}
 }
 
 void EvaluableNode::ReduceToSmallOrderedTypeIfPossible()
 {
-	if(HasExtendedValue() || !HasLargeOrderedType() || value.orderedChildNodes.size() > smallOrderedTypeMaxSize)
+	if(HasExtendedValue() || !HasLargeOrderedType() || value.largeOrderedChildNodes.size() > smallOrderedTypeMaxSize)
 		return;
 
-	auto large_nodes =
-		std::move(!HasExtendedValue() ? value.orderedChildNodes : *value.extendedOrderedChildNodes.orderedChildNodes);
+	auto large_nodes = std::move(value.largeOrderedChildNodes);
+	value.ConstructLargeOrderedChildNodes();
 
 	for(size_t i = 0; i < large_nodes.size(); i++)
 		value.smallOrderedChildNodes[i] = large_nodes[i];
@@ -1199,11 +1201,11 @@ void EvaluableNode::RemoveExtendedValueIfPossible()
 	}
 	else //ordered
 	{
-		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-		value.extendedOrderedChildNodes.orderedChildNodes.reset();
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.largeOrderedChildNodes);
+		value.extendedOrderedChildNodes.largeOrderedChildNodes.reset();
 
-		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = std::move(temp_ocn);
+		value.ConstructLargeOrderedChildNodes();
+		value.largeOrderedChildNodes = std::move(temp_ocn);
 	}
 
 	SetExtendedValue(false);

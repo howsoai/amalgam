@@ -192,7 +192,7 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
 	}
 	else
 	{
-		value.ConstructOrderedChildNodes();
+		value.ConstructLargeOrderedChildNodes();
 	}
 }
 
@@ -222,9 +222,9 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 	}
 	else //ordered
 	{
-		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.largeOrderedChildNodes);
 		value.extendedOrderedChildNodes.Destruct();
-		new (&value.orderedChildNodes) LargeOrderedType(std::move(temp_ocn));
+		new (&value.largeOrderedChildNodes) LargeOrderedType(std::move(temp_ocn));
 
 		SetExtendedValue(false);
 	}
@@ -565,7 +565,7 @@ inline void EvaluableNode::InitOrderedChildNodes()
 	DestructValue();
 
 	if(!HasExtendedValue())
-		value.ConstructOrderedChildNodes();
+		value.ConstructLargeOrderedChildNodes();
 	else
 		value.extendedOrderedChildNodes.Construct();
 }
@@ -812,7 +812,7 @@ inline void EvaluableNode::DestructValue()
 		if(!HasExtendedValue())
 		{
 			if(HasLargeOrderedType())
-				value.DestructOrderedChildNodes();
+				value.DestructLargeOrderedChildNodes();
 		}
 		else
 		{

@@ -44,18 +44,35 @@ public:
 	inline void assign(InputIt first, InputIt last)
 	{
 		auto n = std::distance(first, last);
-		clear();
-		reserve(static_cast<size_type>(n));
-		for(; first != last; ++first)
-			push_back(*first);
+		if(n == 0)
+		{
+			clear();
+			return;
+		}
+
+		if(n <= EvaluableNode::smallOrderedTypeMaxSize)
+		{
+			if(!IsSmall())
+				ReduceToSmallIfPossible();
+
+			std::copy(first, last, GetSmallNodes().begin());
+			en->numElementsWhenSmall = static_cast<uint8_t>(n);
+		}
+		else
+		{
+			if(IsSmall())
+				PromoteToLarge();
+
+			GetLargeNodes().assign(first, last);
+		}
 	}
 
-	inline OrderedRef &operator=(OrderedRef &other)
+	inline OrderedRef &operator=(const OrderedRef &other)
 	{
 		if(this == &other)
 			return *this;
 
-		assign(other.begin(), other.end());
+		assign(other.cbegin(), other.cend());
 
 		return *this;
 	}
@@ -66,9 +83,15 @@ public:
 			return *this;
 
 		if(!IsSmall() && !other.IsSmall())
-			GetLargeNodes().swap(other.GetLargeNodes());
+		{
+			auto &large_nodes = GetLargeNodes();
+			large_nodes = std::move(other.GetLargeNodes());
+		}
 		else
-			assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+		{
+			assign(other.begin(), other.end());
+			other.clear();
+		}
 
 		return *this;
 	}
@@ -464,9 +487,9 @@ private:
 	inline EvaluableNode::LargeOrderedType &GetLargeNodes() const
 	{
 		if(!en->HasExtendedValue())
-			return en->value.orderedChildNodes;
+			return en->value.largeOrderedChildNodes;
 		else
-			return *en->value.extendedOrderedChildNodes.orderedChildNodes.get();
+			return *en->value.extendedOrderedChildNodes.largeOrderedChildNodes.get();
 	}
 
 	EvaluableNode *en;

@@ -1042,14 +1042,14 @@ protected:
 		__forceinline  ~EvaluableNodeValue()
 		{}
 
-		__forceinline void ConstructOrderedChildNodes()
+		__forceinline void ConstructLargeOrderedChildNodes()
 		{
-			new (&orderedChildNodes) LargeOrderedType;
+			new (&largeOrderedChildNodes) LargeOrderedType;
 		}
 
-		__forceinline void DestructOrderedChildNodes()
+		__forceinline void DestructLargeOrderedChildNodes()
 		{
-			orderedChildNodes.~LargeOrderedType();
+			largeOrderedChildNodes.~LargeOrderedType();
 		}
 
 		__forceinline void ConstructMappedChildNodes()
@@ -1064,7 +1064,7 @@ protected:
 		}
 
 		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		LargeOrderedType orderedChildNodes;
+		LargeOrderedType largeOrderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		SmallAssocType mappedChildNodes;
@@ -1103,18 +1103,18 @@ protected:
 		{
 			__forceinline void Construct()
 			{
-				new (&orderedChildNodes) std::unique_ptr<LargeOrderedType>(std::make_unique<LargeOrderedType>());
+				new (&largeOrderedChildNodes) std::unique_ptr<LargeOrderedType>(std::make_unique<LargeOrderedType>());
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
-				orderedChildNodes.~unique_ptr<LargeOrderedType>();
+				largeOrderedChildNodes.~unique_ptr<LargeOrderedType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
-			//external orderedChildNodes
-			std::unique_ptr<LargeOrderedType> orderedChildNodes;
+			//external largeOrderedChildNodes
+			std::unique_ptr<LargeOrderedType> largeOrderedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
 		} extendedOrderedChildNodes;
@@ -1134,7 +1134,7 @@ protected:
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
-			//external orderedChildNodes
+			//external largeOrderedChildNodes
 			std::unique_ptr<LargeAssocType> mappedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;

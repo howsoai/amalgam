@@ -257,9 +257,14 @@ public:
 	inline void clear()
 	{
 		if(!IsSmall())
+		{
 			GetLargeNodes().clear();
-
-		en->numElementsWhenSmall = 0;
+			ReduceToSmallIfPossible();
+		}
+		else
+		{
+			en->numElementsWhenSmall = 0;
+		}
 	}
 
 	inline void reserve(size_type n)

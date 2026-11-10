@@ -1217,13 +1217,13 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 	std::vector<size_t> max_indices;
 	bool value_found = false;
 
-	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
-	if(orderedChildNodes.size() == 0)
+	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
 	// First node has already been interpreted and thus needs different handling
-	double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
+	double candidate_zero = EvaluableNode::ToNumber(ocn[0]);
 	if(!FastIsNaN(candidate_zero))
 	{
 		max_indices.push_back(0);
@@ -1231,9 +1231,9 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 		result_value = candidate_zero;
 	}
 
-	for(size_t i = 1; i < orderedChildNodes.size(); i++)
+	for(size_t i = 1; i < ocn.size(); i++)
 	{
-		double cur_value = interpreter->InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+		double cur_value = interpreter->InterpretNodeIntoNumberValue(ocn[i]);
 
 		if(cur_value == result_value)
 		{

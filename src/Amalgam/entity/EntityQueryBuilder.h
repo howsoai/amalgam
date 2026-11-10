@@ -881,9 +881,7 @@ namespace EntityQueryBuilder
 
 		//get label sid and return if label is invalid
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
-		if(type == ENT_QUERY_NOT_EXISTS
-			|| type == ENT_QUERY_EXISTS
-			|| type == ENT_QUERY_MIN
+		if(type == ENT_QUERY_MIN
 			|| type == ENT_QUERY_MAX
 			|| type == ENT_QUERY_SUM
 			|| type == ENT_QUERY_MODE
@@ -990,7 +988,7 @@ namespace EntityQueryBuilder
 				{
 					for(auto &cn2 : cn->GetOrderedChildNodesReference())
 					{
-						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
+						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn2);
 						if(exists)
 						{
 							labels.emplace_back(sid);

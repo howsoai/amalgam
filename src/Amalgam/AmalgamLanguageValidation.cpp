@@ -622,7 +622,7 @@ AmalgamExample{ R"&((generalized_distance
 	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
-))&", R"(1036.1581794564518)" },
+))&", R"(515.6547015746778)" },
 AmalgamExample{ R"&((generalized_distance
 	;point 1
 	[1 2 1 100 1 50]
@@ -643,7 +643,7 @@ AmalgamExample{ R"&((generalized_distance
 	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
-))&", R"(24.769501899470985)" },
+))&", R"(16.936168566704314)" },
 AmalgamExample{ R"&((generalized_distance
 	;point 1
 	[1 2 1 100 1 50]
@@ -664,7 +664,7 @@ AmalgamExample{ R"&((generalized_distance
 	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
-))&", R"(4.3464184709105573e-45)" },
+))&", R"(1.501901120883625e-25)" },
 AmalgamExample{ R"&((seq
 	(create_entities
 		"DistanceTestContainer"
@@ -785,7 +785,7 @@ AmalgamExample{ R"&((seq
 			)
 		]
 	)
-))&", R"({point2 978.55697898224 point3 1036.1581794564518 point1 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
+))&", R"({point3 515.654701574678 point1 515.654701574678 point2 545.8279373833906})", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "DistanceSymmetryContainer" .null)
 	(create_entities

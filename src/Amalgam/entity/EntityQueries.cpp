@@ -545,7 +545,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
-		IterateOverFilteredEntities(query, [&](const auto &ids, auto get_id) {
+		IterateOverEntityList(query, [&](const auto &ids, auto get_id) {
 			if(is_first && type == ENT_QUERY_IN_ENTITY_LIST)
 			{
 				matching_entities.reserve(ids.size());

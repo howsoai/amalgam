@@ -22,6 +22,10 @@ public:
 
 	//--- Construction & Lifecycle ---
 
+	AssocRef() noexcept
+		: en(&EvaluableNode::emptyMappedChildNodesNode)
+	{}
+
 	AssocRef(EvaluableNode *_en)  noexcept
 		: en(_en)
 	{ }
@@ -29,6 +33,11 @@ public:
 	AssocRef(const AssocRef &other)  noexcept
 		: en(other.en)
 	{ }
+
+	inline void SetEvaluableNodePointer(EvaluableNode *_en)
+	{
+		en = _en;
+	}
 
 	AssocRef &operator=(const AssocRef &other)
 	{

@@ -41,7 +41,16 @@ public:
 
 	AssocRef &operator=(const AssocRef &other)
 	{
-		en = other.en;
+		if(other.size() < EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			GetSmallMap() = other;
+		else
+			GetLargeMap() = other;
+
 		return *this;
 	}
 

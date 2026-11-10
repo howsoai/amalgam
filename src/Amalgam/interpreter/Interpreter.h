@@ -464,7 +464,7 @@ public:
 
 					//need to fetch again after lock in case object has changed
 					cur_context = scopeStack[scope_stack_index - 1];
-					mcn = cur_context->GetMappedChildNodesViewOnAssoc();
+					mcn.SetEvaluableNodePointer(cur_context);
 					found = mcn.find(symbol_sid);
 
 					//if the symbol happened to be removed before lock was acquired, keep descending
@@ -769,7 +769,7 @@ protected:
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
 	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset
-	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedRef params,
 		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter
@@ -782,7 +782,7 @@ protected:
 	//if true, immediate_results allows the interpreted_nodes to be set to immediate values
 	//returns true if it is able to interpret the nodes concurrently
 	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-		EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+		EvaluableNode::OrderedRef &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		EvaluableNodeRequestedValueTypes immediate_results = EvaluableNodeRequestedValueTypes());
 
 	//returns true if this Interpreter shares the stack with others

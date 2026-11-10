@@ -54,7 +54,7 @@ public:
 	void AnalyzeIDPath(EvaluableNode *id_path, StringRef *dest_sid_ref)
 	{
 		idPath = nullptr;
-		idPathEntries = nullptr;
+		idPathEntries.SetEvaluableNodePointer(nullptr);
 		curIndex = 0;
 		containerIdIndex = 0;
 		entityIdIndex = 0;
@@ -83,9 +83,9 @@ public:
 		}
 
 		//size of the entity list excluding trailing nulls
-		auto id_path_entries = &id_path->GetOrderedChildNodesReference();
-		size_t non_null_size = id_path_entries->size();
-		while(non_null_size > 0 && EvaluableNode::IsNull((*id_path_entries)[non_null_size - 1]))
+		auto id_path_entries = id_path->GetOrderedChildNodesViewViewOnList();
+		size_t non_null_size = id_path_entries.size();
+		while(non_null_size > 0 && EvaluableNode::IsNull(id_path_entries[non_null_size - 1]))
 			non_null_size--;
 
 		//if no entities, nothing to traverse
@@ -93,10 +93,10 @@ public:
 			return;
 
 		idPath = id_path;
-		idPathEntries = id_path_entries;
+		idPathEntries.SetEvaluableNodePointer(id_path);
 
 		//find first index
-		while(curIndex < non_null_size && EvaluableNode::IsNull((*idPathEntries)[curIndex]))
+		while(curIndex < non_null_size && EvaluableNode::IsNull(idPathEntries[curIndex]))
 			curIndex++;
 
 		lastIdIndex = non_null_size - 1;
@@ -105,7 +105,7 @@ public:
 		if(destSidReference != nullptr)
 		{
 			//walk down to find the entity id
-			while(entityIdIndex > curIndex && EvaluableNode::IsNull((*idPathEntries)[entityIdIndex - 1]))
+			while(entityIdIndex > curIndex && EvaluableNode::IsNull(idPathEntries[entityIdIndex - 1]))
 				entityIdIndex--;
 		}
 
@@ -116,7 +116,7 @@ public:
 		if(entityIdIndex > curIndex)
 		{
 			containerIdIndex = entityIdIndex - 1;
-			while(containerIdIndex > curIndex && EvaluableNode::IsNull((*idPathEntries)[containerIdIndex - 1]))
+			while(containerIdIndex > curIndex && EvaluableNode::IsNull(idPathEntries[containerIdIndex - 1]))
 				containerIdIndex--;
 		}
 	}
@@ -142,13 +142,13 @@ public:
 		{
 			//advance to next step
 			curIndex++;
-		} while(curIndex < entityIdIndex && EvaluableNode::IsNull((*idPathEntries)[curIndex]));
+		} while(curIndex < entityIdIndex && EvaluableNode::IsNull(idPathEntries[curIndex]));
 	}
 
 	//gets the current ID, nullptr if out of ids
 	inline EvaluableNode *GetCurId()
 	{
-		if(idPathEntries == nullptr)
+		if(!idPathEntries.HasValidNode())
 		{
 			if(curIndex == 0)
 				return idPath;
@@ -157,12 +157,12 @@ public:
 
 		if(curIndex > entityIdIndex)
 			return nullptr;
-		return (*idPathEntries)[curIndex];
+		return idPathEntries[curIndex];
 	}
 
 	//the node for the id path and a pointer to its ordered child nodes
 	EvaluableNode *idPath;
-	EvaluableNode::OrderedType *idPathEntries;
+	EvaluableNode::OrderedRef idPathEntries;
 
 	//current index in idPath
 	size_t curIndex;
@@ -433,7 +433,7 @@ inline EvaluableNodeReference CreateListOfNumbersFromIteratorAndFunction(ValueCo
 	EvaluableNodeManager *enm, GetNumberFunction get_number)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(value_container.size());
 
 	for(auto value_element : value_container)
@@ -449,7 +449,7 @@ inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(Stri
 	EvaluableNodeManager *enm, GetStringFunction get_string_id)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(string_container.size());
 
 	for(auto string_element : string_container)
@@ -465,7 +465,7 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 	EvaluableNodeManager *enm, GetStringFunction get_string)
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
-	auto &ocn = list->GetOrderedChildNodesReference();
+	auto ocn = list->GetOrderedChildNodesViewViewOnList();
 	ocn.reserve(string_container.size());
 
 	for(auto string_element : string_container)
@@ -478,7 +478,7 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 //assumes result is of ENT_CONCLUDE or ENT_RETURN
 inline EvaluableNodeReference RemoveTopConcludeOrReturnNode(EvaluableNodeReference result, EvaluableNodeManager *enm)
 {
-	auto &result_ocn = result->GetOrderedChildNodesReference();
+	auto result_ocn = result->GetOrderedChildNodesViewViewOnList();
 	if(result_ocn.size() == 0)
 	{
 		enm->FreeNodeIfPossible(result);

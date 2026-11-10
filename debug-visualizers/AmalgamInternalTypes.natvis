@@ -6,7 +6,9 @@
 		<Expand>
 			<Item Name="type">type</Item>
 			<Item Name="HAS_EXTENDED_VALUE">(attributes &amp; 1) != 0</Item>
-			<Item Name="value.orderedChildNodes">value.orderedChildNodes</Item>
+			<Item Name="numElementsWhenSmall">numElementsWhenSmall</Item>
+			<Item Name="value.smallOrderedChildNodes">value.smallOrderedChildNodes</Item>
+			<Item Name="value.largeOrderedChildNodes">value.largeOrderedChildNodes</Item>
 			<Item Name="value.mappedChildNodes">value.mappedChildNodes</Item>
 			<Item Name="value.stringValueContainer">value.stringValueContainer</Item>
 			<Item Name="value.numberAndNullValueContainer">value.numberAndNullValueContainer</Item>

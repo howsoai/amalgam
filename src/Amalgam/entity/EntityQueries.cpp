@@ -509,7 +509,7 @@ std::tuple<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue, Evaluab
 EntityQueries::GetQueryRange(EvaluableNode *query)
 {
 	auto type = query->GetType();
-	auto &ocn = query->GetOrderedChildNodes();
+	auto ocn = query->GetOrderedChildNodesView();
 	EvaluableNode *low = ocn[1];
 	EvaluableNode *high = ocn.size() > 2 ? ocn[2] : nullptr;
 	if(type == ENT_QUERY_LESS_OR_EQUAL_TO || type == ENT_QUERY_GREATER_OR_EQUAL_TO)
@@ -568,7 +568,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 	}
 
 	auto &filter = std::get<EntityQuery::Filter>(query.payload);
-	auto &ocn = filter.node->GetOrderedChildNodes();
+	auto ocn = filter.node->GetOrderedChildNodesView();
 	//the builder has already validated this label as public
 	auto label = filter.label;
 
@@ -645,7 +645,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 				return true;
 			bool matches = false;
 			if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
-				for(auto node : ocn[1]->GetOrderedChildNodesReference())
+				for(auto node : ocn[1]->GetOrderedChildNodesViewViewOnList())
 				{
 					EvaluableNodeImmediateValue compare_value;
 					auto compare_type = compare_value.CopyValueFromEvaluableNode(node);

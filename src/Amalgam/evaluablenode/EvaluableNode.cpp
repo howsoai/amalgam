@@ -14,7 +14,7 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode EvaluableNode::emptyOrderedChildNodes(ENT_LIST);
 EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
@@ -266,7 +266,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 	}
 
 	//convert ordered child nodes into index number -> value
-	auto ocn = std::move(GetOrderedChildNodesReference());
+	auto ocn = GetOrderedChildNodesViewViewOnList().ExtractLargeOrderedType();
 
 	InitMappedChildNodes(ocn.size());
 	type = ENT_ASSOC;
@@ -285,7 +285,7 @@ void EvaluableNode::ConvertAssocToList()
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	OrderedType new_ocn;
+	LargeOrderedType new_ocn;
 
 	auto mcn = GetMappedChildNodesViewOnAssoc();
 	new_ocn.reserve(mcn.size());
@@ -294,9 +294,7 @@ void EvaluableNode::ConvertAssocToList()
 
 	InitOrderedChildNodes();
 	type = ENT_LIST;
-
-	//swap for efficiency
-	std::swap(GetOrderedChildNodesReference(), new_ocn);
+	GetOrderedChildNodesViewViewOnList() = std::move(new_ocn);
 }
 
 size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
@@ -320,7 +318,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		}
 		else
 		{
-			total_size += sizeof(OrderedType);
+			total_size += sizeof(LargeOrderedType);
 		}
 	}
 
@@ -335,7 +333,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		comment_size++;
 	total_size += annotation_size + comment_size;
 
-	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
+	total_size += n->GetOrderedChildNodesView().capacity() * sizeof(EvaluableNode *);
 	total_size += n->GetMappedChildNodesView().size() * extended_assoc_multiplier * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
 
 	return total_size;
@@ -377,7 +375,7 @@ bool EvaluableNode::IsNodeValid()
 	}
 	else //ordered
 	{
-		auto &ocn = GetOrderedChildNodesReference();
+		auto ocn = GetOrderedChildNodesViewViewOnList();
 		return (ocn.size() < max_size);
 	}
 
@@ -388,6 +386,7 @@ bool EvaluableNode::IsNodeValid()
 void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+	numElementsWhenSmall = 0;
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
@@ -455,8 +454,9 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	}
 	else //ordered
 	{
-		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = n->GetOrderedChildNodesReference();
+		//ensure a copy is made, not a move, since the method returns an r value
+		auto other_ocn = n->GetOrderedChildNodesViewViewOnList();
+		GetOrderedChildNodesViewViewOnList() = other_ocn;
 	}
 
 	if(copy_metadata)
@@ -507,7 +507,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	}
 	else if(!DoesEvaluableNodeTypeUseNullData(cur_type)) //ordered
 	{
-		auto &n_ocn = n->GetOrderedChildNodesReference();
+		auto n_ocn = n->GetOrderedChildNodesViewViewOnList();
 		if(n_ocn.empty())
 			ClearOrderedChildNodes();
 		else
@@ -640,7 +640,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
-			auto ocn = std::move(GetOrderedChildNodesReference());
+			LargeOrderedType ocn = GetOrderedChildNodesViewViewOnList().ExtractLargeOrderedType();
 
 			InitMappedChildNodes(ocn.size());
 			type = new_type;
@@ -666,15 +666,14 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
-			OrderedType new_ordered;
+			LargeOrderedType new_ordered;
 			auto mcn = GetMappedChildNodesViewOnAssoc();
 			new_ordered.reserve(mcn.size());
 			for(auto &[cn_id, cn] : mcn)
 				new_ordered.emplace_back(cn);
 
 			InitOrderedChildNodes();
-			//swap for efficiency
-			std::swap(GetOrderedChildNodesReference(), new_ordered);
+			GetOrderedChildNodesViewViewOnList() = std::move(new_ordered);
 		}
 		else //just set up empty ordered
 		{
@@ -779,17 +778,17 @@ size_t EvaluableNode::GetNumChildNodes()
 	if(IsAssociativeArray())
 		return GetMappedChildNodesViewOnAssoc().size();
 	else
-		return GetOrderedChildNodesReference().size();
+		return GetOrderedChildNodesViewViewOnList().size();
 
 	return 0;
 }
 
-void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(LargeOrderedType &ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference() = ocn;
+	GetOrderedChildNodesViewViewOnList() = ocn;
 
 	SetNeedCycleCheck(need_cycle_check);
 
@@ -799,12 +798,27 @@ void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, 
 		SetIsIdempotent(is_idempotent);
 }
 
-void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference() = std::move(ocn);
+	GetOrderedChildNodesViewViewOnList() = ocn;
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
+void EvaluableNode::SetOrderedChildNodes(LargeOrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsOrderedArray()) [[unlikely]]
+		return;
+
+	GetOrderedChildNodesViewViewOnList() = std::move(ocn);
 
 	SetNeedCycleCheck(need_cycle_check);
 
@@ -819,7 +833,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference().clear();
+	GetOrderedChildNodesViewViewOnList().clear();
 
 	SetNeedCycleCheck(false);
 
@@ -831,7 +845,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	GetOrderedChildNodesReference().emplace_back(cn);
+	GetOrderedChildNodesViewViewOnList().emplace_back(cn);
 
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
@@ -841,7 +855,7 @@ void EvaluableNode::AppendOrderedChildNodes(OrderedRef ocn_to_append)
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
-	auto &ocn = GetOrderedChildNodesReference();
+	auto ocn = GetOrderedChildNodesViewViewOnList();
 	ocn.insert(end(ocn), begin(ocn_to_append), end(ocn_to_append));
 
 	//if cycles, propagate upward
@@ -1110,13 +1124,59 @@ void EvaluableNode::EnsureHasExtendedValue()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(value.orderedChildNodes);
-		value.DestructOrderedChildNodes();
+		LargeOrderedType temp_ocn;
+		if(!HasLargeOrderedType())
+		{
+			temp_ocn.assign(
+				begin(value.smallOrderedChildNodes), begin(value.smallOrderedChildNodes) + numElementsWhenSmall);
+			SetHasLargeOrderedType();
+		}
+		else
+		{
+			temp_ocn = std::move(value.largeOrderedChildNodes);
+			value.DestructLargeOrderedChildNodes();
+		}
+		
 		value.extendedOrderedChildNodes.Construct();
-		*value.extendedOrderedChildNodes.orderedChildNodes = std::move(temp_ocn);
+		*value.extendedOrderedChildNodes.largeOrderedChildNodes = std::move(temp_ocn);
 	}
 
 	SetExtendedValue(true);
+}
+
+void EvaluableNode::EnsureHasLargeOrderedType()
+{
+	if(HasExtendedValue() || HasLargeOrderedType())
+		return;
+
+	LargeOrderedType large_nodes(begin(value.smallOrderedChildNodes),
+		begin(value.smallOrderedChildNodes) + numElementsWhenSmall);
+	SetHasLargeOrderedType();
+
+	if(!HasExtendedValue())
+	{
+		value.ConstructLargeOrderedChildNodes();
+		value.largeOrderedChildNodes = std::move(large_nodes);
+	}
+	else
+	{
+		value.extendedOrderedChildNodes.Construct();
+		*value.extendedOrderedChildNodes.largeOrderedChildNodes = std::move(large_nodes);
+	}
+}
+
+void EvaluableNode::ReduceToSmallOrderedTypeIfPossible()
+{
+	if(HasExtendedValue() || !HasLargeOrderedType() || value.largeOrderedChildNodes.size() > smallOrderedTypeMaxSize)
+		return;
+
+	auto large_nodes = std::move(value.largeOrderedChildNodes);
+	value.ConstructLargeOrderedChildNodes();
+
+	for(size_t i = 0; i < large_nodes.size(); i++)
+		value.smallOrderedChildNodes[i] = large_nodes[i];
+
+	numElementsWhenSmall = static_cast<uint8_t>(large_nodes.size());
 }
 
 void EvaluableNode::RemoveExtendedValueIfPossible()
@@ -1141,11 +1201,11 @@ void EvaluableNode::RemoveExtendedValueIfPossible()
 	}
 	else //ordered
 	{
-		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-		value.extendedOrderedChildNodes.orderedChildNodes.reset();
+		LargeOrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.largeOrderedChildNodes);
+		value.extendedOrderedChildNodes.largeOrderedChildNodes.reset();
 
-		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = std::move(temp_ocn);
+		value.ConstructLargeOrderedChildNodes();
+		value.largeOrderedChildNodes = std::move(temp_ocn);
 	}
 
 	SetExtendedValue(false);
@@ -1215,8 +1275,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 	}
 
 	//if made it here, then both types are ordered, since immediates and nulls are not passed in
-	auto &a_ocn = a->GetOrderedChildNodesReference();
-	auto &b_ocn = b->GetOrderedChildNodesReference();
+	auto a_ocn = a->GetOrderedChildNodesViewViewOnList();
+	auto b_ocn = b->GetOrderedChildNodesViewViewOnList();
 	size_t a_size = a_ocn.size();
 	if(a_size != b_ocn.size())
 		return false;
@@ -1369,7 +1429,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	}
 	else if(!n->IsTerminal())
 	{
-		for(auto &e : n->GetOrderedChildNodesReference())
+		for(auto &e : n->GetOrderedChildNodesViewViewOnList())
 		{
 			if(e == nullptr)
 				continue;
@@ -1419,7 +1479,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 		}
 		else //must be ordered, since immediate are not recursed
 		{
-			for(EvaluableNode *e : cur->GetOrderedChildNodesReference())
+			for(EvaluableNode *e : cur->GetOrderedChildNodesViewViewOnList())
 			{
 				if(e == nullptr)
 				{
@@ -1468,7 +1528,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 		}
 		else //must be ordered, since immediate are not recursed
 		{
-			auto &ocn = cur->GetOrderedChildNodesReference();
+			auto ocn = cur->GetOrderedChildNodesViewViewOnList();
 			total += ocn.size();
 			for(EvaluableNode *e : ocn)
 			{

@@ -312,7 +312,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 	//copy the rest of the stack if there is more
 	if(!bottomOfScopeStack)
 	{
-		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
+		auto stack_nodes_ocn = copied_stack->GetOrderedChildNodesViewViewOnList();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
 			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
@@ -568,7 +568,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	//if it's an actual address list, then use it
 	if(!EvaluableNode::IsNull(tpl) && DoesEvaluableNodeTypeUseOrderedData(tpl->GetType()))
 	{
-		auto &ocn = tpl->GetOrderedChildNodesReference();
+		auto ocn = tpl->GetOrderedChildNodesViewViewOnList();
 		address_list = ocn.data();
 		address_list_length = ocn.size();
 	}
@@ -619,7 +619,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		}
 		else if(cur_node->IsOrderedArray())
 		{
-			auto &ocn = cur_node->GetOrderedChildNodesReference();
+			auto ocn = cur_node->GetOrderedChildNodesViewViewOnList();
 			if(ocn.size() > 0)
 			{
 				PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedRef params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity)
 {
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
@@ -888,7 +888,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	EvaluableNode::OrderedRef &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())
@@ -996,7 +996,7 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsAndChangesIfNeeded(
 		return result;
 
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_tuple_ocn = result_tuple->GetOrderedChildNodesReference();
+	auto result_tuple_ocn = result_tuple->GetOrderedChildNodesViewViewOnList();
 	result_tuple_ocn.push_back(result);
 	result_tuple.UpdatePropertiesBasedOnAttachedNode(result);
 

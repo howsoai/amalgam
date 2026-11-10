@@ -23,7 +23,7 @@ public:
 	//--- Construction & Lifecycle ---
 
 	AssocRef() noexcept
-		: en(&EvaluableNode::emptyMappedChildNodesNodes)
+		: en(&EvaluableNode::emptyMappedChildNodesNode)
 	{}
 
 	AssocRef(EvaluableNode *_en)  noexcept

@@ -1218,7 +1218,6 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 	bool value_found = false;
 
 	auto ocn = en->GetOrderedChildNodesViewViewOnList();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 

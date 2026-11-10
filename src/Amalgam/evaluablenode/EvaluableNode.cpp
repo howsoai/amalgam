@@ -15,7 +15,7 @@ bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode EvaluableNode::emptyOrderedChildNodes(ENT_LIST);
-EvaluableNode EvaluableNode::emptyMappedChildNodesNodes(ENT_ASSOC);
+EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging

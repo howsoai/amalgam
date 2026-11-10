@@ -729,8 +729,7 @@ public:
 		if(compute_surprisal || DoesFeatureHaveDeviation(index))
 			prob_class_given_match = 1 - featureAttribs[index].deviation;
 
-		double dist_term = ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(index, prob_class_given_match);
-		return ContextuallyExponentiateAndWeightDifferenceTerm<compute_surprisal>(dist_term, index, true);
+		return ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(index, prob_class_given_match);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal

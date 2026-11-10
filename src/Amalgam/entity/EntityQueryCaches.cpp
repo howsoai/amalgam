@@ -804,7 +804,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			EvaluableNode *query_return = enm->AllocNode(ENT_ASSOC);
 			query_return->ReserveMappedChildNodes(matching_ents.size());
 
-			if(last_query_type == ENT_EXISTS)
+			if(last_query_type == ENT_QUERY_EXISTS)
 			{
 				auto &condition = conditions.back();
 				auto &labels = std::get<EntityQuery::LabelExistence>(condition.payload).labels;

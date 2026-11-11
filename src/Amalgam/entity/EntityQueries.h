@@ -23,18 +23,6 @@ extern bool _enable_SBF_datastore;
 
 namespace EntityQueries
 {
-	inline EvaluableNode *GetValueFilterNode(const EntityQuery &query)
-	{
-		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
-			return filter->node;
-		return nullptr;
-	}
-
-	inline StringInternPool::StringID GetValueFilterLabel(const EntityQuery &query)
-	{
-		return std::get<EntityQuery::ValueFilter>(query.payload).label;
-	}
-
 	//converts range endpoints once per filter, outside the entity loop
 	std::tuple<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>
 		GetQueryRange(EvaluableNode *query);

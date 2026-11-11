@@ -907,7 +907,10 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		query_return_value = EvaluableNodeReference::Null();
 
 		auto &query = conditions[cond_index];
-		auto node = EntityQueries::GetValueFilterNode(query);
+		EvaluableNode *node = nullptr;
+		if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
+			node = value_filter->node;
+
 		if(node != nullptr || std::holds_alternative<EntityQuery::EntityIds>(query.payload) || query.queryType == ENT_NULL)
 		{
 			EntityQueries::FilterEntities(query, container, matching_entities, first_condition);
@@ -1107,10 +1110,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerS
 		return;
 	}
 
-	auto query_node = EntityQueries::GetValueFilterNode(query);
+	EvaluableNode *query_node = nullptr;
+	if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
+		query_node = value_filter->node;
+
 	auto type = query_node->GetType();
 	auto &ocn = query_node->GetOrderedChildNodes();
-	auto label = EntityQueries::GetValueFilterLabel(query);
+	auto label = std::get<EntityQuery::ValueFilter>(query.payload).label;
 	auto &temp = buffers.tempMatchingEntityIndices;
 	switch(type)
 	{

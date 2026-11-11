@@ -730,38 +730,16 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		//start each condition with cleared compute results as to not reuse the results from a previous computation
 		compute_results.clear();
 
-		//if query_none, return results as empty list
-		if(query.queryType == ENT_NULL)
-		{
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
-				return EvaluableNodeReference(0.0);
-			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
-		}
-
 		last_query = &query;
-
-		if(auto distance = std::get_if<EntityQuery::Distance>(&query.payload))
-		{
-			distance->entity = container;
-			entity_caches->GetMatchingEntities(query.queryType, distance, matching_ents, compute_results, is_first, !is_last || !return_query_value);
-			if(query.queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
-			{
-				if(compute_results.size() > 0)
-					return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
-				return EvaluableNodeReference::Null();
-			}
-			return EvaluableNodeReference::Null();
-		}
-
-		if(auto extremum = std::get_if<EntityQuery::Extremum>(&query.payload))
-		{
-			entity_caches->FindMinMax(*extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
-			return EvaluableNodeReference::Null();
-		}
 
 		//aggregates return even in non-final position on the cached path.
 		switch(query.queryType)
 		{
+		case ENT_NULL:
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+				return EvaluableNodeReference(0.0);
+			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
+
 		case ENT_QUERY_SELECT:
 			entity_caches->SelectEntities(query, matching_ents, is_first);
 			return EvaluableNodeReference::Null();
@@ -769,6 +747,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_SAMPLE:
 			entity_caches->GetMatchingEntitiesViaSamplingWithReplacement(query, matching_ents, indices_with_duplicates, is_first, !is_last || !return_query_value);
 			return EvaluableNodeReference::Null();
+
+		case ENT_QUERY_MIN:
+		case ENT_QUERY_MAX:
+		{
+			auto &extremum = std::get<EntityQuery::Extremum>(query.payload);
+			entity_caches->FindMinMax(extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
+			return EvaluableNodeReference::Null();
+		}
 
 		case ENT_QUERY_MODE:
 			return entity_caches->ComputeMode(query, matching_ents, enm, is_first);
@@ -788,6 +774,19 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				entity_caches->ComputeNumericAggregate(query, matching_ents, is_first), immediate_result);
 
 		default:
+			if(auto distance = std::get_if<EntityQuery::Distance>(&query.payload))
+			{
+				distance->entity = container;
+				entity_caches->GetMatchingEntities(query.queryType, distance, matching_ents, compute_results, is_first, !is_last || !return_query_value);
+				if(query.queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+				{
+					if(compute_results.size() > 0)
+						return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
+					return EvaluableNodeReference::Null();
+				}
+				return EvaluableNodeReference::Null();
+			}
+
 			entity_caches->GetMatchingEntities(query, matching_ents, is_first);
 			return EvaluableNodeReference::Null();
 		}

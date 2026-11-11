@@ -740,9 +740,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				entity_caches->ComputeNumericAggregate(query, matching_ents, is_first), immediate_result);
 
 		default:
-			//TODO 26245: make this not take in a span
-			entity_caches->GetMatchingEntities(
-				std::span<const EntityQuery>(conditions.data() + cond_index, 1), matching_ents, is_first);
+			entity_caches->GetMatchingEntities(query, matching_ents, is_first);
 		}
 	}
 
@@ -1016,23 +1014,22 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_entities, enm, [](Entity *e) { return e->GetIdStringId(); });
 }
 
-void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries,
-	BitArrayIntegerSet &matching_entities, bool is_first)
+void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto first_query_type = queries.front().queryType;
-	if(first_query_type == ENT_QUERY_IN_ENTITY_LIST || first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+	auto query_type = query.queryType;
+	if(query_type == ENT_QUERY_IN_ENTITY_LIST || query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
 		auto &temp = buffers.tempMatchingEntityIndices;
 		temp.clear();
 		auto &included_entities = is_first ? matching_entities : temp;
-		if(is_first && first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+		if(is_first && query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
-		auto &entity_ids = std::get<EntityQuery::EntityIds>(queries.front().payload);
+		auto &entity_ids = std::get<EntityQuery::EntityIds>(query.payload);
 		for(auto id : entity_ids)
 		{
 			size_t index = container->GetContainedEntityIndex(id);
-			if(first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+			if(query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			{
 				matching_entities.erase(index);
 			}
@@ -1045,7 +1042,7 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 			}
 		}
 
-		if(first_query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
+		if(query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
 			matching_entities.Intersect(temp);
 		return;
 	}
@@ -1054,20 +1051,17 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	Concurrency::ReadLock lock(mutex);
 #endif
 	std::vector<StringInternPool::StringID> labels_to_add;
-	for(const auto &condition : queries)
+	if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
 	{
-		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&condition.payload))
+		if(!DoesHaveLabel(filter->label))
+			labels_to_add.push_back(filter->label);
+	}
+	else if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
+	{
+		for(auto &l : exist_filter->labels)
 		{
-			if(!DoesHaveLabel(filter->label))
-				labels_to_add.push_back(filter->label);
-		}
-		else if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&condition.payload))
-		{
-			for(auto &l : exist_filter->labels)
-			{
-				if(!DoesHaveLabel(l))
-					labels_to_add.push_back(l);
-			}
+			if(!DoesHaveLabel(l))
+				labels_to_add.push_back(l);
 		}
 	}
 #if defined(MULTITHREAD_SUPPORT)
@@ -1076,120 +1070,113 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	EnsureLabelsAreCached(labels_to_add);
 #endif
 
-	for(const auto &condition : queries)
+	if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
 	{
-		if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&condition.payload))
+		if(exist_filter->node->GetType() == ENT_QUERY_EXISTS)
 		{
-			if(exist_filter->node->GetType() == ENT_QUERY_EXISTS)
-			{
-				for(auto &l : exist_filter->labels)
-				{
-					if(is_first)
-					{
-						sbfds.FindAllEntitiesWithFeature(l, matching_entities);
-						is_first = false;
-					}
-					else
-					{
-						sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
-					}
-				}
-			}
-			else
-			{
-				for(auto &l : exist_filter->labels)
-				{
-					if(is_first)
-					{
-						sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
-						is_first = false;
-					}
-					else
-					{
-						sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
-					}
-				}
-			}
-
-			continue;
-		}
-
-		auto query = EntityQueries::GetValueFilterNode(condition);
-		auto type = query->GetType();
-		auto &ocn = query->GetOrderedChildNodes();
-		auto label = EntityQueries::GetValueFilterLabel(condition);
-		auto &temp = buffers.tempMatchingEntityIndices;
-		switch(type)
-		{
-		case ENT_QUERY_EQUALS:
-		case ENT_QUERY_NOT_EQUALS:
-		{
-			auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
-			if(is_first && type == ENT_QUERY_EQUALS)
-			{
-				sbfds.UnionAllEntitiesWithValue(label, value, matching_entities);
-			}
-			else
+			for(auto &l : exist_filter->labels)
 			{
 				if(is_first)
-					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
-
-				temp.clear();
-				sbfds.UnionAllEntitiesWithValue(label, value, temp);
-
-				if(type == ENT_QUERY_EQUALS)
-					matching_entities.Intersect(temp);
+				{
+					sbfds.FindAllEntitiesWithFeature(l, matching_entities);
+					is_first = false;
+				}
 				else
-					matching_entities.erase(temp);
+				{
+					sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
+				}
 			}
-			break;
 		}
-
-		case ENT_QUERY_BETWEEN:
-		case ENT_QUERY_NOT_BETWEEN:
-		case ENT_QUERY_LESS_OR_EQUAL_TO:
-		case ENT_QUERY_GREATER_OR_EQUAL_TO:
+		else
 		{
-			auto [value_type, low, high] = EntityQueries::GetQueryRange(query);
-			if(is_first)
-				sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, matching_entities, type != ENT_QUERY_NOT_BETWEEN);
-			else
-			{
-				temp.clear();
-				sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, temp, type != ENT_QUERY_NOT_BETWEEN);
-				matching_entities.Intersect(temp);
-			}
-			break;
-		}
-
-		case ENT_QUERY_AMONG:
-		case ENT_QUERY_NOT_AMONG:
-		{
-			if(type == ENT_QUERY_NOT_AMONG)
+			for(auto &l : exist_filter->labels)
 			{
 				if(is_first)
-					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+				{
+					sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
+					is_first = false;
+				}
 				else
-					sbfds.IntersectEntitiesWithFeature(label, matching_entities, false);
+				{
+					sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
+				}
 			}
-			temp.clear();
-			auto &matches = is_first && type == ENT_QUERY_AMONG ? matching_entities : temp;
-			if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
-				for(auto node : ocn[1]->GetOrderedChildNodesReference())
-					sbfds.UnionAllEntitiesWithValue(label, EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node), matches);
-			if(type == ENT_QUERY_NOT_AMONG)
-				matching_entities.erase(temp);
-			else if(!is_first)
-				matching_entities.Intersect(temp);
-			break;
 		}
 
-		default:;
-		}
-		is_first = false;
-	}
-	//caller groups EXISTS and NOT_EXISTS separately. each group only removes
-	//members, so batch operations can use the old count as an upper bound until here
-	if(first_query_type == ENT_QUERY_EXISTS || first_query_type == ENT_QUERY_NOT_EXISTS)
 		matching_entities.UpdateNumElements();
+		return;
+	}
+
+	auto query_node = EntityQueries::GetValueFilterNode(query);
+	auto type = query_node->GetType();
+	auto &ocn = query_node->GetOrderedChildNodes();
+	auto label = EntityQueries::GetValueFilterLabel(query);
+	auto &temp = buffers.tempMatchingEntityIndices;
+	switch(type)
+	{
+	case ENT_QUERY_EQUALS:
+	case ENT_QUERY_NOT_EQUALS:
+	{
+		auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
+		if(is_first && type == ENT_QUERY_EQUALS)
+		{
+			sbfds.UnionAllEntitiesWithValue(label, value, matching_entities);
+		}
+		else
+		{
+			if(is_first)
+				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+
+			temp.clear();
+			sbfds.UnionAllEntitiesWithValue(label, value, temp);
+
+			if(type == ENT_QUERY_EQUALS)
+				matching_entities.Intersect(temp);
+			else
+				matching_entities.erase(temp);
+		}
+		break;
+	}
+
+	case ENT_QUERY_BETWEEN:
+	case ENT_QUERY_NOT_BETWEEN:
+	case ENT_QUERY_LESS_OR_EQUAL_TO:
+	case ENT_QUERY_GREATER_OR_EQUAL_TO:
+	{
+		auto [value_type, low, high] = EntityQueries::GetQueryRange(query_node);
+		if(is_first)
+			sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, matching_entities, type != ENT_QUERY_NOT_BETWEEN);
+		else
+		{
+			temp.clear();
+			sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, temp, type != ENT_QUERY_NOT_BETWEEN);
+			matching_entities.Intersect(temp);
+		}
+		break;
+	}
+
+	case ENT_QUERY_AMONG:
+	case ENT_QUERY_NOT_AMONG:
+	{
+		if(type == ENT_QUERY_NOT_AMONG)
+		{
+			if(is_first)
+				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+			else
+				sbfds.IntersectEntitiesWithFeature(label, matching_entities, false);
+		}
+		temp.clear();
+		auto &matches = is_first && type == ENT_QUERY_AMONG ? matching_entities : temp;
+		if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
+			for(auto node : ocn[1]->GetOrderedChildNodesReference())
+				sbfds.UnionAllEntitiesWithValue(label, EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node), matches);
+		if(type == ENT_QUERY_NOT_AMONG)
+			matching_entities.erase(temp);
+		else if(!is_first)
+			matching_entities.Intersect(temp);
+		break;
+	}
+
+	default:;
+	}
 }

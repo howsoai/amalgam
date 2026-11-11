@@ -128,8 +128,7 @@ public:
 	void GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
 		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
-	void GetMatchingEntities(std::span<const EntityQuery> queries,
-		BitArrayIntegerSet &matching_entities, bool is_first);
+	void GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
 	void FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first);
 

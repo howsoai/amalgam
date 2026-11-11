@@ -88,26 +88,4 @@ namespace EntityQueries
 
 	EvaluableNodeReference ValueMassesToResult(OrderedHashMap<StringInternPool::StringID, double> &value_weights,
 		EvaluableNodeManager *enm, EvaluableNodeRequestedValueTypes immediate_result);
-
-	//calls function once with the borrowed or converted ID list and its accessor, before entity iteration
-	template<typename Function>
-	__forceinline void IterateOverEntityList(const EntityQuery &query, Function function)
-	{
-		//TODO 26245: get rid of this method and inline it
-		if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
-		{
-			std::span<EvaluableNode *const> nodes;
-			auto &ocn = filter->node->GetOrderedChildNodes();
-			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0]))
-				nodes = ocn[0]->GetOrderedChildNodesReference();
-
-			function(nodes, [](auto node) {
-				return EvaluableNode::IsNull(node) ? StringInternPool::NOT_A_STRING_ID : node->GetStringIDReference();
-			});
-		}
-		else
-		{
-			function(std::get<EntityQuery::EntityIds>(query.payload), [](auto id) { return id; });
-		}
-	}
 }

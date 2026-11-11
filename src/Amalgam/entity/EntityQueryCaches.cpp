@@ -1028,26 +1028,22 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 		if(is_first && first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
-		EntityQueries::IterateOverEntityList(queries.front(), [&](const auto &ids, auto get_id) {
-			for(auto item : ids)
+		auto &entity_ids = std::get<EntityQuery::EntityIds>(queries.front().payload);
+		for(auto id : entity_ids)
+		{
+			size_t index = container->GetContainedEntityIndex(id);
+			if(first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			{
-				size_t index = container->GetContainedEntityIndex(get_id(item));
-				if(first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
-				{
-					matching_entities.erase(index);
-				}
-				else if(index != std::numeric_limits<size_t>::max())
-				{
-					//converted lists only grow the scratch set for matching IDs
-					if constexpr(std::is_same_v<std::decay_t<decltype(ids)>, EntityQuery::EntityIds>)
-					{
-						if(!is_first && !matching_entities.contains(index))
-							continue;
-					}
-					included_entities.insert(index);
-				}
+				matching_entities.erase(index);
 			}
-		});
+			else if(index != std::numeric_limits<size_t>::max())
+			{
+				if(!is_first && !matching_entities.contains(index))
+					continue;
+
+				included_entities.insert(index);
+			}
+		}
 
 		if(first_query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
 			matching_entities.Intersect(temp);

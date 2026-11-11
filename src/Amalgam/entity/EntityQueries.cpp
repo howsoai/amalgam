@@ -545,25 +545,25 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
-		IterateOverEntityList(query, [&](const auto &ids, auto get_id) {
-			if(is_first && type == ENT_QUERY_IN_ENTITY_LIST)
-			{
-				matching_entities.reserve(ids.size());
-				for(auto item : ids)
-					if(auto entity = container->GetContainedEntity(get_id(item)))
-						matching_entities.push_back(entity);
-			}
-			else
-			{
-				if(is_first)
-					matching_entities = container->GetContainedEntities();
-				std::erase_if(matching_entities, [&](Entity *entity) {
-					auto id = entity->GetIdStringId();
-					bool found = std::any_of(begin(ids), end(ids), [&](auto item) { return get_id(item) == id; });
-					return found == (type == ENT_QUERY_NOT_IN_ENTITY_LIST);
-				});
-			}
-		});
+		auto &ids = std::get<EntityQuery::EntityIds>(query.payload);
+
+		if(is_first && type == ENT_QUERY_IN_ENTITY_LIST)
+		{
+			matching_entities.reserve(ids.size());
+			for(auto entity_id : ids)
+				if(auto entity = container->GetContainedEntity(entity_id))
+					matching_entities.push_back(entity);
+		}
+		else
+		{
+			if(is_first)
+				matching_entities = container->GetContainedEntities();
+			std::erase_if(matching_entities, [&](Entity *entity) {
+				auto id = entity->GetIdStringId();
+				bool found = std::any_of(begin(ids), end(ids), [&](auto candidate_id) { return candidate_id == id; });
+				return found == (type == ENT_QUERY_NOT_IN_ENTITY_LIST);
+			});
+		}
 		return;
 	}
 

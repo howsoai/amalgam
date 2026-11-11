@@ -159,7 +159,7 @@ public:
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container,
-		std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
+		std::vector<EvaluableNodeReference> &condition_nodes, Interpreter *interpreter, EvaluableNodeManager *enm,
 		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//the container this is a cache for

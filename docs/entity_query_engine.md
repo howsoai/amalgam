@@ -440,7 +440,7 @@ Output:
 
 ### Opcode: `query_not_exists`
 #### Parameters
-`entity_label|list_of_entity_labels labels`
+`[entity_label|list_of_entity_labels labels]`
 #### Returns
 `query`
 #### Description

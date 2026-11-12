@@ -125,8 +125,9 @@ public:
 
 	//returns the set matching_entities of entity ids in the cache that match the provided query condition cond, will fill compute_results with numeric results if KNN query
 	//if is_first is true, optimizes to skip unioning results with matching_entities (just overwrites instead).
-	void GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
-		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
+	void GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType query_type, EntityQuery::Distance &distance_cond,
+		BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results,
+		bool is_first, bool update_matching_entities);
 
 	void GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 

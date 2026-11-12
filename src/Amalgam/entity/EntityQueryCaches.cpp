@@ -659,7 +659,9 @@ void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &m
 	}
 }
 
-
+//iterates over all condition_nodes, regardless of whether they're a list or list of lists, etc.
+// using interpreter, and builds a condition object from it.  then it calls callback with the query object,
+// followed by a bool indicating whether it is the first condition and a bool indicating whether it is the last condition
 template <typename Func>
 static inline EvaluableNodeReference IterateOverQueryConditions(std::vector<EvaluableNodeReference> &condition_nodes,
 	Interpreter *interpreter, Func callback)
@@ -680,7 +682,7 @@ static inline EvaluableNodeReference IterateOverQueryConditions(std::vector<Eval
 		if(EvaluableNode::IsQuery(condition_nodes[i]))
 		{
 			EntityQueryBuilder::BuildCondition(condition_nodes[i], query, interpreter);
-			retval = callback(i, query, first_condition, last_condition_entry);
+			retval = callback(query, first_condition, last_condition_entry);
 
 			first_condition = false;
 		}
@@ -696,7 +698,7 @@ static inline EvaluableNodeReference IterateOverQueryConditions(std::vector<Eval
 				bool last_sub_condition = (last_condition_entry && (j + 1 == cn_ocn.size()));
 
 				EntityQueryBuilder::BuildCondition(cn, query, interpreter);
-				retval = callback(i, query, first_condition, last_sub_condition);
+				retval = callback(query, first_condition, last_sub_condition);
 
 				first_condition = false;
 			}
@@ -731,7 +733,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	// for the first condition, matching_ents is empty and must be populated
 	// for each subsequent loop, matching_ents will have the currently selected entities to query from
 	EvaluableNodeReference result = IterateOverQueryConditions(condition_nodes, interpreter,
-		[&](auto i, EntityQuery &query, bool is_first, bool is_last) -> EvaluableNodeReference
+		[&](EntityQuery &query, bool is_first, bool is_last) -> EvaluableNodeReference
 	{
 		//start each condition with cleared compute results as to not reuse the results from a previous computation
 		compute_results.clear();
@@ -933,7 +935,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 
 	//start querying
 	EvaluableNodeReference query_return_value = IterateOverQueryConditions(condition_nodes, interpreter,
-		[&](auto i, EntityQuery &query, bool is_first, bool is_last)
+		[&](EntityQuery &query, bool is_first, bool is_last)
 	{
 		EvaluableNode *node = nullptr;
 		if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))

@@ -38,7 +38,23 @@ static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interp
 	["Entity1" "Entity2"]
 	["A" "_3SaCTguSSie"]
 	["Entity1"]
-])", "", R"((destroy_entities "Entity1" "Entity2"))"}
+])", "", R"((destroy_entities "Entity1" "Entity2"))"},
+{ R"&((seq
+	(create_entities
+		"case0" { b 1}
+		"case1" { a 4 }
+		"case2" { b 3 a 3 }
+		"case3" { b 3 a 4 }
+		"case4" { b 5 a 3 }
+		"case5" { b 6 a 4 }
+	)
+	(compute_on_contained_entities
+		(query_select 1 4)
+		(query_exists ["b" "a"])
+	)
+))&", R"({
+	case4 {b 5 a 3}
+})", "", R"((destroy_entities "case0" "case1" "case2" "case3" "case4" "case5"))" }
 		});
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

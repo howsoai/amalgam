@@ -52,6 +52,29 @@ Output:
 	["Entity1"]
 ]
 ```
+Example:
+```amalgam
+(seq
+	(create_entities
+		"case0" { b 1}
+		"case1" { a 4 }
+		"case2" { b 3 a 3 }
+		"case3" { b 3 a 4 }
+		"case4" { b 5 a 3 }
+		"case5" { b 6 a 4 }
+	)
+	(compute_on_contained_entities
+		(query_select 1 4)
+		(query_exists ["b" "a"])
+	)
+)
+```
+Output:
+```amalgam
+{
+	case4 {b 5 a 3}
+}
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
@@ -358,11 +381,11 @@ Output:
 
 ### Opcode: `query_exists`
 #### Parameters
-`entity_label label`
+`entity_label|list_of_entity_labels labels1 entity_label|list_of_entity_labels labels2 ...`
 #### Returns
 `query`
 #### Description
-When used as a query argument, selects entities which have the `label`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding labels and values.
+When used as a query argument, selects entities which have the label or labels specified by each parameter `labels`.  Each parameter `labels` can either be a single string label or a list of labels.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding labels and values.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -417,11 +440,11 @@ Output:
 
 ### Opcode: `query_not_exists`
 #### Parameters
-`entity_label label`
+`entity_label|list_of_entity_labels labels`
 #### Returns
 `query`
 #### Description
-When used as a query argument, selects entities which do not have the `label`.
+When used as a query argument, selects entities which do not have the label or labels specified by each parameter `labels`.  Each parameter `labels` can either be a single string label or a list of labels.  
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

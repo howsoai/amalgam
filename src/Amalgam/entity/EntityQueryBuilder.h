@@ -1049,7 +1049,7 @@ namespace EntityQueryBuilder
 			}
 
 			auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
-			if(ocn.size() == 0)
+			if(ocn.size() == 0 || !EvaluableNode::IsOrderedArray(ocn[0]))
 				return;
 
 			auto &nodes = ocn[0]->GetOrderedChildNodesReference();

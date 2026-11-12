@@ -676,9 +676,17 @@ static inline EvaluableNodeReference IterateOverQueryConditions(std::vector<Eval
 	bool first_condition = true;
 	EvaluableNodeReference retval = EvaluableNodeReference::Null();
 
-	for(size_t i = 0; i < condition_nodes.size(); i++)
+	//find any empty trailing lists
+	size_t num_active_condition_nodes = condition_nodes.size();
+	while(num_active_condition_nodes > 0
+			&& condition_nodes[num_active_condition_nodes - 1] != nullptr
+			&& condition_nodes[num_active_condition_nodes - 1]->GetType() == ENT_LIST
+			&& condition_nodes[num_active_condition_nodes - 1]->GetOrderedChildNodesReference().size() == 0)
+		num_active_condition_nodes--;
+
+	for(size_t i = 0; i < num_active_condition_nodes; i++)
 	{
-		bool last_condition_entry = (i + 1 == condition_nodes.size());
+		bool last_condition_entry = (i + 1 == num_active_condition_nodes);
 		if(EvaluableNode::IsQuery(condition_nodes[i]))
 		{
 			EntityQueryBuilder::BuildCondition(condition_nodes[i], query, interpreter);
@@ -952,12 +960,11 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 				query_return->ReserveMappedChildNodes(matching_entities.size());
 				for(auto entity : matching_entities)
 				{
-
 					//create assoc for values for each entity
 					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
 					entity_values->ReserveMappedChildNodes(labels.size());
 					for(auto &label_sid : labels)
-						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
+						entity_values->SetMappedChildNode(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
 
 					//append to query_return after building to ensure all flags are propagated
 					query_return->SetMappedChildNode(entity->GetIdStringId(), entity_values);
@@ -967,6 +974,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			return EvaluableNodeReference::Null();
 		}
 
+		EvaluableNodeReference retval = EvaluableNodeReference::Null();
 		auto distance = std::get_if<EntityQuery::Distance>(&query.payload);
 		if(distance == nullptr)
 		{
@@ -989,20 +997,20 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			{
 				if(query.queryType == ENT_QUERY_MODE)
 				{
-					query_return_value = EntityQueries::ComputeMode(query, matching_entities, enm);
+					retval = EntityQueries::ComputeMode(query, matching_entities, enm);
 				}
 				else if(query.queryType == ENT_QUERY_VALUE_MASSES)
 				{
 					auto value_weights = EntityQueries::ComputeValueMasses(query, matching_entities);
 					//fallback always constructs the result, including size-only requests.
-					query_return_value = EntityQueries::ValueMassesToResult(value_weights, enm, {});
+					retval = EntityQueries::ValueMassesToResult(value_weights, enm, {});
 				}
 				else
-					query_return_value = EvaluableNodeReference(enm->AllocNode(
+					retval = EvaluableNodeReference(enm->AllocNode(
 						EntityQueries::ComputeNumericAggregate(query, matching_entities)), true);
 			}
 
-			return EvaluableNodeReference::Null();
+			return retval;
 		}
 
 		auto &condition = *distance;

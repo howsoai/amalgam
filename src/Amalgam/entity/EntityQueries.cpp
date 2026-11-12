@@ -591,7 +591,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 		auto &labels = existence.labels;
 
 		filter_entities([&](Entity *entity) {
-			if(type == ENT_QUERY_NOT_EXISTS)
+			if(type == ENT_QUERY_EXISTS)
 			{
 				for(auto &l : labels)
 				{
@@ -601,7 +601,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 				}
 				return true;
 			}
-			else
+			else //ENT_QUERY_NOT_EXISTS
 			{
 				for(auto &l : labels)
 				{

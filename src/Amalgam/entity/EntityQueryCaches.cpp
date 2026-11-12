@@ -124,37 +124,38 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	return compute_from(matching_entities);
 }
 
-void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
-	std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities)
+void EntityQueryCaches::GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType query_type, EntityQuery::Distance &distance_cond,
+	BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results,
+	bool is_first, bool update_matching_entities)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(*cond, lock);
+	EnsureLabelsAreCached(distance_cond, lock);
 #else
-	EnsureLabelsAreCached(*cond);
+	EnsureLabelsAreCached(distance_cond);
 #endif
 
 	//get entity (case) weighting if applicable
-	bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
+	bool use_entity_weights = (distance_cond.weightLabel != StringInternPool::NOT_A_STRING_ID);
 	size_t weight_column = std::numeric_limits<size_t>::max();
 	double min_weight = 1.0;
 	if(use_entity_weights)
 	{
-		weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
+		weight_column = sbfds.GetColumnIndexFromLabelId(distance_cond.weightLabel);
 		min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
 	}
 
 	auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t, true>(weight_column, true);
 
-	EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
-		cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
-		cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
+	EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(distance_cond.distEvaluator.computeSurprisal,
+		distance_cond.distEvaluator.transformSurprisalToProb, distance_cond.distanceWeightExponent,
+		distance_cond.minToRetrieve, distance_cond.maxToRetrieve, distance_cond.numToRetrieveMinIncrementalProbability, distance_cond.extraToRetrieve,
 		use_entity_weights, min_weight, get_weight);
 
 	if(is_first)
 		matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
 
-	for(auto label : cond->positionLabels)
+	for(auto label : distance_cond.positionLabels)
 		sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
 	matching_entities.UpdateNumElements();
 
@@ -162,32 +163,32 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		return;
 
 	//column preparation can prune and reorder features; initialize distance terms only afterward
-	sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
-	if(auto neighbors = std::get_if<EntityQuery::Distance::Neighbors>(&cond->target))
+	sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(distance_cond.distEvaluator, distance_cond.positionLabels);
+	if(auto neighbors = std::get_if<EntityQuery::Distance::Neighbors>(&distance_cond.target))
 	{
 		size_t exclusion_entity_index = container->GetContainedEntityIndex(neighbors->entityIdToExclude);
 		matching_entities.erase(exclusion_entity_index);
 
-		cond->distEvaluator.InitializeParametersAndFeatureParams(neighbors->populateOmittedFeatureValues);
+		distance_cond.distEvaluator.InitializeParametersAndFeatureParams(neighbors->populateOmittedFeatureValues);
 		//labels and values must have the same size if they're prepopulated
-		if(!cond->distEvaluator.populateOmittedFeatureValues && neighbors->valuesToCompare.size() != cond->positionLabels.size())
+		if(!distance_cond.distEvaluator.populateOmittedFeatureValues && neighbors->valuesToCompare.size() != distance_cond.positionLabels.size())
 		{
 			matching_entities.clear();
 			return;
 		}
 
 		//if no position labels, then the weight must be zero so just randomly choose k
-		if(cond->positionLabels.size() == 0)
+		if(distance_cond.positionLabels.size() == 0)
 		{
 			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 			temp = matching_entities;
 
 			matching_entities.clear();
 
-			auto rand_stream = cond->randomStream.CreateOtherStreamViaRand();
+			auto rand_stream = distance_cond.randomStream.CreateOtherStreamViaRand();
 
 			//insert each case and compute to zero distance because the distance because weight was zero to get here
-			size_t num_to_retrieve = std::min(cond->maxToRetrieve, temp.size());
+			size_t num_to_retrieve = std::min(distance_cond.maxToRetrieve, temp.size());
 			for(size_t i = 0; i < num_to_retrieve; i++)
 			{
 				size_t rand_index = temp.GetRandomElement(rand_stream);
@@ -198,37 +199,37 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		}
 		else if(query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 		{
-			if(cond->distEvaluator.populateOmittedFeatureValues)
+			if(distance_cond.distEvaluator.populateOmittedFeatureValues)
 			{
-				sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, exclusion_entity_index,
-					distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
-					cond->interpreter, cond->entity, compute_results, cond->randomStream);
+				sbfds.FindEntitiesNearestToIndexedEntity(distance_cond.distEvaluator, distance_cond.positionLabels, exclusion_entity_index,
+					distance_transform.GetNumToRetrieve(), distance_cond.singleLabel, matching_entities, false,
+					distance_cond.interpreter, distance_cond.entity, compute_results, distance_cond.randomStream);
 			}
 			else
 			{
-				sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, neighbors->valuesToCompare,
-					distance_transform.GetNumToRetrieve(), cond->singleLabel,
-					matching_entities, false, cond->interpreter, cond->entity, compute_results,
-					cond->randomStream);
+				sbfds.FindEntitiesNearestToPosition(distance_cond.distEvaluator, distance_cond.positionLabels, neighbors->valuesToCompare,
+					distance_transform.GetNumToRetrieve(), distance_cond.singleLabel,
+					matching_entities, false, distance_cond.interpreter, distance_cond.entity, compute_results,
+					distance_cond.randomStream);
 			}
 		}
 		else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
-			if(cond->distEvaluator.populateOmittedFeatureValues)
+			if(distance_cond.distEvaluator.populateOmittedFeatureValues)
 			{
-				sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
-					exclusion_entity_index, neighbors->maxDistance, cond->singleLabel, matching_entities,
-					cond->interpreter, cond->entity, compute_results);
+				sbfds.FindEntitiesWithinDistanceToIndexedEntity(distance_cond.distEvaluator, distance_cond.positionLabels,
+					exclusion_entity_index, neighbors->maxDistance, distance_cond.singleLabel, matching_entities,
+					distance_cond.interpreter, distance_cond.entity, compute_results);
 			}
 			else
 			{
-				sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
-					neighbors->valuesToCompare, neighbors->maxDistance, cond->singleLabel, matching_entities,
-					cond->interpreter, cond->entity, compute_results);
+				sbfds.FindEntitiesWithinDistanceToPosition(distance_cond.distEvaluator, distance_cond.positionLabels,
+					neighbors->valuesToCompare, neighbors->maxDistance, distance_cond.singleLabel, matching_entities,
+					distance_cond.interpreter, distance_cond.entity, compute_results);
 			}
 		}
 
-		distance_transform.TransformDistances(compute_results, cond->returnSortedList);
+		distance_transform.TransformDistances(compute_results, distance_cond.returnSortedList);
 
 		//populate matching_entities if needed
 		if(update_matching_entities)
@@ -242,7 +243,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
 		//ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 	{
-		cond->distEvaluator.InitializeParametersAndFeatureParams(false);
+		distance_cond.distEvaluator.InitializeParametersAndFeatureParams(false);
 		BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
 		//if anything that computes results for entities
@@ -254,7 +255,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 			|| query_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			//if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
-			auto statistics = std::get_if<EntityQuery::Distance::Statistics>(&cond->target);
+			auto statistics = std::get_if<EntityQuery::Distance::Statistics>(&distance_cond.target);
 			if(statistics != nullptr && !statistics->entityIds.empty())
 			{
 				ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
@@ -288,15 +289,15 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		}
 
 		//rebind the thread-local cache before the processor inspects this query.
-		buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
-			cond->positionLabels, cond->singleLabel);
+		buffers.knnCache.ResetCache(sbfds, matching_entities, distance_cond.distEvaluator, distance_cond.interpreter, distance_cond.entity,
+			distance_cond.positionLabels, distance_cond.singleLabel);
 
 	#ifdef MULTITHREAD_SUPPORT
 		EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
-			distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
+			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.singleLabel, distance_cond.useConcurrency);
 	#else
 		EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
-			distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
+			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.singleLabel);
 	#endif
 
 		auto &results_buffer = buffers.doubleVector;
@@ -304,19 +305,23 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 
 		if(query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			conviction_processor.ComputeDistanceContributionsOnPositions(*std::get<EntityQuery::Distance::Positions>(cond->target).nodes, results_buffer);
+			conviction_processor.ComputeDistanceContributionsOnPositions(
+				*std::get<EntityQuery::Distance::Positions>(distance_cond.target).nodes, results_buffer);
 		}
 		else if(query_type == ENT_QUERY_ENTITY_CONVICTIONS)
 		{
-			conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, std::get<EntityQuery::Distance::Statistics>(cond->target).convictionOfRemoval);
+			conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true,
+				std::get<EntityQuery::Distance::Statistics>(distance_cond.target).convictionOfRemoval);
 		}
 		else if(query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
-			conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, false, std::get<EntityQuery::Distance::Statistics>(cond->target).convictionOfRemoval);
+			conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, false,
+				std::get<EntityQuery::Distance::Statistics>(distance_cond.target).convictionOfRemoval);
 		}
 		else if(query_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
 		{
-			double group_conviction = conviction_processor.ComputeCaseGroupKLDivergence(*ents_to_compute_ptr, std::get<EntityQuery::Distance::Statistics>(cond->target).convictionOfRemoval);
+			double group_conviction = conviction_processor.ComputeCaseGroupKLDivergence(*ents_to_compute_ptr,
+				std::get<EntityQuery::Distance::Statistics>(distance_cond.target).convictionOfRemoval);
 
 			compute_results.clear();
 			compute_results.emplace_back(group_conviction, 0);
@@ -332,7 +337,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		{
 			conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
 
-			if(cond->returnSortedList)
+			if(distance_cond.returnSortedList)
 			{
 				std::stable_sort(begin(compute_results), end(compute_results),
 					[](auto a, auto b) {return a.distance > b.distance; }
@@ -344,7 +349,8 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 		}
 		else //ENT_QUERY_ENTITY_CLUSTERS
 		{
-			conviction_processor.ComputeCaseClusters(*ents_to_compute_ptr, results_buffer, std::get<EntityQuery::Distance::Clusters>(cond->target).minWeight);
+			conviction_processor.ComputeCaseClusters(*ents_to_compute_ptr, results_buffer,
+				std::get<EntityQuery::Distance::Clusters>(distance_cond.target).minWeight);
 		}
 
 		//clear compute_results as it may have been used for intermediate results
@@ -365,7 +371,7 @@ void EntityQueryCaches::GetMatchingEntities(EvaluableNodeType query_type, Entity
 				compute_results.emplace_back(results_buffer[i++], ent_index);
 		}
 
-		if(cond->returnSortedList)
+		if(distance_cond.returnSortedList)
 		{
 			std::stable_sort(begin(compute_results), end(compute_results),
 				[](auto a, auto b) {return a.distance < b.distance; }
@@ -653,8 +659,65 @@ void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &m
 	}
 }
 
+//iterates over all condition_nodes, regardless of whether they're a list or list of lists, etc.
+// using interpreter, and builds a condition object from it.  then it calls callback with the query object,
+// followed by a bool indicating whether it is the first condition and a bool indicating whether it is the last condition
+template <typename Func>
+static inline EvaluableNodeReference IterateOverQueryConditions(std::vector<EvaluableNodeReference> &condition_nodes,
+	Interpreter *interpreter, Func callback)
+{
+	//buffer to reuse memory
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+	#endif
+		static EntityQuery query;
+
+	query.queryType = ENT_NULL;
+	bool first_condition = true;
+	EvaluableNodeReference retval = EvaluableNodeReference::Null();
+
+	//find any empty trailing lists
+	size_t num_active_condition_nodes = condition_nodes.size();
+	while(num_active_condition_nodes > 0
+			&& condition_nodes[num_active_condition_nodes - 1] != nullptr
+			&& condition_nodes[num_active_condition_nodes - 1]->GetType() == ENT_LIST
+			&& condition_nodes[num_active_condition_nodes - 1]->GetOrderedChildNodesReference().size() == 0)
+		num_active_condition_nodes--;
+
+	for(size_t i = 0; i < num_active_condition_nodes; i++)
+	{
+		bool last_condition_entry = (i + 1 == num_active_condition_nodes);
+		if(EvaluableNode::IsQuery(condition_nodes[i]))
+		{
+			EntityQueryBuilder::BuildCondition(condition_nodes[i], query, interpreter);
+			retval = callback(query, first_condition, last_condition_entry);
+
+			first_condition = false;
+		}
+		else if(condition_nodes[i] != nullptr && condition_nodes[i]->GetType() == ENT_LIST)
+		{
+			auto &cn_ocn = condition_nodes[i]->GetOrderedChildNodesReference();
+			for(size_t j = 0; j < cn_ocn.size(); j++)
+			{
+				auto &cn = cn_ocn[j];
+				if(!EvaluableNode::IsQuery(cn))
+					continue;
+
+				bool last_sub_condition = (last_condition_entry && (j + 1 == cn_ocn.size()));
+
+				EntityQueryBuilder::BuildCondition(cn, query, interpreter);
+				retval = callback(query, first_condition, last_sub_condition);
+
+				first_condition = false;
+			}
+		}
+	}
+
+	return retval;
+}
+
 EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Entity *container,
-	std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
+	std::vector<EvaluableNodeReference> &condition_nodes, Interpreter *interpreter, EvaluableNodeManager *enm,
 	bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//get the cache associated with this container
@@ -672,55 +735,42 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	auto &indices_with_duplicates = entity_caches->buffers.entityIndicesWithDuplicates;
 	indices_with_duplicates.clear();
 
+	EntityQuery *last_query = nullptr;
+
 	//execute each query
 	// for the first condition, matching_ents is empty and must be populated
 	// for each subsequent loop, matching_ents will have the currently selected entities to query from
-	for(size_t cond_index = 0; cond_index < conditions.size(); cond_index++)
+	EvaluableNodeReference result = IterateOverQueryConditions(condition_nodes, interpreter,
+		[&](EntityQuery &query, bool is_first, bool is_last) -> EvaluableNodeReference
 	{
-		auto &query = conditions[cond_index];
-		bool is_first = (cond_index == 0);
-		bool is_last = (cond_index == (conditions.size() - 1));
-
 		//start each condition with cleared compute results as to not reuse the results from a previous computation
 		compute_results.clear();
 
-		//if query_none, return results as empty list
-		if(query.queryType == ENT_NULL)
-		{
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
-				return EvaluableNodeReference(0.0);
-			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
-		}
-
-		if(auto distance = std::get_if<EntityQuery::Distance>(&query.payload))
-		{
-			distance->entity = container;
-			entity_caches->GetMatchingEntities(query.queryType, distance, matching_ents, compute_results, is_first, !is_last || !return_query_value);
-			if(query.queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
-			{
-				if(compute_results.size() > 0)
-					return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
-				return EvaluableNodeReference::Null();
-			}
-			continue;
-		}
-
-		if(auto extremum = std::get_if<EntityQuery::Extremum>(&query.payload))
-		{
-			entity_caches->FindMinMax(*extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
-			continue;
-		}
+		last_query = &query;
 
 		//aggregates return even in non-final position on the cached path.
 		switch(query.queryType)
 		{
+		case ENT_NULL:
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+				return EvaluableNodeReference(0.0);
+			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
+
 		case ENT_QUERY_SELECT:
 			entity_caches->SelectEntities(query, matching_ents, is_first);
-			continue;
+			return EvaluableNodeReference::Null();
 
 		case ENT_QUERY_SAMPLE:
 			entity_caches->GetMatchingEntitiesViaSamplingWithReplacement(query, matching_ents, indices_with_duplicates, is_first, !is_last || !return_query_value);
-			continue;
+			return EvaluableNodeReference::Null();
+
+		case ENT_QUERY_MIN:
+		case ENT_QUERY_MAX:
+		{
+			auto &extremum = std::get<EntityQuery::Extremum>(query.payload);
+			entity_caches->FindMinMax(extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
+			return EvaluableNodeReference::Null();
+		}
 
 		case ENT_QUERY_MODE:
 			return entity_caches->ComputeMode(query, matching_ents, enm, is_first);
@@ -738,59 +788,44 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_MAX_DIFFERENCE:
 			return enm->AllocIfNotImmediate(
 				entity_caches->ComputeNumericAggregate(query, matching_ents, is_first), immediate_result);
-		default:
-			break;
-		}
 
-		if(EntityQueries::GetFilterNode(query) != nullptr
-			|| std::holds_alternative<EntityQuery::EntityIds>(query.payload))
+		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
+		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
+		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_CONVICTIONS:
+		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+		case ENT_QUERY_ENTITY_CLUSTERS:
 		{
-			//hold the cache lock across consecutive filters in the same group; inclusive comparisons join the BETWEEN group.
-			auto group_type = [](EvaluableNodeType type) {
-				switch(type)
-				{
-				case ENT_QUERY_LESS_OR_EQUAL_TO:
-				case ENT_QUERY_GREATER_OR_EQUAL_TO:
-					return ENT_QUERY_BETWEEN;
-				case ENT_QUERY_EXISTS:
-				case ENT_QUERY_NOT_EXISTS:
-				case ENT_QUERY_EQUALS:
-				case ENT_QUERY_NOT_EQUALS:
-				case ENT_QUERY_BETWEEN:
-				case ENT_QUERY_NOT_BETWEEN:
-					return type;
-				default:
-					return ENT_NULL;
-				}
-			};
+			auto &distance = std::get<EntityQuery::Distance>(query.payload);
+			distance.entity = container;
+			entity_caches->GetMatchingEntitiesFromDistanceQuery(query.queryType, distance, matching_ents,
+				compute_results, is_first, !is_last || !return_query_value);
 
-			auto type = group_type(query.queryType);
-			size_t group_end = cond_index + 1;
-
-			if(type != ENT_NULL)
+			if(query.queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
 			{
-				while(group_end < conditions.size()
-						&& EntityQueries::GetFilterNode(conditions[group_end]) != nullptr
-						&& group_type(conditions[group_end].queryType) == type)
-					group_end++;
+				if(compute_results.size() > 0)
+					return enm->AllocIfNotImmediate(
+						static_cast<double>(compute_results[0].distance), immediate_result);
+				return EvaluableNodeReference::Null();
 			}
-
-			entity_caches->GetMatchingEntities(
-				std::span<const EntityQuery>(conditions.data() + cond_index, group_end - cond_index), matching_ents, is_first);
-
-			cond_index = group_end - 1;
-			continue;
+			return EvaluableNodeReference::Null();
 		}
-	}
 
-	//---Return Query Results---//
-	EntityQuery::Distance *last_query = nullptr;
+		default:
+			entity_caches->GetMatchingEntities(query, matching_ents, is_first);
+			return EvaluableNodeReference::Null();
+		}
+	});
+
+	if(!result.IsNull())
+		return result;
+
 	EvaluableNodeType last_query_type = ENT_NULL;
-	if(conditions.size() > 0)
-	{
-		last_query = std::get_if<EntityQuery::Distance>(&conditions.back().payload);
-		last_query_type = conditions.back().queryType;
-	}
+	if(last_query != nullptr)
+		last_query_type = last_query->queryType;
 
 	//function to transform entity indices to entity ids
 	const auto entity_index_to_id = [container](size_t entity_index) { return container->GetContainedEntityIdFromIndex(entity_index); };
@@ -805,7 +840,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	}
 
 	//return data as appropriate
-	if(return_query_value && !conditions.empty())
+	if(return_query_value && last_query != nullptr)
 	{
 		auto &contained_entities = container->GetContainedEntities();
 
@@ -828,8 +863,10 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
 
+			auto &dist_query = std::get<EntityQuery::Distance>(last_query->payload);
+
 			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
-				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
+				enm, dist_query.returnSortedList, dist_query.additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
 		else //if there are no compute results, return an assoc of the requested labels for each entity
@@ -841,22 +878,30 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			EvaluableNode *query_return = enm->AllocNode(ENT_ASSOC);
 			query_return->ReserveMappedChildNodes(matching_ents.size());
 
-			size_t num_labels = 0;
-			//TODO 26224: the use of ForEachQueryLabel here and below needs to be reexamined
-			EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1, [&](auto) { ++num_labels; });
-			for(const auto &entity_index : matching_ents)
+			if(last_query_type == ENT_QUERY_EXISTS)
 			{
-				EvaluableNode *entity_values = nullptr;
-				if(num_labels > 0)
+				auto &labels = std::get<EntityQuery::LabelExistence>(last_query->payload).labels;
+
+				//create string reference for each entity's labels
+				string_intern_pool.CreateMultipleStringReferences(labels, matching_ents.size());
+
+				for(const auto &entity_index : matching_ents)
 				{
-					entity_values = enm->AllocNode(ENT_ASSOC);
-					entity_values->ReserveMappedChildNodes(num_labels);
-					EntityQueries::ForEachQueryLabel(conditions, conditions.size() - 1,
-						[&](auto label_sid) {
-							entity_values->SetMappedChildNode(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
-						});
+					//create assoc for values for each entity
+					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
+					entity_values->ReserveMappedChildNodes(labels.size());
+					for(auto &label_sid : labels)
+						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
+
+					//append to query_return after building to ensure all flags are propagated
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);
 				}
-				query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);
+			}
+			else
+			{
+				//create a null for every entry, since nothing requested
+				for(const auto &entity_index : matching_ents)
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), nullptr);
 			}
 
 			return EvaluableNodeReference(query_return, true);
@@ -871,38 +916,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, Interpreter *interpreter,
 	std::vector<EvaluableNodeReference> &condition_nodes,
 	EvaluableNodeManager *enm, bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	//build conditions from condition_nodes
-	//buffer to use as for parsing and querying conditions
-	//one per thread to reuse memory
-#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-#endif
-		static std::vector<EntityQuery> conditions;
-
-	conditions.clear();
-	for(auto &cond_node : condition_nodes)
-	{
-		if(EvaluableNode::IsQuery(cond_node))
-		{
-			conditions.emplace_back();
-			auto &query = conditions.back();
-			EntityQueryBuilder::BuildCondition(cond_node, query, interpreter);
-		}
-		else if(cond_node->GetType() == ENT_LIST)
-		{
-			for(auto cn : cond_node->GetOrderedChildNodesReference())
-			{
-				if(!EvaluableNode::IsQuery(cn))
-					continue;
-
-				conditions.emplace_back();
-				auto &query = conditions.back();
-				EntityQueryBuilder::BuildCondition(cn, query, interpreter);
-			}
-		}
-	}
-
+{	
 	if(_enable_SBF_datastore) [[likely]]
 	{
 		//if haven't built a cache before, need to build the cache container
@@ -920,47 +934,51 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		#endif
 		}
 
-		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);
+		return GetMatchingEntitiesFromQueryCaches(container, condition_nodes,
+			interpreter, enm, return_query_value, immediate_result);
 	}
 
 	//list of the entities to be found, pruned down, and ultimately returned after converting to matching_entity_ids
 	std::vector<Entity *> matching_entities;
-	EvaluableNodeReference query_return_value;
 
 	//start querying
-	for(size_t cond_index = 0; cond_index < conditions.size(); cond_index++)
+	EvaluableNodeReference query_return_value = IterateOverQueryConditions(condition_nodes, interpreter,
+		[&](EntityQuery &query, bool is_first, bool is_last)
 	{
-		bool first_condition = (cond_index == 0);
-		bool last_condition = (cond_index + 1 == conditions.size());
+		EvaluableNode *node = nullptr;
+		if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
+			node = value_filter->node;
 
-		//reset to make sure it doesn't return an outdated list
-		query_return_value = EvaluableNodeReference::Null();
-
-		auto &query = conditions[cond_index];
-		auto node = EntityQueries::GetFilterNode(query);
 		if(node != nullptr || std::holds_alternative<EntityQuery::EntityIds>(query.payload) || query.queryType == ENT_NULL)
 		{
-			EntityQueries::FilterEntities(query, container, matching_entities, first_condition);
-			if(last_condition && return_query_value && node != nullptr && node->GetType() == ENT_QUERY_EXISTS)
+			EntityQueries::FilterEntities(query, container, matching_entities, is_first);
+			if(is_last && return_query_value && node != nullptr && node->GetType() == ENT_QUERY_EXISTS)
 			{
-				auto result = enm->AllocNode(ENT_ASSOC);
-				result->ReserveMappedChildNodes(matching_entities.size());
+				auto &labels = std::get<EntityQuery::LabelExistence>(query.payload).labels;
+
+				auto query_return = enm->AllocNode(ENT_ASSOC);
+				query_return->ReserveMappedChildNodes(matching_entities.size());
 				for(auto entity : matching_entities)
 				{
-					auto values = enm->AllocNode(ENT_ASSOC);
-					EntityQueries::ForEachQueryLabel(conditions, cond_index,
-						[&](auto label) { values->SetMappedChildNode(label, entity->GetValueAtLabel(label, enm).first); });
-					result->SetMappedChildNode(entity->GetIdStringId(), values);
+					//create assoc for values for each entity
+					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
+					entity_values->ReserveMappedChildNodes(labels.size());
+					for(auto &label_sid : labels)
+						entity_values->SetMappedChildNode(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
+
+					//append to query_return after building to ensure all flags are propagated
+					query_return->SetMappedChildNode(entity->GetIdStringId(), entity_values);
 				}
-				query_return_value = EvaluableNodeReference(result, true);
+				return EvaluableNodeReference(query_return, true);
 			}
-			continue;
+			return EvaluableNodeReference::Null();
 		}
 
+		EvaluableNodeReference retval = EvaluableNodeReference::Null();
 		auto distance = std::get_if<EntityQuery::Distance>(&query.payload);
 		if(distance == nullptr)
 		{
-			if(first_condition && query.queryType != ENT_QUERY_SAMPLE)
+			if(is_first && query.queryType != ENT_QUERY_SAMPLE)
 				matching_entities = container->GetContainedEntities();
 
 			if(query.queryType == ENT_QUERY_MIN || query.queryType == ENT_QUERY_MAX)
@@ -973,26 +991,26 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			}
 			else if(query.queryType == ENT_QUERY_SAMPLE)
 			{
-				EntityQueries::SampleEntities(query, first_condition ? container->GetContainedEntities() : matching_entities, matching_entities);
+				EntityQueries::SampleEntities(query, is_first ? container->GetContainedEntities() : matching_entities, matching_entities);
 			}
-			else if(last_condition && return_query_value)
+			else if(is_last && return_query_value)
 			{
 				if(query.queryType == ENT_QUERY_MODE)
 				{
-					query_return_value = EntityQueries::ComputeMode(query, matching_entities, enm);
+					retval = EntityQueries::ComputeMode(query, matching_entities, enm);
 				}
 				else if(query.queryType == ENT_QUERY_VALUE_MASSES)
 				{
 					auto value_weights = EntityQueries::ComputeValueMasses(query, matching_entities);
 					//fallback always constructs the result, including size-only requests.
-					query_return_value = EntityQueries::ValueMassesToResult(value_weights, enm, {});
+					retval = EntityQueries::ValueMassesToResult(value_weights, enm, {});
 				}
 				else
-					query_return_value = EvaluableNodeReference(enm->AllocNode(
+					retval = EvaluableNodeReference(enm->AllocNode(
 						EntityQueries::ComputeNumericAggregate(query, matching_entities)), true);
 			}
 
-			continue;
+			return retval;
 		}
 
 		auto &condition = *distance;
@@ -1023,11 +1041,11 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			#endif
 			}
 
-			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);
+			return GetMatchingEntitiesFromQueryCaches(container, condition_nodes, interpreter, enm, return_query_value, immediate_result);
 		}
 
-		query_return_value = condition.GetMatchingEntities(query.queryType, container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);
-	}
+		return condition.GetMatchingEntities(query.queryType, container, matching_entities, is_first, (return_query_value && is_last) ? enm : nullptr);
+	});
 
 	//if need to return something specific, then do so, otherwise return list of matching entities
 	if(query_return_value != nullptr)
@@ -1037,40 +1055,35 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_entities, enm, [](Entity *e) { return e->GetIdStringId(); });
 }
 
-void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries,
-	BitArrayIntegerSet &matching_entities, bool is_first)
+void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto first_query_type = queries.front().queryType;
-	if(first_query_type == ENT_QUERY_IN_ENTITY_LIST || first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+	auto query_type = query.queryType;
+	if(query_type == ENT_QUERY_IN_ENTITY_LIST || query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
 		auto &temp = buffers.tempMatchingEntityIndices;
 		temp.clear();
 		auto &included_entities = is_first ? matching_entities : temp;
-		if(is_first && first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
+		if(is_first && query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
-		EntityQueries::IterateOverEntityList(queries.front(), [&](const auto &ids, auto get_id) {
-			for(auto item : ids)
+		auto &entity_ids = std::get<EntityQuery::EntityIds>(query.payload);
+		for(auto id : entity_ids)
+		{
+			size_t index = container->GetContainedEntityIndex(id);
+			if(query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			{
-				size_t index = container->GetContainedEntityIndex(get_id(item));
-				if(first_query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
-				{
-					matching_entities.erase(index);
-				}
-				else if(index != std::numeric_limits<size_t>::max())
-				{
-					//converted lists only grow the scratch set for matching IDs
-					if constexpr(std::is_same_v<std::decay_t<decltype(ids)>, EntityQuery::EntityIds>)
-					{
-						if(!is_first && !matching_entities.contains(index))
-							continue;
-					}
-					included_entities.insert(index);
-				}
+				matching_entities.erase(index);
 			}
-		});
+			else if(index != std::numeric_limits<size_t>::max())
+			{
+				if(!is_first && !matching_entities.contains(index))
+					continue;
 
-		if(first_query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
+				included_entities.insert(index);
+			}
+		}
+
+		if(query_type == ENT_QUERY_IN_ENTITY_LIST && !is_first)
 			matching_entities.Intersect(temp);
 		return;
 	}
@@ -1079,11 +1092,18 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	Concurrency::ReadLock lock(mutex);
 #endif
 	std::vector<StringInternPool::StringID> labels_to_add;
-	for(const auto &condition : queries)
+	if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
 	{
-		auto label = EntityQueries::GetFilterLabel(condition);
-		if(!DoesHaveLabel(label))
-			labels_to_add.push_back(label);
+		if(!DoesHaveLabel(filter->label))
+			labels_to_add.push_back(filter->label);
+	}
+	else if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
+	{
+		for(auto &l : exist_filter->labels)
+		{
+			if(!DoesHaveLabel(l))
+				labels_to_add.push_back(l);
+		}
 	}
 #if defined(MULTITHREAD_SUPPORT)
 	EnsureLabelsAreCached(labels_to_add, lock);
@@ -1091,100 +1111,116 @@ void EntityQueryCaches::GetMatchingEntities(std::span<const EntityQuery> queries
 	EnsureLabelsAreCached(labels_to_add);
 #endif
 
-	for(const auto &condition : queries)
+	if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
 	{
-		auto query = EntityQueries::GetFilterNode(condition);
-		auto type = query->GetType();
-		auto &ocn = query->GetOrderedChildNodes();
-		auto label = EntityQueries::GetFilterLabel(condition);
-		auto &temp = buffers.tempMatchingEntityIndices;
-		switch(type)
+		if(exist_filter->node->GetType() == ENT_QUERY_EXISTS)
 		{
-		case ENT_QUERY_EXISTS:
+			for(auto &l : exist_filter->labels)
+			{
+				if(is_first)
+				{
+					sbfds.FindAllEntitiesWithFeature(l, matching_entities);
+					is_first = false;
+				}
+				else
+				{
+					sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
+				}
+			}
+		}
+		else
+		{
+			for(auto &l : exist_filter->labels)
+			{
+				if(is_first)
+				{
+					sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
+					is_first = false;
+				}
+				else
+				{
+					sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
+				}
+			}
+		}
+
+		matching_entities.UpdateNumElements();
+		return;
+	}
+
+	EvaluableNode *query_node = nullptr;
+	if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
+		query_node = value_filter->node;
+
+	auto type = query_node->GetType();
+	auto &ocn = query_node->GetOrderedChildNodes();
+	auto label = std::get<EntityQuery::ValueFilter>(query.payload).label;
+	auto &temp = buffers.tempMatchingEntityIndices;
+	switch(type)
+	{
+	case ENT_QUERY_EQUALS:
+	case ENT_QUERY_NOT_EQUALS:
+	{
+		auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
+		if(is_first && type == ENT_QUERY_EQUALS)
+		{
+			sbfds.UnionAllEntitiesWithValue(label, value, matching_entities);
+		}
+		else
+		{
+			if(is_first)
+				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+
+			temp.clear();
+			sbfds.UnionAllEntitiesWithValue(label, value, temp);
+
+			if(type == ENT_QUERY_EQUALS)
+				matching_entities.Intersect(temp);
+			else
+				matching_entities.erase(temp);
+		}
+		break;
+	}
+
+	case ENT_QUERY_BETWEEN:
+	case ENT_QUERY_NOT_BETWEEN:
+	case ENT_QUERY_LESS_OR_EQUAL_TO:
+	case ENT_QUERY_GREATER_OR_EQUAL_TO:
+	{
+		auto [value_type, low, high] = EntityQueries::GetQueryRange(query_node);
+		if(is_first)
+			sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, matching_entities, type != ENT_QUERY_NOT_BETWEEN);
+		else
+		{
+			temp.clear();
+			sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, temp, type != ENT_QUERY_NOT_BETWEEN);
+			matching_entities.Intersect(temp);
+		}
+		break;
+	}
+
+	case ENT_QUERY_AMONG:
+	case ENT_QUERY_NOT_AMONG:
+	{
+		if(type == ENT_QUERY_NOT_AMONG)
+		{
 			if(is_first)
 				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
 			else
-				sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
-
-			break;
-
-		case ENT_QUERY_NOT_EXISTS:
-			if(is_first)
-				sbfds.FindAllEntitiesWithoutFeature(label, matching_entities);
-			else
-				sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
-
-			break;
-
-		case ENT_QUERY_EQUALS:
-		case ENT_QUERY_NOT_EQUALS:
-		{
-			auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(ocn[1]);
-			if(is_first && type == ENT_QUERY_EQUALS)
-			{
-				sbfds.UnionAllEntitiesWithValue(label, value, matching_entities);
-			}
-			else
-			{
-				if(is_first)
-					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
-
-				temp.clear();
-				sbfds.UnionAllEntitiesWithValue(label, value, temp);
-
-				if(type == ENT_QUERY_EQUALS)
-					matching_entities.Intersect(temp);
-				else
-					matching_entities.erase(temp);
-			}
-			break;
+				sbfds.IntersectEntitiesWithFeature(label, matching_entities, false);
 		}
-
-		case ENT_QUERY_BETWEEN:
-		case ENT_QUERY_NOT_BETWEEN:
-		case ENT_QUERY_LESS_OR_EQUAL_TO:
-		case ENT_QUERY_GREATER_OR_EQUAL_TO:
-		{
-			auto [value_type, low, high] = EntityQueries::GetQueryRange(query);
-			if(is_first)
-				sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, matching_entities, type != ENT_QUERY_NOT_BETWEEN);
-			else
-			{
-				temp.clear();
-				sbfds.FindAllEntitiesWithinRange(label, value_type, low, high, temp, type != ENT_QUERY_NOT_BETWEEN);
-				matching_entities.Intersect(temp);
-			}
-			break;
-		}
-
-		case ENT_QUERY_AMONG:
-		case ENT_QUERY_NOT_AMONG:
-		{
-			if(type == ENT_QUERY_NOT_AMONG)
-			{
-				if(is_first)
-					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
-				else
-					sbfds.IntersectEntitiesWithFeature(label, matching_entities, false);
-			}
-			temp.clear();
-			auto &matches = is_first && type == ENT_QUERY_AMONG ? matching_entities : temp;
-			if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
-				for(auto node : ocn[1]->GetOrderedChildNodesReference())
-					sbfds.UnionAllEntitiesWithValue(label, EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node), matches);
-			if(type == ENT_QUERY_NOT_AMONG)
-				matching_entities.erase(temp);
-			else if(!is_first)
-				matching_entities.Intersect(temp);
-			break;
-		}
-
-		default:;
-		}
-		is_first = false;
+		temp.clear();
+		auto &matches = is_first && type == ENT_QUERY_AMONG ? matching_entities : temp;
+		if(ocn.size() > 1 && EvaluableNode::IsOrderedArray(ocn[1]))
+			for(auto node : ocn[1]->GetOrderedChildNodesReference())
+				sbfds.UnionAllEntitiesWithValue(label, EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node), matches);
+		if(type == ENT_QUERY_NOT_AMONG)
+			matching_entities.erase(temp);
+		else if(!is_first)
+			matching_entities.Intersect(temp);
+		break;
 	}
-	//caller groups EXISTS and NOT_EXISTS separately. each group only removes
-	//members, so batch operations can use the old count as an upper bound until here
-	if(first_query_type == ENT_QUERY_EXISTS || first_query_type == ENT_QUERY_NOT_EXISTS)
-		matching_entities.UpdateNumElements();
+
+	default:;
+	}
 }

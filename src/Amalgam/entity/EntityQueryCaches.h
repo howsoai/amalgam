@@ -125,11 +125,11 @@ public:
 
 	//returns the set matching_entities of entity ids in the cache that match the provided query condition cond, will fill compute_results with numeric results if KNN query
 	//if is_first is true, optimizes to skip unioning results with matching_entities (just overwrites instead).
-	void GetMatchingEntities(EvaluableNodeType query_type, EntityQuery::Distance *cond, BitArrayIntegerSet &matching_entities,
-		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
+	void GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType query_type, EntityQuery::Distance &distance_cond,
+		BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results,
+		bool is_first, bool update_matching_entities);
 
-	void GetMatchingEntities(std::span<const EntityQuery> queries,
-		BitArrayIntegerSet &matching_entities, bool is_first);
+	void GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
 	void FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first);
 
@@ -160,7 +160,7 @@ public:
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container,
-		std::vector<EntityQuery> &conditions, EvaluableNodeManager *enm,
+		std::vector<EvaluableNodeReference> &condition_nodes, Interpreter *interpreter, EvaluableNodeManager *enm,
 		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//the container this is a cache for

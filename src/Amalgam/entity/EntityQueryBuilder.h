@@ -881,9 +881,7 @@ namespace EntityQueryBuilder
 
 		//get label sid and return if label is invalid
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
-		if(type == ENT_QUERY_NOT_EXISTS
-			|| type == ENT_QUERY_EXISTS
-			|| type == ENT_QUERY_MIN
+		if(type == ENT_QUERY_MIN
 			|| type == ENT_QUERY_MAX
 			|| type == ENT_QUERY_SUM
 			|| type == ENT_QUERY_MODE
@@ -963,7 +961,7 @@ namespace EntityQueryBuilder
 				parameter = EvaluableNode::ToNumber(ocn[1]);
 
 			size_t weight_index = has_parameter ? 2 : 1;
-			EntityQuery::Aggregate labels{label_sid};
+			EntityQuery::Aggregate labels{ label_sid };
 			if(ocn.size() > weight_index)
 				labels.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
 
@@ -981,6 +979,53 @@ namespace EntityQueryBuilder
 
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
+		{
+			auto &existence = query.SetQueryType<EntityQuery::LabelExistence>(type, cn);
+			auto &labels = existence.labels;
+			for(auto &cn : ocn)
+			{
+				if(EvaluableNode::IsOrderedArray(cn))
+				{
+					for(auto &cn2 : cn->GetOrderedChildNodesReference())
+					{
+						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn2);
+						if(exists)
+						{
+							labels.emplace_back(sid);
+						}
+						else
+						{
+							//only need to check if checking for existence
+							if(type == ENT_QUERY_EXISTS)
+							{
+								query.queryType = ENT_NULL;
+								return;
+							}
+						}
+					}
+				}
+				else //treat as an id itself
+				{
+					auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
+					if(exists)
+					{
+						labels.emplace_back(sid);
+					}
+					else
+					{
+						//only need to check if checking for existence
+						if(type == ENT_QUERY_EXISTS)
+						{
+							query.queryType = ENT_NULL;
+							return;
+						}
+					}
+				}
+
+			}
+			return;
+		}
+
 		case ENT_QUERY_EQUALS:
 		case ENT_QUERY_NOT_EQUALS:
 		case ENT_QUERY_BETWEEN:
@@ -990,31 +1035,33 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_AMONG:
 		case ENT_QUERY_NOT_AMONG:
 
-			query.SetQueryType<EntityQuery::Filter>(type, cn, label_sid);
+			query.SetQueryType<EntityQuery::ValueFilter>(type, cn, label_sid);
 			return;
 
 		case ENT_QUERY_IN_ENTITY_LIST:
 		case ENT_QUERY_NOT_IN_ENTITY_LIST:
-			//coercing an ID can allocate; prepare those lists once to avoid repeated coercion during query execution.
-			if(ocn.size() > 0 && EvaluableNode::IsOrderedArray(ocn[0])
-				&& std::any_of(begin(ocn[0]->GetOrderedChildNodesReference()), end(ocn[0]->GetOrderedChildNodesReference()),
-					[](auto node) { return !EvaluableNode::IsNull(node) && node->GetType() != ENT_STRING; }))
+		{
+			if(ocn.size() == 0)
 			{
-				auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
-				auto &nodes = ocn[0]->GetOrderedChildNodesReference();
-				ids.reserve(nodes.size());
-				for(auto node : nodes)
-				{
-					auto [valid, id] = EvaluableNode::ToStringIDIfExists(node);
-					if(valid) [[likely]]
-						ids.push_back(id);
-				}
+				if(type == ENT_QUERY_IN_ENTITY_LIST)
+					query.queryType = ENT_NULL;
+				return;
 			}
-			else
+
+			auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
+			if(ocn.size() == 0 || !EvaluableNode::IsOrderedArray(ocn[0]))
+				return;
+
+			auto &nodes = ocn[0]->GetOrderedChildNodesReference();
+			ids.reserve(nodes.size());
+			for(auto node : nodes)
 			{
-				query.SetQueryType<EntityQuery::Filter>(type, cn, label_sid);
+				auto [valid, id] = EvaluableNode::ToStringIDIfExists(node);
+				if(valid) [[likely]]
+					ids.push_back(id);
 			}
 			return;
+		}
 
 		default:
 			return;

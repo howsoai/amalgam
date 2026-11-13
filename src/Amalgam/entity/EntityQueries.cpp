@@ -22,7 +22,8 @@ static auto GetEntityNumberAccessor(const std::vector<Entity *> &matching_entiti
 
 double EntityQueries::ComputeNumericAggregate(const EntityQuery &query, const std::vector<Entity *> &matching_entities)
 {
-	auto [value_label, weight_label] = query.GetAggregateLabels();
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
 
 	if(Entity::IsLabelPrivate(value_label))
 		return query.queryType == ENT_QUERY_SUM ? 0.0 : std::numeric_limits<double>::quiet_NaN();
@@ -56,7 +57,9 @@ double EntityQueries::ComputeNumericAggregate(const EntityQuery &query, const st
 EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,
 	const std::vector<Entity *> &matching_entities, EvaluableNodeManager *enm)
 {
-	auto [value_label, weight_label] = std::get<EntityQuery::Aggregate>(query.payload);
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
+
 	auto get_key_string_value = [&matching_entities, label = value_label](size_t i, std::string &value) {
 		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(label, true, true);
 		value = std::move(ret_val);
@@ -74,7 +77,9 @@ EvaluableNodeReference EntityQueries::ComputeMode(const EntityQuery &query,
 OrderedHashMap<StringInternPool::StringID, double> EntityQueries::ComputeValueMasses(const EntityQuery &query,
 	const std::vector<Entity *> &matching_entities)
 {
-	auto [value_label, weight_label] = std::get<EntityQuery::Aggregate>(query.payload);
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
+
 	auto get_key_string_value = [&matching_entities, label = value_label](size_t i, StringInternPool::StringID &value) {
 		auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(label, true, true);
 		value = ret_val;
@@ -169,7 +174,7 @@ double EntityQuery::Distance::GetConditionDistanceMeasure(Entity *e, bool high_a
 
 void EntityQueries::SelectEntities(EntityQuery &query, std::vector<Entity *> &matching_entities)
 {
-	auto &parameters = std::get<EntityQuery::Select>(query.payload);
+	auto &parameters = query.select;
 
 	//regardless of options, need to sort entities by entity id
 	EntityManipulation::SortEntitiesByID(matching_entities);
@@ -183,7 +188,7 @@ void EntityQueries::SelectEntities(EntityQuery &query, std::vector<Entity *> &ma
 		return;
 	}
 
-	if(parameters.hasRandomStream)
+	if(query.hasRandomStream)
 	{
 		size_t num_entities = matching_entities.size();
 		if(parameters.hasStartOffset)
@@ -191,7 +196,7 @@ void EntityQueries::SelectEntities(EntityQuery &query, std::vector<Entity *> &ma
 			//shuffle all because we don't know what the starting offset will be and some values may be swapped with others
 			for(size_t i = 0; i < num_entities; i++)
 			{
-				size_t index_to_swap = parameters.randomStream.RandSize(num_entities);
+				size_t index_to_swap = query.randomStream.RandSize(num_entities);
 				std::swap(matching_entities[i], matching_entities[index_to_swap]);
 			}
 		}
@@ -199,7 +204,7 @@ void EntityQueries::SelectEntities(EntityQuery &query, std::vector<Entity *> &ma
 		{
 			for(size_t i = 0; i < num_to_select; i++)
 			{
-				size_t index_to_swap = parameters.randomStream.RandSize(num_entities);
+				size_t index_to_swap = query.randomStream.RandSize(num_entities);
 				std::swap(matching_entities[i], matching_entities[index_to_swap]);
 			}
 		}
@@ -215,7 +220,7 @@ void EntityQueries::SelectEntities(EntityQuery &query, std::vector<Entity *> &ma
 
 void EntityQueries::SampleEntities(EntityQuery &query, std::vector<Entity *> &source_entities, std::vector<Entity *> &matching_entities)
 {
-	auto &parameters = std::get<EntityQuery::Sample>(query.payload);
+	auto &parameters = query.sample;
 
 	size_t num_entities = source_entities.size();
 	size_t num_to_sample = parameters.count;
@@ -230,17 +235,17 @@ void EntityQueries::SampleEntities(EntityQuery &query, std::vector<Entity *> &so
 	samples.reserve(num_to_sample);
 
 	RandomStream random_stream;
-	if(parameters.hasRandomStream)
-		random_stream = parameters.randomStream.CreateOtherStreamViaRand();
+	if(query.hasRandomStream)
+		random_stream = query.randomStream.CreateOtherStreamViaRand();
 	else //just use a random seed
 		random_stream.SetState("12345");
 
-	if(parameters.valueLabel == StringInternPool::NOT_A_STRING_ID)
+	if(query.singleLabel == StringInternPool::NOT_A_STRING_ID)
 	{
 		//select num_to_select entities and save them in the sample vector
 		for(size_t i = 0; i < num_to_sample; i++)
 		{
-			size_t index_to_swap = parameters.randomStream.RandSize(num_entities);
+			size_t index_to_swap = query.randomStream.RandSize(num_entities);
 			Entity *selected = source_entities[index_to_swap];
 			samples.emplace_back(selected);
 		}
@@ -258,7 +263,7 @@ void EntityQueries::SampleEntities(EntityQuery &query, std::vector<Entity *> &so
 			double found;
 
 			if(e != nullptr)
-				std::tie(value, found) = e->GetValueAtLabelAsNumber(parameters.valueLabel);
+				std::tie(value, found) = e->GetValueAtLabelAsNumber(query.singleLabel);
 			else
 				found = false;
 
@@ -296,7 +301,7 @@ void EntityQueries::SampleEntities(EntityQuery &query, std::vector<Entity *> &so
 
 void EntityQueries::FindMinMax(const EntityQuery &query, std::vector<Entity *> &matching_entities)
 {
-	auto &parameters = std::get<EntityQuery::Extremum>(query.payload);
+	auto &parameters = query.extremum;
 
 	//get values for each entity
 	std::vector<std::pair<Entity *, EvaluableNodeImmediateValue>> entity_values;
@@ -306,7 +311,7 @@ void EntityQueries::FindMinMax(const EntityQuery &query, std::vector<Entity *> &
 		if(matching_entities[i] == nullptr)
 			continue;
 
-		auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(parameters.valueLabel, true);
+		auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(query.singleLabel, true);
 
 		if(value.nodeType == parameters.valueType)
 			entity_values.emplace_back(matching_entities[i], value.nodeValue);
@@ -545,7 +550,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	if(type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 	{
-		auto &ids = std::get<EntityQuery::EntityIds>(query.payload);
+		auto &ids = query.labels;
 
 		if(is_first && type == ENT_QUERY_IN_ENTITY_LIST)
 		{
@@ -587,8 +592,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 
 	if(type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS)
 	{
-		auto &existence = std::get<EntityQuery::LabelExistence>(query.payload);
-		auto &labels = existence.labels;
+		auto &labels = query.labels;
 
 		filter_entities([&](Entity *entity) {
 			if(type == ENT_QUERY_EXISTS)
@@ -615,10 +619,9 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 		return;
 	}
 
-	auto &filter = std::get<EntityQuery::ValueFilter>(query.payload);
-	auto &ocn = filter.node->GetOrderedChildNodes();
+	auto &ocn = query.queryNode->GetOrderedChildNodes();
 	//the builder has already validated this label as public
-	auto label = filter.label;
+	auto label = query.singleLabel;
 
 	switch(type)
 	{
@@ -640,7 +643,7 @@ void EntityQueries::FilterEntities(const EntityQuery &query, Entity *container,
 	case ENT_QUERY_LESS_OR_EQUAL_TO:
 	case ENT_QUERY_GREATER_OR_EQUAL_TO:
 	{
-		auto [value_type, low, high] = GetQueryRange(filter.node);
+		auto [value_type, low, high] = GetQueryRange(query.queryNode);
 		if(value_type == ENIVT_NUMBER)
 			filter_entities([&](Entity *entity) {
 				auto [value, found] = entity->GetValueAtLabelAsNumber(label, true);

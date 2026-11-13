@@ -12,90 +12,56 @@
 //data structure used for an entity query
 struct EntityQuery
 {
-	//initialize the tag and active alternative without zeroing inactive distance storage.
 	EntityQuery() {}
 
-	template<typename Parameters, typename... Args>
-	EntityQuery(EvaluableNodeType type, std::in_place_type_t<Parameters>, Args &&... args)
-		: queryType(type), payload(std::in_place_type<Parameters>, std::forward<Args>(args)...) {}
+	//ENT_NULL also marks invalid queries whose parsed payload is still present
+	EvaluableNodeType queryType = ENT_NULL;
+	EvaluableNode *queryNode;
 
-	EntityQuery(EntityQuery &&) noexcept = default;
-	EntityQuery &operator=(EntityQuery &&) noexcept = default;
-	EntityQuery(const EntityQuery &) = delete;
-	EntityQuery &operator=(const EntityQuery &) = delete;
+	std::vector<StringInternPool::StringID> labels;
+	StringInternPool::StringID singleLabel;
 
-	//helper function to allow a clean implementation of, for example:
-	//auto &selection = query.SetQueryType<EntityQuery::Select>(type);
-	template <typename T, typename... Args>
-	inline T &SetQueryType(EvaluableNodeType type, Args&&... args)
-	{
-		queryType = type;
-		return payload.emplace<T>(std::forward<Args>(args)...);
-	}
+	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
 
-	struct LabelExistence
-	{
-		EvaluableNode *node;
-		std::vector<StringInternPool::StringID> labels;
-	};
+	bool hasRandomStream;
+	RandomStream randomStream;
 
-	struct ValueFilter
-	{
-		EvaluableNode *node;
-		StringInternPool::StringID label;
-	};
-
-	using EntityIds = std::vector<StringInternPool::StringID>;
-
-	struct Aggregate
-	{
-		StringInternPool::StringID valueLabel;
-		StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
-	};
-
-	struct Quantile : Aggregate
+	struct
 	{
 		double percentage;
-	};
+	} quantile;
 
-	struct Mean : Aggregate
+	struct
 	{
 		double power;
 		double center;
 		bool calculateMoment;
 		bool absoluteValue;
-	};
+	} mean;
 
-	struct Difference
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		double limit;
 		bool includeZero;
-	};
+	} difference;
 
-	struct Extremum
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		size_t count;
 		EvaluableNodeImmediateValueType valueType;
-	};
+	} extremum;
 
-	struct Select
+	struct
 	{
 		size_t count;
 		size_t startOffset;
 		bool hasStartOffset;
-		bool hasRandomStream;
-		RandomStream randomStream;
-	};
+	} select;
 
-	struct Sample
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		size_t count;
-		bool hasRandomStream;
-		RandomStream randomStream;
-	};
+	 } sample;
 
 	struct Distance
 	{
@@ -119,7 +85,7 @@ struct EntityQuery
 
 		struct Statistics
 		{
-			EntityIds entityIds;
+			std::vector<StringInternPool::StringID> entityIds;
 			bool convictionOfRemoval = false;
 		};
 
@@ -189,25 +155,5 @@ struct EntityQuery
 		size_t maxToRetrieve = 0;
 
 		RandomStream randomStream;
-	};
-
-	//ENT_NULL also marks invalid queries whose parsed payload is still present
-	EvaluableNodeType queryType = ENT_NULL;
-	std::variant<std::monostate, LabelExistence, ValueFilter, EntityIds, Aggregate, Quantile, Mean, Difference,
-		Extremum, Select, Sample, Distance> payload;
-
-	Aggregate GetAggregateLabels() const
-	{
-		return std::visit([](const auto &parameters) {
-			Aggregate labels{StringInternPool::NOT_A_STRING_ID};
-
-			if constexpr(requires { parameters.valueLabel; })
-				labels.valueLabel = parameters.valueLabel;
-
-			if constexpr(requires { parameters.weightLabel; })
-				labels.weightLabel = parameters.weightLabel;
-
-			return labels;
-		}, payload);
-	}
+	} distance;
 };

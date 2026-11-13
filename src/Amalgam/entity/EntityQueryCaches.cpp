@@ -93,8 +93,9 @@ void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters)
 double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto labels = query.GetAggregateLabels();
-	auto [value_label, weight_label] = labels;
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
+
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(labels, lock);
@@ -486,9 +487,9 @@ OrderedHashMap<StringInternPool::StringID, double> EntityQueryCaches::ComputeVal
 
 void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuery &query, BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities)
 {
-	auto &parameters = std::get<EntityQuery::Sample>(query.payload);
+	auto &parameters = query.sample;
 
-	if(parameters.valueLabel == StringInternPool::NOT_A_STRING_ID)
+	if(query.singleLabel == StringInternPool::NOT_A_STRING_ID)
 	{
 		size_t num_entities;
 		if(is_first)
@@ -505,7 +506,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 		if(is_first && !update_matching_entities)
 		{
 			for(size_t i = 0; i < num_to_sample; i++)
-				entity_indices_sampled.push_back(parameters.randomStream.RandSize(num_entities));
+				entity_indices_sampled.push_back(query.randomStream.RandSize(num_entities));
 			return;
 		}
 
@@ -518,9 +519,9 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 			//get a random id out of all valid ones
 			size_t selected_id;
 			if(is_first)
-				selected_id = parameters.randomStream.RandSize(num_entities);
+				selected_id = query.randomStream.RandSize(num_entities);
 			else
-				selected_id = matching_entities.GetNthElement(parameters.randomStream.RandSize(num_entities));
+				selected_id = matching_entities.GetNthElement(query.randomStream.RandSize(num_entities));
 
 			//keep track if necessary
 			if(update_matching_entities)
@@ -546,9 +547,9 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 	auto &entity_indices = EntityQueryCaches::buffers.entityIndices;
 
 	if(is_first)
-		sbfds.FindAllEntitiesWithValidNumbers(parameters.valueLabel, matching_entities, entity_indices, probabilities);
+		sbfds.FindAllEntitiesWithValidNumbers(query.singleLabel, matching_entities, entity_indices, probabilities);
 	else
-		sbfds.IntersectEntitiesWithValidNumbers(parameters.valueLabel, matching_entities, entity_indices, probabilities);
+		sbfds.IntersectEntitiesWithValidNumbers(query.singleLabel, matching_entities, entity_indices, probabilities);
 
 	//don't attempt to continue if no elements
 	if(matching_entities.size() == 0)
@@ -565,7 +566,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 		//sample the entities
 		for(size_t i = 0; i < num_to_sample; i++)
 		{
-			size_t selected_entity_index = WeightedDiscreteRandomSample(probabilities, parameters.randomStream);
+			size_t selected_entity_index = WeightedDiscreteRandomSample(probabilities, query.randomStream);
 			auto eid = entity_indices[selected_entity_index];
 
 			if(update_matching_entities)
@@ -582,7 +583,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 		//sample the entities
 		for(size_t i = 0; i < num_to_sample; i++)
 		{
-			auto eid = ewt.WeightedDiscreteRand(parameters.randomStream);
+			auto eid = ewt.WeightedDiscreteRand(query.randomStream);
 
 			if(update_matching_entities)
 				matching_entities.insert(eid);
@@ -594,7 +595,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto &parameters = std::get<EntityQuery::Select>(query.payload);
+	auto &parameters = query.select;
 
 	size_t num_to_select = parameters.count;
 	size_t offset = parameters.hasStartOffset ? parameters.startOffset : 0; //offset to start selecting from, maintains the order given a random seed
@@ -608,7 +609,7 @@ void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &m
 	if(num_entities == 0)
 		return;
 
-	if(is_first && !parameters.hasRandomStream)
+	if(is_first && !query.hasRandomStream)
 	{
 		for(size_t i = offset; i < num_to_select + offset && i < num_entities; i++)
 			matching_entities.insert(i);
@@ -626,7 +627,7 @@ void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &m
 			matching_entities.clear();
 		}
 
-		if(parameters.hasRandomStream)
+		if(query.hasRandomStream)
 		{
 			for(size_t i = 0; i < num_to_select + offset; i++)
 			{
@@ -634,7 +635,7 @@ void EntityQueryCaches::SelectEntities(EntityQuery &query, BitArrayIntegerSet &m
 					break;
 
 				//find random
-				size_t selected_index = parameters.randomStream.RandSize(temp.size());
+				size_t selected_index = query.randomStream.RandSize(temp.size());
 
 				selected_index = temp.GetNthElement(selected_index);
 				temp.erase(selected_index);
@@ -767,7 +768,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
-			auto &extremum = std::get<EntityQuery::Extremum>(query.payload);
+			auto &extremum = query.extremum;
 			entity_caches->FindMinMax(extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
 			return EvaluableNodeReference::Null();
 		}
@@ -799,7 +800,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		case ENT_QUERY_ENTITY_CLUSTERS:
 		{
-			auto &distance = std::get<EntityQuery::Distance>(query.payload);
+			//TODO: see if can reduce one param to function
+			auto &distance = query.distance;
 			distance.entity = container;
 			entity_caches->GetMatchingEntitiesFromDistanceQuery(query.queryType, distance, matching_ents,
 				compute_results, is_first, !is_last || !return_query_value);
@@ -863,7 +865,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
 
-			auto &dist_query = std::get<EntityQuery::Distance>(last_query->payload);
+			auto &dist_query = last_query->distance;
 
 			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
 				enm, dist_query.returnSortedList, dist_query.additionalSortedListLabels,
@@ -880,7 +882,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 			if(last_query_type == ENT_QUERY_EXISTS)
 			{
-				auto &labels = std::get<EntityQuery::LabelExistence>(last_query->payload).labels;
+				auto &labels = last_query->labels;
 
 				//create string reference for each entity's labels
 				string_intern_pool.CreateMultipleStringReferences(labels, matching_ents.size());
@@ -954,7 +956,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			EntityQueries::FilterEntities(query, container, matching_entities, is_first);
 			if(is_last && return_query_value && node != nullptr && node->GetType() == ENT_QUERY_EXISTS)
 			{
-				auto &labels = std::get<EntityQuery::LabelExistence>(query.payload).labels;
+				auto &labels = query.labels;
 
 				auto query_return = enm->AllocNode(ENT_ASSOC);
 				query_return->ReserveMappedChildNodes(matching_entities.size());
@@ -1066,7 +1068,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerS
 		if(is_first && query_type == ENT_QUERY_NOT_IN_ENTITY_LIST)
 			matching_entities.SetAllIds(container->GetNumContainedEntities());
 
-		auto &entity_ids = std::get<EntityQuery::EntityIds>(query.payload);
+		auto &entity_ids = query.labels;
 		for(auto id : entity_ids)
 		{
 			size_t index = container->GetContainedEntityIndex(id);

@@ -559,7 +559,7 @@ namespace EntityQueryBuilder
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
-		auto &cur_condition = query.SetQueryType<EntityQuery::Distance>(condition_type);
+		auto &cur_condition = query.distance;
 		
 		cur_condition.useConcurrency = cn->GetConcurrency();
 		cur_condition.interpreter = calling_interpreter;
@@ -852,6 +852,9 @@ namespace EntityQueryBuilder
 	{
 		auto &ocn = cn->GetOrderedChildNodes();
 
+		query.queryType = type;
+		query.queryNode = cn;
+
 		//validate number of parameters
 		switch(type)
 		{
@@ -911,23 +914,23 @@ namespace EntityQueryBuilder
 		{
 		case ENT_QUERY_SELECT:
 		{
-			auto &selection = query.SetQueryType<EntityQuery::Select>(type);
+			auto &selection = query.select;
 			selection.count = ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 0;
 			selection.hasStartOffset = ocn.size() > 1;
 			selection.startOffset = selection.hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
-			selection.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			selection.randomStream = selection.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+			query.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
+			query.randomStream = query.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
 				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
 
 		case ENT_QUERY_SAMPLE:
 		{
-			auto &sample = query.SetQueryType<EntityQuery::Sample>(type);
+			auto &sample = query.sample;
 			sample.count = ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
-			sample.valueLabel = ocn.size() > 1 ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : label_sid;
-			sample.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			sample.randomStream = sample.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+			query.singleLabel = ocn.size() > 1 ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : label_sid;
+			query.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
+			query.randomStream = query.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
 				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
@@ -935,17 +938,17 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
-			query.SetQueryType<EntityQuery::Extremum>(type, label_sid,
-				ocn.size() >= 2 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 1,
-				ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]) ? ENIVT_NUMBER : ENIVT_STRING_ID);
+			query.singleLabel = label_sid;
+			query.extremum.count = (ocn.size() >= 2 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 1);
+			query.extremum.valueType = (ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]) ? ENIVT_NUMBER : ENIVT_STRING_ID);
 			return;
 		}
 
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
-			query.SetQueryType<EntityQuery::Difference>(type, label_sid,
-				ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN(),
-				type == ENT_QUERY_MIN_DIFFERENCE && ocn.size() >= 3 && EvaluableNode::ToBool(ocn[2]));
+			query.singleLabel = label_sid;
+			query.difference.limit = (ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN());
+			query.difference.includeZero = (type == ENT_QUERY_MIN_DIFFERENCE && ocn.size() >= 3 && EvaluableNode::ToBool(ocn[2]));
 			return;
 
 		case ENT_QUERY_SUM:
@@ -961,18 +964,21 @@ namespace EntityQueryBuilder
 				parameter = EvaluableNode::ToNumber(ocn[1]);
 
 			size_t weight_index = has_parameter ? 2 : 1;
-			EntityQuery::Aggregate labels{ label_sid };
+			query.singleLabel = label_sid;
 			if(ocn.size() > weight_index)
-				labels.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
+				query.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
 
 			if(type == ENT_QUERY_QUANTILE)
-				query.SetQueryType<EntityQuery::Quantile>(type, labels, parameter);
+			{
+				query.quantile.percentage = parameter;
+			}
 			else if(type == ENT_QUERY_GENERALIZED_MEAN)
-				query.SetQueryType<EntityQuery::Mean>(type, labels, parameter,
-					ocn.size() >= 4 ? EvaluableNode::ToNumber(ocn[3], 0.0) : 0.0,
-					ocn.size() >= 5 && EvaluableNode::ToBool(ocn[4]), ocn.size() >= 6 && EvaluableNode::ToBool(ocn[5]));
-			else
-				query.SetQueryType<EntityQuery::Aggregate>(type, labels);
+			{
+				query.mean.power = parameter;
+				query.mean.center = ocn.size() >= 4 ? EvaluableNode::ToNumber(ocn[3], 0.0) : 0.0;
+				query.mean.calculateMoment = ocn.size() >= 5 && EvaluableNode::ToBool(ocn[4]);
+				query.mean.absoluteValue = ocn.size() >= 6 && EvaluableNode::ToBool(ocn[5]);
+			}
 
 			return;
 		}
@@ -980,8 +986,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
 		{
-			auto &existence = query.SetQueryType<EntityQuery::LabelExistence>(type, cn);
-			auto &labels = existence.labels;
+			query.labels.clear();
 			for(auto &cn : ocn)
 			{
 				if(EvaluableNode::IsOrderedArray(cn))
@@ -991,7 +996,7 @@ namespace EntityQueryBuilder
 						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn2);
 						if(exists)
 						{
-							labels.emplace_back(sid);
+							query.labels.emplace_back(sid);
 						}
 						else
 						{
@@ -1009,7 +1014,7 @@ namespace EntityQueryBuilder
 					auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
 					if(exists)
 					{
-						labels.emplace_back(sid);
+						query.labels.emplace_back(sid);
 					}
 					else
 					{
@@ -1035,7 +1040,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_AMONG:
 		case ENT_QUERY_NOT_AMONG:
 
-			query.SetQueryType<EntityQuery::ValueFilter>(type, cn, label_sid);
+			query.singleLabel = label_sid;
 			return;
 
 		case ENT_QUERY_IN_ENTITY_LIST:
@@ -1048,7 +1053,8 @@ namespace EntityQueryBuilder
 				return;
 			}
 
-			auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
+			auto &ids = query.labels;
+			ids.clear();
 			if(ocn.size() == 0 || !EvaluableNode::IsOrderedArray(ocn[0]))
 				return;
 

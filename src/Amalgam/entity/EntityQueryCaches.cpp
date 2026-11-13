@@ -405,8 +405,9 @@ void EntityQueryCaches::FindMinMax(const EntityQuery &query, BitArrayIntegerSet 
 EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, BitArrayIntegerSet &matching_entities,
 	EvaluableNodeManager *enm, bool is_first)
 {
-	auto labels = std::get<EntityQuery::Aggregate>(query.payload);
-	auto [value_label, weight_label] = labels;
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
+
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(labels, lock);
@@ -448,8 +449,9 @@ EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, 
 OrderedHashMap<StringInternPool::StringID, double> EntityQueryCaches::ComputeValueMasses(const EntityQuery &query,
 	BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto labels = std::get<EntityQuery::Aggregate>(query.payload);
-	auto [value_label, weight_label] = labels;
+	auto value_label = query.singleLabel;
+	auto weight_label = query.weightLabel;
+
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(labels, lock);
@@ -947,77 +949,50 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 	EvaluableNodeReference query_return_value = IterateOverQueryConditions(condition_nodes, interpreter,
 		[&](EntityQuery &query, bool is_first, bool is_last)
 	{
-		EvaluableNode *node = nullptr;
-		if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
-			node = value_filter->node;
+		if(query.queryNode == nullptr || query.queryType == ENT_NULL)
+			return EvaluableNodeReference::Null();
 
-		if(node != nullptr || std::holds_alternative<EntityQuery::EntityIds>(query.payload) || query.queryType == ENT_NULL)
+		if(query.queryType == ENT_QUERY_MIN || query.queryType == ENT_QUERY_MAX)
 		{
-			EntityQueries::FilterEntities(query, container, matching_entities, is_first);
-			if(is_last && return_query_value && node != nullptr && node->GetType() == ENT_QUERY_EXISTS)
-			{
-				auto &labels = query.labels;
-
-				auto query_return = enm->AllocNode(ENT_ASSOC);
-				query_return->ReserveMappedChildNodes(matching_entities.size());
-				for(auto entity : matching_entities)
-				{
-					//create assoc for values for each entity
-					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
-					entity_values->ReserveMappedChildNodes(labels.size());
-					for(auto &label_sid : labels)
-						entity_values->SetMappedChildNode(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
-
-					//append to query_return after building to ensure all flags are propagated
-					query_return->SetMappedChildNode(entity->GetIdStringId(), entity_values);
-				}
-				return EvaluableNodeReference(query_return, true);
-			}
+			EntityQueries::FindMinMax(query, matching_entities);
 			return EvaluableNodeReference::Null();
 		}
 
-		EvaluableNodeReference retval = EvaluableNodeReference::Null();
-		auto distance = std::get_if<EntityQuery::Distance>(&query.payload);
-		if(distance == nullptr)
+		if(query.queryType == ENT_QUERY_SELECT)
 		{
-			if(is_first && query.queryType != ENT_QUERY_SAMPLE)
-				matching_entities = container->GetContainedEntities();
-
-			if(query.queryType == ENT_QUERY_MIN || query.queryType == ENT_QUERY_MAX)
-			{
-				EntityQueries::FindMinMax(query, matching_entities);
-			}
-			else if(query.queryType == ENT_QUERY_SELECT)
-			{
-				EntityQueries::SelectEntities(query, matching_entities);
-			}
-			else if(query.queryType == ENT_QUERY_SAMPLE)
-			{
-				EntityQueries::SampleEntities(query, is_first ? container->GetContainedEntities() : matching_entities, matching_entities);
-			}
-			else if(is_last && return_query_value)
-			{
-				if(query.queryType == ENT_QUERY_MODE)
-				{
-					retval = EntityQueries::ComputeMode(query, matching_entities, enm);
-				}
-				else if(query.queryType == ENT_QUERY_VALUE_MASSES)
-				{
-					auto value_weights = EntityQueries::ComputeValueMasses(query, matching_entities);
-					//fallback always constructs the result, including size-only requests.
-					retval = EntityQueries::ValueMassesToResult(value_weights, enm, {});
-				}
-				else
-					retval = EvaluableNodeReference(enm->AllocNode(
-						EntityQueries::ComputeNumericAggregate(query, matching_entities)), true);
-			}
-
-			return retval;
+			EntityQueries::SelectEntities(query, matching_entities);
+			return EvaluableNodeReference::Null();
 		}
 
-		auto &condition = *distance;
-		//populate here because now know container entity
-		condition.entity = container;
+		if(query.queryType == ENT_QUERY_SAMPLE)
+		{
+			EntityQueries::SampleEntities(query, is_first ? container->GetContainedEntities() : matching_entities, matching_entities);
+			return EvaluableNodeReference::Null();
+		}
+
+		if(query.queryType == ENT_QUERY_MODE)
+			return EntityQueries::ComputeMode(query, matching_entities, enm);
+
+		if(query.queryType == ENT_QUERY_VALUE_MASSES)
+		{
+			auto value_weights = EntityQueries::ComputeValueMasses(query, matching_entities);
+			//fallback always constructs the result, including size-only requests.
+			return EntityQueries::ValueMassesToResult(value_weights, enm, {});
+		}
+
+		if(query.queryType == ENT_QUERY_SUM || query.queryType == ENT_QUERY_QUANTILE
+			|| query.queryType == ENT_QUERY_GENERALIZED_MEAN || query.queryType == ENT_QUERY_MIN_DIFFERENCE
+			|| query.queryType == ENT_QUERY_MAX_DIFFERENCE)
+		{
+			return EvaluableNodeReference(enm->AllocNode(
+				EntityQueries::ComputeNumericAggregate(query, matching_entities)), true);
+		}
+
+		if(query.queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || query.queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
+		{
+			query.distance.entity = container;
+			return query.distance.GetMatchingEntities(query.queryType, container, matching_entities, is_first, (return_query_value && is_last) ? enm : nullptr);
+		}
 
 		//check for any unsupported operations by brute force; if possible, use query caches, otherwise return null
 		if(query.queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS
@@ -1043,10 +1018,32 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			#endif
 			}
 
+			query.distance.entity = container;
 			return GetMatchingEntitiesFromQueryCaches(container, condition_nodes, interpreter, enm, return_query_value, immediate_result);
 		}
 
-		return condition.GetMatchingEntities(query.queryType, container, matching_entities, is_first, (return_query_value && is_last) ? enm : nullptr);
+		EntityQueries::FilterEntities(query, container, matching_entities, is_first);
+		if(is_last && return_query_value && query.queryNode->GetType() == ENT_QUERY_EXISTS)
+		{
+			auto &labels = query.labels;
+
+			auto query_return = enm->AllocNode(ENT_ASSOC);
+			query_return->ReserveMappedChildNodes(matching_entities.size());
+			for(auto entity : matching_entities)
+			{
+				//create assoc for values for each entity
+				EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
+				entity_values->ReserveMappedChildNodes(labels.size());
+				for(auto &label_sid : labels)
+					entity_values->SetMappedChildNode(label_sid, entity->GetValueAtLabel(label_sid, enm).first);
+
+				//append to query_return after building to ensure all flags are propagated
+				query_return->SetMappedChildNode(entity->GetIdStringId(), entity_values);
+			}
+			return EvaluableNodeReference(query_return, true);
+		}
+
+		return EvaluableNodeReference::Null();
 	});
 
 	//if need to return something specific, then do so, otherwise return list of matching entities
@@ -1113,50 +1110,46 @@ void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerS
 	EnsureLabelsAreCached(labels_to_add);
 #endif
 
-	if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
+	if(query_type == ENT_QUERY_EXISTS)
 	{
-		if(exist_filter->node->GetType() == ENT_QUERY_EXISTS)
+		for(auto &l : query.labels)
 		{
-			for(auto &l : exist_filter->labels)
+			if(is_first)
 			{
-				if(is_first)
-				{
-					sbfds.FindAllEntitiesWithFeature(l, matching_entities);
-					is_first = false;
-				}
-				else
-				{
-					sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
-				}
+				sbfds.FindAllEntitiesWithFeature(l, matching_entities);
+				is_first = false;
+			}
+			else
+			{
+				sbfds.IntersectEntitiesWithFeature(l, matching_entities, true);
 			}
 		}
-		else
+		matching_entities.UpdateNumElements();
+		return;
+	}
+	else if(query_type == ENT_QUERY_NOT_EXISTS)
+	{
+		for(auto &l : query.labels)
 		{
-			for(auto &l : exist_filter->labels)
+			if(is_first)
 			{
-				if(is_first)
-				{
-					sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
-					is_first = false;
-				}
-				else
-				{
-					sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
-				}
+				sbfds.FindAllEntitiesWithoutFeature(l, matching_entities);
+				is_first = false;
+			}
+			else
+			{
+				sbfds.IntersectEntitiesWithoutFeature(l, matching_entities, true);
 			}
 		}
-
 		matching_entities.UpdateNumElements();
 		return;
 	}
 
-	EvaluableNode *query_node = nullptr;
-	if(auto value_filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
-		query_node = value_filter->node;
+	EvaluableNode *query_node = query.queryNode;
 
 	auto type = query_node->GetType();
 	auto &ocn = query_node->GetOrderedChildNodes();
-	auto label = std::get<EntityQuery::ValueFilter>(query.payload).label;
+	auto label = query.singleLabel;
 	auto &temp = buffers.tempMatchingEntityIndices;
 	switch(type)
 	{

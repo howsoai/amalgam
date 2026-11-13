@@ -131,7 +131,7 @@ public:
 
 	void GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
-	void FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first);
+	void FindMinMax(const EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
 	double ComputeNumericAggregate(const EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);

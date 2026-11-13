@@ -381,13 +381,13 @@ void EntityQueryCaches::GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType q
 	}
 }
 
-void EntityQueryCaches::FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first)
+void EntityQueryCaches::FindMinMax(const EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(parameters, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelsAreCached(parameters);
+	EnsureLabelsAreCached(query);
 #endif
 
 	auto &temp = buffers.tempMatchingEntityIndices;
@@ -397,8 +397,9 @@ void EntityQueryCaches::FindMinMax(const EntityQuery::Extremum &parameters, bool
 		matching_entities.clear();
 	}
 
-	sbfds.FindMinMax(parameters.valueLabel, parameters.valueType, parameters.count,
-		largest, is_first ? nullptr : &temp, matching_entities);
+	auto &extremum = query.extremum;
+	sbfds.FindMinMax(query.singleLabel, extremum.valueType, extremum.count,
+		query.queryType == ENT_QUERY_MAX, is_first ? nullptr : &temp, matching_entities);
 }
 
 EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, BitArrayIntegerSet &matching_entities,
@@ -768,8 +769,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
-			auto &extremum = query.extremum;
-			entity_caches->FindMinMax(extremum, query.queryType == ENT_QUERY_MAX, matching_ents, is_first);
+			entity_caches->FindMinMax(query, matching_ents, is_first);
 			return EvaluableNodeReference::Null();
 		}
 

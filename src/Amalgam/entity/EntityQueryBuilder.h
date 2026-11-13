@@ -762,7 +762,7 @@ namespace EntityQueryBuilder
 
 		//set radius label
 		if(ocn.size() > RADIUS_LABEL)
-			cur_condition.singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
+			cur_condition.radiusLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
 
 		//set numerical precision
 		cur_condition.distEvaluator.recomputeAccurateDistances = true;
@@ -851,9 +851,6 @@ namespace EntityQueryBuilder
 		Interpreter *calling_interpreter)
 	{
 		auto &ocn = cn->GetOrderedChildNodes();
-
-		query.queryType = type;
-		query.queryNode = cn;
 
 		//validate number of parameters
 		switch(type)
@@ -1078,6 +1075,12 @@ namespace EntityQueryBuilder
 	inline void BuildCondition(EvaluableNode *condition_node, EntityQuery &query, Interpreter *calling_interpreter)
 	{
 		EvaluableNodeType t = condition_node->GetType();
+		query.queryType = t;
+		query.queryNode = condition_node;
+		query.singleLabel = StringInternPool::NOT_A_STRING_ID;
+		query.labels.clear();
+		query.weightLabel = StringInternPool::NOT_A_STRING_ID;;
+
 		if(t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 				|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
 				|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS

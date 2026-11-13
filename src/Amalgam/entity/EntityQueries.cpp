@@ -123,9 +123,9 @@ bool EntityQuery::Distance::DoesEntityMatchCondition(Entity *e, Neighbors &neigh
 	}
 
 	double radius = 0.0;
-	if(singleLabel != StringInternPool::NOT_A_STRING_ID)
+	if(radiusLabel != StringInternPool::NOT_A_STRING_ID)
 	{
-		auto [value, found] = e->GetValueAtLabelAsNumber(singleLabel);
+		auto [value, found] = e->GetValueAtLabelAsNumber(radiusLabel);
 		if(found)
 			radius = value;
 	}
@@ -161,9 +161,9 @@ double EntityQuery::Distance::GetConditionDistanceMeasure(Entity *e, bool high_a
 	}
 
 	double radius = 0.0;
-	if(singleLabel != StringInternPool::NOT_A_STRING_ID)
+	if(radiusLabel != StringInternPool::NOT_A_STRING_ID)
 	{
-		auto [value, found] = e->GetValueAtLabelAsNumber(singleLabel);
+		auto [value, found] = e->GetValueAtLabelAsNumber(radiusLabel);
 		if(found)
 			radius = value;
 	}

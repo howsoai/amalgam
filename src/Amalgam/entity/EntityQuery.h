@@ -18,10 +18,9 @@ struct EntityQuery
 	EvaluableNodeType queryType = ENT_NULL;
 	EvaluableNode *queryNode;
 
-	std::vector<StringInternPool::StringID> labels;
-	StringInternPool::StringID singleLabel;
-
+	StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
 	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
+	std::vector<StringInternPool::StringID> labels;
 
 	bool hasRandomStream;
 	RandomStream randomStream;
@@ -146,7 +145,7 @@ struct EntityQuery
 		bool useConcurrency = false;
 
 		//radius label
-		StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
+		StringInternPool::StringID radiusLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//a label representing a weight label
 		StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;

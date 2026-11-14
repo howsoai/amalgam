@@ -1178,6 +1178,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				else
 					match_on_not_value = true;
 			}
+			evaluableNodeManager->FreeNodeTreeIfPossible(match_on_value_param);
 		}
 	}
 

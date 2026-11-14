@@ -953,9 +953,6 @@ protected:
 	//only allocated if needed
 	std::unique_ptr<ActiveInterpreters> activeInterpreters;
 
-	//number of nodes to allocate at once for the local allocation buffer
-	static const int labBlockAllocationSize = 24;
-
 	//local memory pool for allocations
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local inline static LocalAllocationBuffer localAllocationBuffer;

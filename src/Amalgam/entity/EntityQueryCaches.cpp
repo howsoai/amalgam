@@ -776,7 +776,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 
 		case ENT_QUERY_MODE:
-			return entity_caches->ComputeMode(query, matching_ents, enm, is_first);
+			return enm->AllocIfNotImmediate(
+				entity_caches->ComputeMode(query, matching_ents, enm, is_first), immediate_result);
 
 		case ENT_QUERY_VALUE_MASSES:
 		{

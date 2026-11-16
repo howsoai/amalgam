@@ -65,7 +65,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
-		if(label != StringInternPool::NOT_A_STRING_ID)
+		if(Entity::IsLabelValidAndPublic(label))
 			labels_to_add.push_back(label);
 		};
 
@@ -97,7 +97,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
-		if(label != StringInternPool::NOT_A_STRING_ID)
+		if(Entity::IsLabelValidAndPublic(label))
 			labels_to_add.push_back(label);
 		};
 

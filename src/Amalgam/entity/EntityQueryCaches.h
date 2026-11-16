@@ -109,14 +109,11 @@ public:
 	void EnsureLabelsAreCached(const EntityQuery &query, Concurrency::ReadLock &lock);
 
 	//returns false if any changes were made to the caches
-	//in a multithreading context, this means it should be called again until returns true
-	bool EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
+	//given the multithreading context, this means it should be called again until returns true
+	bool EnsureLabelsAreCachedConcurrently(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
 	void EnsureLabelsAreCached(const EntityQuery::Distance &dist_params);
 	void EnsureLabelsAreCached(const EntityQuery &query);
-
-	//returns false if any changes were made to the caches
-	bool EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
 	//removes label_sid from the cache

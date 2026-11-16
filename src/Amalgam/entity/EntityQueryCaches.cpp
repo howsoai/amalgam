@@ -57,8 +57,6 @@ bool EntityQueryCaches::EnsureLabelsAreCachedConcurrently(std::vector<StringInte
 }
 #endif
 
-//TODO 26312: change both of the methods below to have while loops for multithreading
-
 #if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params, Concurrency::ReadLock &lock)
 #else

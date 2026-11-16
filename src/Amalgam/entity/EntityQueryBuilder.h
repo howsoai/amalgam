@@ -313,6 +313,8 @@ namespace EntityQueryBuilder
 		EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
 		dist_eval.featureAttribs.resize(num_elements);
+		for(auto &feature_attrib : dist_eval.featureAttribs)
+			feature_attrib.Clear();
 
 		bool weights_populated = false;
 		if(EvaluableNode::IsAssociativeArray(weights_node) && !EvaluableNode::IsNull(weights_selection_features))
@@ -564,7 +566,18 @@ namespace EntityQueryBuilder
 		cur_condition.useConcurrency = cn->GetConcurrency();
 		cur_condition.interpreter = calling_interpreter;
 
-		auto &neighbors = std::get<EntityQuery::Distance::Neighbors>(cur_condition.target);
+		cur_condition.ClearMainParameters();
+		cur_condition.minToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition.numToRetrieveMinIncrementalProbability = 0.0;
+		cur_condition.extraToRetrieve = 0;
+		cur_condition.distanceWeightExponent = 1.0;
+		cur_condition.returnSortedList = false;
+		cur_condition.additionalSortedListLabels.clear();
+		cur_condition.entity = nullptr;
+		cur_condition.radiusLabel = StringInternPool::NOT_A_STRING_ID;
+		cur_condition.weightLabel = StringInternPool::NOT_A_STRING_ID;
+		cur_condition.maxToRetrieve = 0;
+		auto &neighbors = cur_condition.target.emplace<EntityQuery::Distance::Neighbors>();
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition.maxToRetrieve = std::numeric_limits<size_t>::max();
@@ -620,6 +633,7 @@ namespace EntityQueryBuilder
 		}
 
 		//set position labels
+		cur_condition.positionLabels.clear();
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{

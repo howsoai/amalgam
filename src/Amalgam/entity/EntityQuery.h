@@ -66,6 +66,11 @@ struct EntityQuery
 	{
 		Distance()
 		{
+			ClearMainParameters();
+		}
+
+		void ClearMainParameters()
+		{
 			distEvaluator.pValue = distEvaluator.inversePValue = 0.0;
 			distEvaluator.computeSurprisal = distEvaluator.transformSurprisalToProb = false;
 			distEvaluator.highAccuracyDistances = distEvaluator.recomputeAccurateDistances = false;

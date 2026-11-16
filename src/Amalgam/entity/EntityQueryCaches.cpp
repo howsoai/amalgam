@@ -61,6 +61,9 @@ bool EntityQueryCaches::EnsureLabelsAreCachedConcurrently(std::vector<StringInte
 
 #if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params, Concurrency::ReadLock &lock)
+#else
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params)
+#endif
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
@@ -68,25 +71,31 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 			labels_to_add.push_back(label);
 		};
 
-	for(auto label : dist_params.positionLabels)
-		add_label(label);
-	add_label(dist_params.weightLabel);
-	for(auto label : dist_params.additionalSortedListLabels)
-		add_label(label);
-
-	add_label(dist_params.weightLabel);
-
-	EnsureLabelsAreCachedConcurrently(labels_to_add, lock);
-}
-#else
-void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params)
-{
-	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
-}
+#if defined(MULTITHREAD_SUPPORT)
+	do {
 #endif
+		labels_to_add.clear();
+
+		for(auto label : dist_params.positionLabels)
+			add_label(label);
+		add_label(dist_params.weightLabel);
+		for(auto label : dist_params.additionalSortedListLabels)
+			add_label(label);
+
+		add_label(dist_params.weightLabel);
+
+#if defined(MULTITHREAD_SUPPORT)
+	} while(EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
+#else
+	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
+#endif
+}
 
 #if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query, Concurrency::ReadLock &lock)
+#else
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
+#endif
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
@@ -94,19 +103,23 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query, Concurre
 			labels_to_add.push_back(label);
 		};
 
-	for(auto label : query.labels)
-		add_label(label);
-	add_label(query.singleLabel);
-	add_label(query.weightLabel);
-
-	EnsureLabelsAreCachedConcurrently(labels_to_add, lock);
-}
-#else
-void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
-{
-	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
-}
+#if defined(MULTITHREAD_SUPPORT)
+	do
+	{
 #endif
+		labels_to_add.clear();
+
+		for(auto label : query.labels)
+			add_label(label);
+		add_label(query.singleLabel);
+		add_label(query.weightLabel);
+
+#if defined(MULTITHREAD_SUPPORT)
+	} while(EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
+#else
+	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
+#endif
+}
 
 double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	BitArrayIntegerSet &matching_entities, bool is_first)

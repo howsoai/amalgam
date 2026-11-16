@@ -25,9 +25,9 @@ thread_local
 EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityProcessor::buffers;
 
 #if defined(MULTITHREAD_SUPPORT)
-void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
+void EntityQueryCaches::EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add, Concurrency::ReadLock &lock)
 #else
-void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add)
+void EntityQueryCaches::EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add)
 #endif
 {
 	if(labels_to_add.size() == 0)
@@ -36,15 +36,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::Stri
 #if defined(MULTITHREAD_SUPPORT)
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
-
-	//now with write_lock, remove any labels that have already been added by other threads
-	labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
-		[this](auto sid) { return DoesHaveLabel(sid); }),
-		end(labels_to_add));
-
-	//need to double-check to make sure that another thread didn't already rebuild
-	if(labels_to_add.size() > 0)
-	#endif
+#endif
 		sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -98,9 +90,9 @@ double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(labels, lock);
+	EnsureLabelIsCached(value_label, lock);
 #else
-	EnsureLabelsAreCached(labels);
+	EnsureLabelIsCached(value_label);
 #endif
 
 	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
@@ -203,13 +195,13 @@ void EntityQueryCaches::GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType q
 			if(distance_cond.distEvaluator.populateOmittedFeatureValues)
 			{
 				sbfds.FindEntitiesNearestToIndexedEntity(distance_cond.distEvaluator, distance_cond.positionLabels, exclusion_entity_index,
-					distance_transform.GetNumToRetrieve(), distance_cond.singleLabel, matching_entities, false,
+					distance_transform.GetNumToRetrieve(), distance_cond.radiusLabel, matching_entities, false,
 					distance_cond.interpreter, distance_cond.entity, compute_results, distance_cond.randomStream);
 			}
 			else
 			{
 				sbfds.FindEntitiesNearestToPosition(distance_cond.distEvaluator, distance_cond.positionLabels, neighbors->valuesToCompare,
-					distance_transform.GetNumToRetrieve(), distance_cond.singleLabel,
+					distance_transform.GetNumToRetrieve(), distance_cond.radiusLabel,
 					matching_entities, false, distance_cond.interpreter, distance_cond.entity, compute_results,
 					distance_cond.randomStream);
 			}
@@ -219,13 +211,13 @@ void EntityQueryCaches::GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType q
 			if(distance_cond.distEvaluator.populateOmittedFeatureValues)
 			{
 				sbfds.FindEntitiesWithinDistanceToIndexedEntity(distance_cond.distEvaluator, distance_cond.positionLabels,
-					exclusion_entity_index, neighbors->maxDistance, distance_cond.singleLabel, matching_entities,
+					exclusion_entity_index, neighbors->maxDistance, distance_cond.radiusLabel, matching_entities,
 					distance_cond.interpreter, distance_cond.entity, compute_results);
 			}
 			else
 			{
 				sbfds.FindEntitiesWithinDistanceToPosition(distance_cond.distEvaluator, distance_cond.positionLabels,
-					neighbors->valuesToCompare, neighbors->maxDistance, distance_cond.singleLabel, matching_entities,
+					neighbors->valuesToCompare, neighbors->maxDistance, distance_cond.radiusLabel, matching_entities,
 					distance_cond.interpreter, distance_cond.entity, compute_results);
 			}
 		}
@@ -291,14 +283,14 @@ void EntityQueryCaches::GetMatchingEntitiesFromDistanceQuery(EvaluableNodeType q
 
 		//rebind the thread-local cache before the processor inspects this query.
 		buffers.knnCache.ResetCache(sbfds, matching_entities, distance_cond.distEvaluator, distance_cond.interpreter, distance_cond.entity,
-			distance_cond.positionLabels, distance_cond.singleLabel);
+			distance_cond.positionLabels, distance_cond.radiusLabel);
 
 	#ifdef MULTITHREAD_SUPPORT
 		EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
-			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.singleLabel, distance_cond.useConcurrency);
+			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.radiusLabel, distance_cond.useConcurrency);
 	#else
 		EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
-			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.singleLabel);
+			distance_transform, distance_transform.GetNumToRetrieve(), distance_cond.radiusLabel);
 	#endif
 
 		auto &results_buffer = buffers.doubleVector;
@@ -410,9 +402,9 @@ EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, 
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(labels, lock);
+	EnsureLabelIsCached(value_label, lock);
 #else
-	EnsureLabelsAreCached(labels);
+	EnsureLabelIsCached(value_label);
 #endif
 
 	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
@@ -454,9 +446,9 @@ OrderedHashMap<StringInternPool::StringID, double> EntityQueryCaches::ComputeVal
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(labels, lock);
+	EnsureLabelIsCached(value_label, lock);
 #else
-	EnsureLabelsAreCached(labels);
+	EnsureLabelIsCached(value_label);
 #endif
 
 	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);

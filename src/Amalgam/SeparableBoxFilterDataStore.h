@@ -116,7 +116,7 @@ public:
 	}
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities
-	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities);
+	void AddLabels(std::span<StringInternPool::StringID> label_sids, const std::vector<Entity *> &entities);
 
 	//returns true only if none of the entities have the label
 	inline bool IsColumnIndexRemovable(size_t column_index_to_remove)
@@ -672,7 +672,7 @@ protected:
 	//adds a new labels to the database
 	// assumes label_ids is not empty
 	//returns the number of new columns inserted
-	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids);
+	size_t AddLabelsAsEmptyColumns(std::span<StringInternPool::StringID> label_sids);
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated

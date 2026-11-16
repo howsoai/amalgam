@@ -43,7 +43,7 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 #endif
 }
 
-void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::StringID> &label_sids,
+void SeparableBoxFilterDataStore::AddLabels(std::span<StringInternPool::StringID> label_sids,
 	const std::vector<Entity *> &entities)
 {
 	//make sure have data to add
@@ -734,7 +734,7 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_ind
 		numEntities--;
 }
 
-size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids)
+size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::span<StringInternPool::StringID> label_sids)
 {
 	size_t num_inserted_columns = 0;
 

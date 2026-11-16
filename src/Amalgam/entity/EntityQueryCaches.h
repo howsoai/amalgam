@@ -107,11 +107,25 @@ public:
 #if defined(MULTITHREAD_SUPPORT)
 	template<typename Parameters>
 	void EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock);
-	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add, Concurrency::ReadLock &lock);
+
+	inline void EnsureLabelIsCached(StringInternPool::StringID label_to_add, Concurrency::ReadLock &lock)
+	{
+		//temporary container for the span to work properly
+		StringInternPool::StringID temp[]{ label_to_add };
+		EnsureLabelsAreCached(std::span(temp), lock);
+	}
 #else
 	template<typename Parameters>
 	void EnsureLabelsAreCached(const Parameters &parameters);
-	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
+	void EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add);
+
+	inline void EnsureLabelIsCached(StringInternPool::StringID label_to_add)
+	{
+		//temporary container for the span to work properly
+		StringInternPool::StringID temp[]{ label_to_add };
+		EnsureLabelsAreCached(std::span(temp));
+	}
 #endif
 
 	//removes label_sid from the cache

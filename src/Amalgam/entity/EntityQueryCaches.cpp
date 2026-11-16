@@ -27,27 +27,27 @@ EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityPr
 #if defined(MULTITHREAD_SUPPORT)
 bool EntityQueryCaches::EnsureLabelsAreCachedConcurrently(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
 {
-	//remove labels that already exist
-	labels_to_add.erase(
-		std::remove_if(begin(labels_to_add), end(labels_to_add), [this](auto sid) { return DoesHaveLabel(sid); }),
-		end(labels_to_add));
+	bool uncached_labels = false;
+	for(auto &sid : labels_to_add)
+	{
+		if(!DoesHaveLabel(sid))
+		{
+			uncached_labels = true;
+			break;
+		}
+	}
 
-	//if all labels are accounted for, no changes were made
-	if(labels_to_add.size() == 0)
+	//if all labels are accounted for, no changes needed
+	if(!uncached_labels)
 		return true;
 	//at least one label needs to be added
 
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
-	//now with write_lock, remove any labels that have already been added by other threads
-	labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
-		[this](auto sid) { return DoesHaveLabel(sid); }),
-		end(labels_to_add));
 
-	//if another thread rebuilt everything, can skip
-	if(labels_to_add.size() == 0)
-		return false;
-
+	//add any labels needed; even if none
+	//this method operates relatively quickly so no need to iterate over labels again
+	//still need to return false even if all labels are accounted for because need to downgrade lock to read-only
 	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 
 	//release write lock and reacquire read lock
@@ -65,7 +65,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
-		if(label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(label))
+		if(label != StringInternPool::NOT_A_STRING_ID)
 			labels_to_add.push_back(label);
 		};
 
@@ -83,7 +83,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 		add_label(dist_params.weightLabel);
 
 #if defined(MULTITHREAD_SUPPORT)
-	} while(EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
+	} while(!EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
 #else
 	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 #endif
@@ -97,7 +97,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
 {
 	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
-		if(label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(label))
+		if(label != StringInternPool::NOT_A_STRING_ID)
 			labels_to_add.push_back(label);
 		};
 
@@ -113,7 +113,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
 		add_label(query.weightLabel);
 
 #if defined(MULTITHREAD_SUPPORT)
-	} while(EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
+	} while(!EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
 #else
 	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 #endif

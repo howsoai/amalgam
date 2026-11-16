@@ -105,27 +105,18 @@ public:
 
 	//caches labels needed by the current query if they are not in the cache
 #if defined(MULTITHREAD_SUPPORT)
-	template<typename Parameters>
-	void EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock);
-	void EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQuery::Distance &dist_params, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQuery &query, Concurrency::ReadLock &lock);
 
-	inline void EnsureLabelIsCached(StringInternPool::StringID label_to_add, Concurrency::ReadLock &lock)
-	{
-		//temporary container for the span to work properly
-		StringInternPool::StringID temp[]{ label_to_add };
-		EnsureLabelsAreCached(std::span(temp), lock);
-	}
+	//returns false if any changes were made to the caches
+	//in a multithreading context, this means it should be called again until returns true
+	bool EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
-	template<typename Parameters>
-	void EnsureLabelsAreCached(const Parameters &parameters);
-	void EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add);
+	void EnsureLabelsAreCached(const EntityQuery::Distance &dist_params);
+	void EnsureLabelsAreCached(const EntityQuery &query);
 
-	inline void EnsureLabelIsCached(StringInternPool::StringID label_to_add)
-	{
-		//temporary container for the span to work properly
-		StringInternPool::StringID temp[]{ label_to_add };
-		EnsureLabelsAreCached(std::span(temp));
-	}
+	//returns false if any changes were made to the caches
+	bool EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
 #endif
 
 	//removes label_sid from the cache

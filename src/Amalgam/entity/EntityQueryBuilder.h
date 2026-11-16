@@ -1078,8 +1078,8 @@ namespace EntityQueryBuilder
 		query.queryType = t;
 		query.queryNode = condition_node;
 		query.singleLabel = StringInternPool::NOT_A_STRING_ID;
+		query.weightLabel = StringInternPool::NOT_A_STRING_ID;
 		query.labels.clear();
-		query.weightLabel = StringInternPool::NOT_A_STRING_ID;;
 
 		if(t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 				|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS

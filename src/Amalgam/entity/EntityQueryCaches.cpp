@@ -25,55 +25,89 @@ thread_local
 EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityProcessor::buffers;
 
 #if defined(MULTITHREAD_SUPPORT)
-void EntityQueryCaches::EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add, Concurrency::ReadLock &lock)
+bool EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
 #else
-void EntityQueryCaches::EnsureLabelsAreCached(std::span<StringInternPool::StringID> labels_to_add)
+bool EntityQueryCaches::EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add)
 #endif
 {
+	//remove labels that already exist
+	labels_to_add.erase(
+		std::remove_if(begin(labels_to_add), end(labels_to_add), [this](auto sid) { return DoesHaveLabel(sid); }),
+		end(labels_to_add));
+
+	//if all labels are accounted for, no changes were made
 	if(labels_to_add.size() == 0)
-		return;
+		return true;
+	//at least one label needs to be added
 
 #if defined(MULTITHREAD_SUPPORT)
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
+	//now with write_lock, remove any labels that have already been added by other threads
+	labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
+		[this](auto sid) { return DoesHaveLabel(sid); }),
+		end(labels_to_add));
+
+	//if another thread rebuilt everything, can skip
+	if(labels_to_add.size() == 0)
+		return false;
 #endif
-		sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
+	sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 
 #if defined(MULTITHREAD_SUPPORT)
 	//release write lock and reacquire read lock
 	write_lock.unlock();
 	lock.lock();
 #endif
+
+	return false;
 }
 
-template<typename Parameters>
+//TODO 26312: change both of the methods below to have while loops for multithreading
+
 #if defined(MULTITHREAD_SUPPORT)
-void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock)
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params, Concurrency::ReadLock &lock)
 #else
-void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters)
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params)
 #endif
 {
-	std::vector<StringInternPool::StringID> labels_to_add;
+	static std::vector<StringInternPool::StringID> labels_to_add;
 	auto add_label = [&](auto label) {
 		if(label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(label))
 			labels_to_add.push_back(label);
 	};
 
-	if constexpr(requires { parameters.positionLabels; })
-	{
-		for(auto label : parameters.positionLabels)
-			add_label(label);
-		add_label(parameters.weightLabel);
-		add_label(parameters.singleLabel);
-		for(auto label : parameters.additionalSortedListLabels)
-			add_label(label);
-	}
+	for(auto label : dist_params.positionLabels)
+		add_label(label);
+	add_label(dist_params.weightLabel);
+	for(auto label : dist_params.additionalSortedListLabels)
+		add_label(label);
 
-	if constexpr(requires { parameters.valueLabel; })
-		add_label(parameters.valueLabel);
+	add_label(dist_params.weightLabel);
 
-	if constexpr(requires { parameters.weightLabel; } && !requires { parameters.positionLabels; })
-		add_label(parameters.weightLabel);
+#if defined(MULTITHREAD_SUPPORT)
+	EnsureLabelsAreCached(labels_to_add, lock);
+#else
+	EnsureLabelsAreCached(labels_to_add);
+#endif
+}
+
+#if defined(MULTITHREAD_SUPPORT)
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query, Concurrency::ReadLock &lock)
+#else
+void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
+#endif
+{
+	static std::vector<StringInternPool::StringID> labels_to_add;
+	auto add_label = [&](auto label) {
+		if(label != StringInternPool::NOT_A_STRING_ID && !DoesHaveLabel(label))
+			labels_to_add.push_back(label);
+	};
+
+	for(auto label : query.labels)
+		add_label(label);
+	add_label(query.singleLabel);
+	add_label(query.weightLabel);
 
 #if defined(MULTITHREAD_SUPPORT)
 	EnsureLabelsAreCached(labels_to_add, lock);
@@ -85,22 +119,19 @@ void EntityQueryCaches::EnsureLabelsAreCached(const Parameters &parameters)
 double EntityQueryCaches::ComputeNumericAggregate(const EntityQuery &query,
 	BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto value_label = query.singleLabel;
-	auto weight_label = query.weightLabel;
-
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelIsCached(value_label, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelIsCached(value_label);
+	EnsureLabelsAreCached(query);
 #endif
 
-	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(query.singleLabel);
 	if(column_index == std::numeric_limits<size_t>::max())
 		return query.queryType == ENT_QUERY_SUM ? 0.0 : std::numeric_limits<double>::quiet_NaN();
 
-	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
-	bool has_weight = weight_label != StringInternPool::NOT_A_STRING_ID;
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(query.weightLabel);
+	bool has_weight = query.weightLabel != StringInternPool::NOT_A_STRING_ID;
 
 	auto compute_from = [&](auto &entities) {
 		using Iterator = decltype(entities.begin());
@@ -397,21 +428,18 @@ void EntityQueryCaches::FindMinMax(const EntityQuery &query, BitArrayIntegerSet 
 EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, BitArrayIntegerSet &matching_entities,
 	EvaluableNodeManager *enm, bool is_first)
 {
-	auto value_label = query.singleLabel;
-	auto weight_label = query.weightLabel;
-
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelIsCached(value_label, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelIsCached(value_label);
+	EnsureLabelsAreCached(query);
 #endif
 
-	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(query.singleLabel);
 	if(column_index == std::numeric_limits<size_t>::max())
 		return EvaluableNodeReference::Null();
 
-	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(query.weightLabel);
 	bool has_weight = false;
 	if(weight_column_index != std::numeric_limits<size_t>::max())
 		has_weight = true;
@@ -441,21 +469,18 @@ EvaluableNodeReference EntityQueryCaches::ComputeMode(const EntityQuery &query, 
 OrderedHashMap<StringInternPool::StringID, double> EntityQueryCaches::ComputeValueMasses(const EntityQuery &query,
 	BitArrayIntegerSet &matching_entities, bool is_first)
 {
-	auto value_label = query.singleLabel;
-	auto weight_label = query.weightLabel;
-
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelIsCached(value_label, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelIsCached(value_label);
+	EnsureLabelsAreCached(query);
 #endif
 
-	size_t column_index = sbfds.GetColumnIndexFromLabelId(value_label);
+	size_t column_index = sbfds.GetColumnIndexFromLabelId(query.singleLabel);
 	if(column_index == std::numeric_limits<size_t>::max())
 		return {};
 
-	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(weight_label);
+	size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(query.weightLabel);
 	bool has_weight = false;
 	if(weight_column_index != std::numeric_limits<size_t>::max())
 		has_weight = true;
@@ -531,9 +556,9 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(parameters, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelsAreCached(parameters);
+	EnsureLabelsAreCached(query);
 #endif
 
 	size_t num_to_sample = parameters.count;
@@ -1082,25 +1107,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQuery &query, BitArrayIntegerS
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
-#endif
-	std::vector<StringInternPool::StringID> labels_to_add;
-	if(auto filter = std::get_if<EntityQuery::ValueFilter>(&query.payload))
-	{
-		if(!DoesHaveLabel(filter->label))
-			labels_to_add.push_back(filter->label);
-	}
-	else if(auto exist_filter = std::get_if<EntityQuery::LabelExistence>(&query.payload))
-	{
-		for(auto &l : exist_filter->labels)
-		{
-			if(!DoesHaveLabel(l))
-				labels_to_add.push_back(l);
-		}
-	}
-#if defined(MULTITHREAD_SUPPORT)
-	EnsureLabelsAreCached(labels_to_add, lock);
+	EnsureLabelsAreCached(query, lock);
 #else
-	EnsureLabelsAreCached(labels_to_add);
+	EnsureLabelsAreCached(query);
 #endif
 
 	if(query_type == ENT_QUERY_EXISTS)

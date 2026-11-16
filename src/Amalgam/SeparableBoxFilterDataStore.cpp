@@ -51,7 +51,7 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 		return;
 
 	numEntities = std::max(numEntities, entities.size());
-//TODO 26312: need to exclude private labels and make sure have correct indices if columns are duplicated
+//TODO 26312: have issue with loop where RemoveAnyUnusedLabels is being applied and falling into an infinite loop
 	//resize the column data storage and populate column and label_id lookups
 	size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 

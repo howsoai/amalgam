@@ -51,7 +51,6 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 		return;
 
 	numEntities = std::max(numEntities, entities.size());
-//TODO 26312: have issue with loop where RemoveAnyUnusedLabels is being applied and falling into an infinite loop
 	//resize the column data storage and populate column and label_id lookups
 	size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 
@@ -81,8 +80,15 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 			BuildLabel(i, entities);
 	}
 
-	//remove any that have no values in case an invalid query was done
-	RemoveAnyUnusedLabels();
+#ifdef MULTITHREAD_SUPPORT
+	//when multithreading, don't want to remove after every addition, otherwise can end up in deadlock,
+	// but do want to try to clean up once in a while in the off chance there are unused columns
+	static std::atomic<uint16_t> additions_since_last_removal = 0;
+	uint16_t added_column_index = additions_since_last_removal.fetch_add(1, std::memory_order_relaxed);
+	if((added_column_index % 1023)== 0)
+#endif
+		//remove any that have no values in case an invalid query was done
+		RemoveAnyUnusedLabels();
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)

@@ -27,6 +27,9 @@ EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityPr
 #if defined(MULTITHREAD_SUPPORT)
 bool EntityQueryCaches::EnsureLabelsAreCachedConcurrently(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock)
 {
+	if(container->GetNumContainedEntities() == 0)
+		return true;
+
 	bool uncached_labels = false;
 	for(auto &sid : labels_to_add)
 	{

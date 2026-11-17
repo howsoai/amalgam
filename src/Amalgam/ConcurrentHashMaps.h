@@ -614,10 +614,34 @@ public:
 		return iterator(this, shard_index, it, std::move(lk));
 	}
 
+	//like find, but assums caller owns lock to this shard,
+	//for debugging and diagnostics
+	inline iterator FindUnderLock(const key_type &key)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx, std::defer_lock);
+		auto it = this->shards[shard_index].map.find(key);
+		if(it == this->shards[shard_index].map.end())
+			return this->end();
+		return iterator(this, shard_index, it, std::move(lk));
+	}
+
 	inline const_iterator find(const key_type &key) const
 	{
 		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		auto it = this->shards[shard_index].map.find(key);
+		if(it == this->shards[shard_index].map.end())
+			return this->end();
+		return const_iterator(this, shard_index, it, std::move(lk));
+	}
+
+	//like find, but assums caller owns lock to this shard,
+	//for debugging and diagnostics
+	inline const_iterator FindUnderLock(const key_type &key) const
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx, std::defer_lock);
 		auto it = this->shards[shard_index].map.find(key);
 		if(it == this->shards[shard_index].map.end())
 			return this->end();

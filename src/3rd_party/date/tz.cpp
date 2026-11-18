@@ -85,6 +85,13 @@
 
 #include "date/tz_private.h"
 
+#if USE_OS_TZDB
+// ptz.h has to use date's types here, not std::chrono's
+#  undef HAS_CHRONO_20
+#  define HAS_CHRONO_20 0
+#  include "date/ptz.h"
+#endif
+
 #ifdef __APPLE__
 #  include "date/ios.h"
 #else
@@ -622,7 +629,7 @@ static
 char
 tolower(char c)
 {
-    return static_cast<char>(std::tolower(c));
+    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 }
 
 inline
@@ -667,9 +674,9 @@ parse_month(std::istream& in)
     auto s = get_alpha_word(in);
     tolower(s);
     auto m = std::find_if(std::begin(month_names), std::end(month_names),
-                 [&s](std::string const& m)
+                 [&s](std::string const& month)
                  {
-                     return is_prefix_of(s, m);
+                     return is_prefix_of(s, month);
                  })
                   - month_names;
     if (m >= std::end(month_names) - std::begin(month_names))
@@ -893,9 +900,9 @@ parse_dow(std::istream& in)
     auto s = get_alpha_word(in);
     tolower(s);
     auto dow = std::find_if(std::begin(dow_names), std::end(dow_names),
-                 [&s](std::string const& dow)
+                 [&s](std::string const& day)
                  {
-                     return is_prefix_of(s, dow);
+                     return is_prefix_of(s, day);
                  })
                   - dow_names;
     if (dow >= std::end(dow_names) - std::begin(dow_names))
@@ -2182,6 +2189,25 @@ load_just_leaps(std::istream& inf)
 
 #endif  // !MISSING_LEAP_SECONDS
 
+// Version 2+ files end with "\n<TZ string>\n", which gives the rule for
+// times after the last transition (RFC 9636 section 3.3).
+static
+std::string
+load_footer(std::istream& inf)
+{
+    inf.seekg(0, std::ios::end);
+    auto size = static_cast<std::streamoff>(inf.tellg());
+    std::string tail(static_cast<std::size_t>(std::min<std::streamoff>(size, 512)), '\0');
+    inf.seekg(size - static_cast<std::streamoff>(tail.size()));
+    inf.read(&tail[0], static_cast<std::streamsize>(tail.size()));
+    if (tail.size() < 2 || tail.back() != '\n')
+        return {};
+    auto i = tail.rfind('\n', tail.size() - 2);
+    if (i == std::string::npos)
+        return {};
+    return tail.substr(i + 1, tail.size() - i - 2);
+}
+
 template <class TimeType>
 void
 time_zone::load_data(std::istream& inf,
@@ -2198,9 +2224,15 @@ time_zone::load_data(std::istream& inf,
     if (leap_seconds.empty() && tzh_leapcnt > 0)
         leap_seconds = load_leaps<TimeType>(inf, tzh_leapcnt);
 #endif
+    if (infos.empty())
+        throw std::runtime_error("Invalid zoneinfo file " + name_ +
+                                 ": no local time types");
     ttinfos_.reserve(infos.size());
     for (auto& info : infos)
     {
+        if (info.tt_abbrind >= abbrev.size())
+            throw std::runtime_error("Invalid zoneinfo file " + name_ +
+                                     ": abbreviation index out of range");
         ttinfos_.push_back({seconds{info.tt_gmtoff},
                             abbrev.c_str() + info.tt_abbrind,
                             info.tt_isdst != 0});
@@ -2218,7 +2250,12 @@ time_zone::load_data(std::istream& inf,
         ++i;
     }
     for (auto j = 0u; i < transitions_.size(); ++i, ++j)
+    {
+        if (indices[j] >= ttinfos_.size())
+            throw std::runtime_error("Invalid zoneinfo file " + name_ +
+                                     ": local time type index out of range");
         transitions_[i].info = ttinfos_.data() + indices[j];
+    }
 }
 
 void
@@ -2261,6 +2298,18 @@ time_zone::init_impl()
         load_counts(inf, tzh_ttisgmtcnt, tzh_ttisstdcnt, tzh_leapcnt,
                          tzh_timecnt,    tzh_typecnt,    tzh_charcnt);
         load_data<int64_t>(inf, tzh_leapcnt, tzh_timecnt, tzh_typecnt, tzh_charcnt);
+        posix_tz_ = load_footer(inf);
+        if (!posix_tz_.empty())
+        {
+            try
+            {
+                Posix::time_zone{posix_tz_};
+            }
+            catch (const std::exception&)
+            {
+                posix_tz_.clear();
+            }
+        }
     }
 #if !MISSING_LEAP_SECONDS
     if (tzh_leapcnt > 0)
@@ -2276,7 +2325,7 @@ time_zone::init_impl()
                                        });
                   t != transitions_.end(); ++t)
         {
-            while (t->timepoint >= l)
+            while (itr != leap_seconds.end() && t->timepoint >= l)
             {
                 ++leap_count;
                 if (++itr == leap_seconds.end())
@@ -2340,6 +2389,12 @@ time_zone::get_info_impl(sys_seconds tp) const
 {
     using namespace std;
     init();
+    if (!posix_tz_.empty() && tp >= transitions_.back().timepoint)
+    {
+        auto r = Posix::time_zone{posix_tz_}.get_info(tp);
+        r.begin = std::max(r.begin, transitions_.back().timepoint);
+        return r;
+    }
     return load_sys_info(upper_bound(transitions_.begin(), transitions_.end(), tp,
                                      [](const sys_seconds& x, const transition& t)
                                      {
@@ -2352,6 +2407,17 @@ time_zone::get_info_impl(local_seconds tp) const
 {
     using namespace std::chrono;
     init();
+    // Stay a day clear of the last transition so it is still found in the table
+    auto const& final_tr = transitions_.back();
+    auto clear_of_final = final_tr.timepoint + final_tr.info->offset + days{1};
+    if (!posix_tz_.empty() && tp >= local_seconds{clear_of_final.time_since_epoch()})
+    {
+        auto i = Posix::time_zone{posix_tz_}.get_info(tp);
+        i.first.begin = std::max(i.first.begin, final_tr.timepoint);
+        if (i.result != local_info::unique)
+            i.second.begin = std::max(i.second.begin, final_tr.timepoint);
+        return i;
+    }
     local_info i{};
     i.result = local_info::unique;
     auto tr = upper_bound(transitions_.begin(), transitions_.end(), tp,
@@ -2440,7 +2506,7 @@ time_zone::parse_from_android_tzdata(std::ifstream& inf, const std::size_t off)
                                        });
                   t != transitions_.end(); ++t)
         {
-            while (t->timepoint >= l)
+            while (itr != leap_seconds.end() && t->timepoint >= l)
             {
                 ++leap_count;
                 if (++itr == leap_seconds.end())
@@ -2512,7 +2578,6 @@ time_zone::time_zone(const std::string& s, detail::undocumented)
     {
         std::cerr << s << '\n';
         std::cerr << *this << '\n';
-        zonelets_.pop_back();
         throw;
     }
 }
@@ -2611,8 +2676,9 @@ time_zone::adjust_infos(const std::vector<Rule>& rules)
         std::pair<const Rule*, const Rule*> eqr{};
         std::istringstream in;
         in.exceptions(std::ios::failbit | std::ios::badbit);
-        // Classify info as rule-based, has save, or neither
-        if (!z.u.rule_.empty())
+        // Classify info as rule-based, has save, or neither.  An earlier call
+        // that threw part way through may have already turned z into a save.
+        if (z.tag_ == zonelet::has_rule && !z.u.rule_.empty())
         {
             // Find out if this zonelet has a rule or a save
             eqr = std::equal_range(rules.data(), rules.data() + rules.size(), z.u.rule_);
@@ -2642,7 +2708,7 @@ time_zone::adjust_infos(const std::vector<Rule>& rules)
                 }
             }
         }
-        else
+        else if (z.tag_ == zonelet::has_rule)
         {
             // This zone::zonelet has no rule and no save
             z.tag_ = zonelet::is_empty;
@@ -3211,7 +3277,6 @@ download_to_string(const std::string& url, std::string& str)
     };
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
-    curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYPEER, false);
     auto res = curl_easy_perform(curl.get());
     return (res == CURLE_OK);
 }
@@ -3230,7 +3295,6 @@ download_to_file(const std::string& url, const std::string& local_filename,
     if (!curl)
         return false;
     curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYPEER, false);
     if (error_buffer)
        curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_buffer);
     curl_write_callback write_cb = [](char* contents, std::size_t size, std::size_t nmemb,
@@ -3255,6 +3319,21 @@ download_to_file(const std::string& url, const std::string& local_filename,
     return res == CURLE_OK;
 }
 
+// A tzdata version is a four digit year followed by a single lowercase
+// letter, e.g. "2016a".  The version is used to build file names that are
+// passed to the shell, so anything else is rejected.
+static
+bool
+is_valid_version(const std::string& version)
+{
+    if (version.size() != 5)
+        return false;
+    for (std::size_t i = 0; i < 4; ++i)
+        if (!('0' <= version[i] && version[i] <= '9'))
+            return false;
+    return 'a' <= version[4] && version[4] <= 'z';
+}
+
 std::string
 remote_version()
 {
@@ -3268,6 +3347,8 @@ remote_version()
         const int ver_str_len = 5;
         if (p != std::string::npos && p + (db_size + ver_str_len) <= str.size())
             version = str.substr(p + db_size, ver_str_len);
+        if (!is_valid_version(version))
+            version.clear();
     }
     return version;
 }
@@ -3655,6 +3736,8 @@ bool
 remote_download(const std::string& version, char* error_buffer)
 {
     assert(!version.empty());
+    if (!is_valid_version(version))
+        return false;
 
 #  ifdef _WIN32
     // Download folder should be always available for Windows
@@ -3690,6 +3773,8 @@ remote_install(const std::string& version)
 {
     auto success = false;
     assert(!version.empty());
+    if (!is_valid_version(version))
+        return false;
 
     std::string install = get_install();
     auto gz_file = get_download_gz_file(version);

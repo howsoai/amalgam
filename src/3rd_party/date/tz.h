@@ -789,6 +789,7 @@ private:
 #if USE_OS_TZDB
     std::vector<detail::transition>      transitions_;
     std::vector<detail::expanded_ttinfo> ttinfos_;
+    std::string                          posix_tz_;
 #else  // !USE_OS_TZDB
     std::vector<detail::zonelet>         zonelets_;
 #endif  // !USE_OS_TZDB
@@ -2027,11 +2028,14 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
     using std::chrono::seconds;
     using std::chrono::minutes;
     using CT = typename std::common_type<Duration, seconds>::type;
-    minutes offset_local{};
-    auto offptr = offset ? offset : &offset_local;
+    minutes offset_local = minutes::min();
     fields<CT> fds{};
     fds.has_tod = true;
-    date::from_stream(is, fmt, fds, abbrev, offptr);
+    from_stream(is, fmt, fds, abbrev, &offset_local);
+    if (offset_local == minutes::min())
+        offset_local = minutes{0};
+    else if (offset != nullptr)
+        *offset = offset_local;
     if (!fds.ymd.ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -2039,7 +2043,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
         bool is_60_sec = fds.tod.seconds() == seconds{60};
         if (is_60_sec)
             fds.tod.seconds(detail::undocumented{}) -= seconds{1};
-        auto tmp = utc_clock::from_sys(sys_days(fds.ymd) - *offptr + fds.tod.to_duration());
+        auto tmp = utc_clock::from_sys(sys_days(fds.ymd) - offset_local + fds.tod.to_duration());
         if (is_60_sec)
             tmp += seconds{1};
         if (is_60_sec != is_leap_second(tmp).first || !fds.tod.in_conventional_range())
@@ -2166,7 +2170,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             std::chrono::minutes* offset = nullptr)
 {
     local_time<Duration> lp;
-    date::from_stream(is, fmt, lp, abbrev, offset);
+    from_stream(is, fmt, lp, abbrev, offset);
     if (!is.fail())
         tp = tai_clock::from_local(lp);
     return is;
@@ -2289,7 +2293,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             std::chrono::minutes* offset = nullptr)
 {
     local_time<Duration> lp;
-    date::from_stream(is, fmt, lp, abbrev, offset);
+    from_stream(is, fmt, lp, abbrev, offset);
     if (!is.fail())
         tp = gps_clock::from_local(lp);
     return is;

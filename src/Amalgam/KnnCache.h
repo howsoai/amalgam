@@ -36,13 +36,18 @@ public:
 		entity = _entity;
 		computationRequiresEntityCall = false;
 		for(const auto &feature : dist_eval.featureAttribs)
+		{
 			if(feature.callEntityOpcode != nullptr)
 				computationRequiresEntityCall = true;
+		}
+
 		positionLabelIds = &position_label_ids;
 		radiusLabelId = radius_label;
 
-		cachedNeighbors.clear();
+		//resize and clear in a way that reduces the number of reallocations
 		cachedNeighbors.resize(sbfDataStore->GetNumInsertedEntities());
+		for(auto &neighbors : cachedNeighbors)
+			neighbors.clear();
 	}
 
 	//gets the nearest neighbors to the index and caches them for each of entities_to_compute

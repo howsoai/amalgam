@@ -343,12 +343,15 @@ public:
 	//Computes the distance contributions for each relevant entity in the cache with the entity at holdout_entity removed from the model
 	//populates updated_contribs_out only with the set of entities that have different distance contributions than their base contributions
 	//sets updated_contribs_sum_out to the sum of all distance contributions of entities
-	inline void UpdateDistanceContributionsWithHoldout(EntityReference holdout_entity, double holdout_replacement_value,
+	//returns the index of holdout_entity among the relevant entities, which is the reference of its entry in updated_contribs_out,
+	// or std::numeric_limits<size_t>::max() if holdout_entity is not a relevant entity
+	inline size_t UpdateDistanceContributionsWithHoldout(EntityReference holdout_entity, double holdout_replacement_value,
 		const std::vector<double> &dist_contribs, const double base_dist_contrib_sum,
 		std::vector<DistanceReferencePair<size_t>> &updated_contribs_out, double &updated_contribs_sum_out)
 	{
 		updated_contribs_sum_out = base_dist_contrib_sum;
 
+		size_t holdout_distance_contribs_index = std::numeric_limits<size_t>::max();
 		int64_t distance_contribs_index = -1;
 		updated_contribs_out.reserve(knnCache->GetNumRelevantEntities());
 		for(auto entity_reference : *knnCache->GetRelevantEntities())
@@ -363,6 +366,7 @@ public:
 
 				//write out whatever the replacement value is for this element
 				updated_contribs_out.emplace_back(holdout_replacement_value, distance_contribs_index);
+				holdout_distance_contribs_index = static_cast<size_t>(distance_contribs_index);
 				continue;
 			}
 
@@ -394,6 +398,8 @@ public:
 
 			updated_contribs_sum_out = updated_contribs_out.size() * avg_dc;
 		}
+
+		return holdout_distance_contribs_index;
 	}
 
 	//Computes the case KL divergence or conviction for each case in entities_to_compute
@@ -452,8 +458,8 @@ public:
 				updated_distance_contribs.clear();
 				double updated_contrib_sum = 0.0;
 				buffers.neighbors.clear();
-				UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities, base_dist_contribs, contrib_sum,
-					buffers.updatedDistanceContribs, updated_contrib_sum);
+				size_t holdout_distance_contribs_index = UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities,
+					base_dist_contribs, contrib_sum, buffers.updatedDistanceContribs, updated_contrib_sum);
 
 				//convert updated_distance_contribs to probabilities
 				//convert via the updated contribution sum and multiply by the probability mass of everything that isn't the holdout
@@ -464,7 +470,7 @@ public:
 				for(auto &dc : updated_distance_contribs)
 				{
 					//the knockout case was already already assigned the probability
-					if(dc.reference != convictions_out_index)
+					if(dc.reference != holdout_distance_contribs_index)
 						dc.distance *= updated_dc_to_probability;
 				}
 

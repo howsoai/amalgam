@@ -14,15 +14,14 @@ struct EntityQuery
 {
 	EntityQuery() {}
 
-	//ENT_NULL also marks invalid queries whose parsed payload is still present
 	EvaluableNodeType queryType = ENT_NULL;
-	EvaluableNode *queryNode;
+	EvaluableNode *queryNode = nullptr;
 
 	StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
 	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
 	std::vector<StringInternPool::StringID> labels;
 
-	bool hasRandomStream;
+	bool hasRandomStream = false;
 	RandomStream randomStream;
 
 	struct

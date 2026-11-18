@@ -559,7 +559,10 @@ namespace EntityQueryBuilder
 
 		//need to at least have position, otherwise not valid query
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
+		{
+			query.queryType = ENT_NULL;
 			return;
+		}
 
 		auto &cur_condition = query.distance;
 		
@@ -872,7 +875,10 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_BETWEEN: //all double parameter query types
 		case ENT_QUERY_NOT_BETWEEN:
 			if(ocn.size() < 3) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		case ENT_QUERY_LESS_OR_EQUAL_TO:
@@ -880,14 +886,20 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_NOT_EQUALS:
 		case ENT_QUERY_EQUALS:
 			if(ocn.size() < 2) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		case ENT_QUERY_VALUE_MASSES:
 			if(ocn.size() < 1) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		default:;
@@ -917,7 +929,10 @@ namespace EntityQueryBuilder
 				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]).second;
 
 			if(!Entity::IsLabelValidAndPublic(label_sid)) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 		}
 
 		//basic filters borrow their values; other queries retain only their parsed arguments.

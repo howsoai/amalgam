@@ -982,7 +982,10 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		[&](EntityQuery &query, bool is_first, bool is_last)
 	{
 		if(query.queryNode == nullptr || query.queryType == ENT_NULL)
+		{
+			matching_entities.clear();
 			return EvaluableNodeReference::Null();
+		}
 
 		if(query.queryType == ENT_QUERY_MIN || query.queryType == ENT_QUERY_MAX)
 		{

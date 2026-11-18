@@ -80,14 +80,17 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 			BuildLabel(i, entities);
 	}
 
+	//don't want to remove after every addition, otherwise can end up in deadlock in multithreading,
+	//or just a lot of overhead in single threading
+	//want to try to clean up once in a while in the off chance there are unused columns
 #ifdef MULTITHREAD_SUPPORT
-	//when multithreading, don't want to remove after every addition, otherwise can end up in deadlock,
-	// but do want to try to clean up once in a while in the off chance there are unused columns
 	static std::atomic<uint16_t> additions_since_last_removal = 0;
 	uint16_t added_column_index = additions_since_last_removal.fetch_add(1, std::memory_order_relaxed);
-	if((added_column_index % 1023)== 0)
+#else
+	static uint16_t additions_since_last_removal = 0;
+	uint16_t added_column_index = additions_since_last_removal++;
 #endif
-		//remove any that have no values in case an invalid query was done
+	if((added_column_index % 1023)== 0)
 		RemoveAnyUnusedLabels();
 }
 

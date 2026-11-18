@@ -16,6 +16,25 @@ MakeAmalgamUnitTests(Ts... elems)
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
 AmalgamExample{ R"&((seq
+	(create_entities "vert0" {x 0 y 0})
+	(create_entities "vert1" {x 1 y 0})
+	(create_entities "vert2" {x 1 y 1})
+	(create_entities "vert3" {x 0 y 1})
+	(create_entities "vert4" {x 0.5 y 0.5})
+	(create_entities "vert5" {x 2 y 1})
+	;entities computed on their own have the same values as when every entity is computed
+	(=
+		(unzip
+			(compute_on_contained_entities (query_entity_kl_divergences 2 ["x" "y"] .null))
+			["vert3" "vert4" "vert5"]
+		)
+		(unzip
+			(compute_on_contained_entities (query_entity_kl_divergences 2 ["x" "y"] ["vert3" "vert4" "vert5"]))
+			["vert3" "vert4" "vert5"]
+		)
+	)
+))&", R"(.true)", "", R"((apply "destroy_entities" (contained_entities)))" },
+AmalgamExample{ R"&((seq
 	(create_entities "a" (assoc "x" 1))
 	(create_entities "b" (assoc "x" 2))
 	;warm the distance cache before checking the empty-context exclusion

@@ -46,17 +46,17 @@ namespace EntityQueries
 		case ENT_QUERY_SUM:
 			return EntityQueriesStatistics::Sum(first, last, get_value, has_weight, get_weight);
 		case ENT_QUERY_QUANTILE:
-			return Quantile(first, last, get_value, has_weight, get_weight, std::get<EntityQuery::Quantile>(query.payload).percentage, quantile_buffer);
+			return Quantile(first, last, get_value, has_weight, get_weight, query.quantile.percentage, quantile_buffer);
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
-			auto &mean = std::get<EntityQuery::Mean>(query.payload);
+			auto &mean = query.mean;
 			return GeneralizedMean(first, last, get_value, has_weight, get_weight,
 				mean.power, mean.center, mean.calculateMoment, mean.absoluteValue);
 		}
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
 		{
-			auto &difference = std::get<EntityQuery::Difference>(query.payload);
+			auto &difference = query.difference;
 			return EntityQueriesStatistics::ExtremeDifference(first, last, get_value,
 				query.queryType == ENT_QUERY_MIN_DIFFERENCE, difference.limit, difference.includeZero, values_buffer);
 		}

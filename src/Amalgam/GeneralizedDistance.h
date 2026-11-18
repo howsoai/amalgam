@@ -104,6 +104,20 @@ public:
 			typeAttributes.continuous.cycleRange = std::numeric_limits<double>::quiet_NaN();
 		}
 
+		void Clear()
+		{
+			featureType = FDT_CONTINUOUS_NUMBER;
+			featureDataIndex = std::numeric_limits<size_t>::max();
+			weight = 1.0;
+			typeAttributes.continuous.cycleRange = std::numeric_limits<double>::quiet_NaN();
+			deviation = 0.0;
+			nominalStringSparseDeviationMatrix.clear();
+			nominalNumberSparseDeviationMatrix.clear();
+			unknownToUnknownDistanceTerm = DistanceTermWithDeviation(std::numeric_limits<double>::quiet_NaN());
+			knownToUnknownDistanceTerm = DistanceTermWithDeviation(std::numeric_limits<double>::quiet_NaN());
+			callEntityOpcode = nullptr;
+		}
+
 		//returns true if the feature is nominal
 		__forceinline bool IsFeatureNominal()
 		{

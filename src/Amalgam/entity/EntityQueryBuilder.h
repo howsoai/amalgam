@@ -313,6 +313,8 @@ namespace EntityQueryBuilder
 		EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
 		dist_eval.featureAttribs.resize(num_elements);
+		for(auto &feature_attrib : dist_eval.featureAttribs)
+			feature_attrib.Clear();
 
 		bool weights_populated = false;
 		if(EvaluableNode::IsAssociativeArray(weights_node) && !EvaluableNode::IsNull(weights_selection_features))
@@ -557,14 +559,28 @@ namespace EntityQueryBuilder
 
 		//need to at least have position, otherwise not valid query
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
+		{
+			query.queryType = ENT_NULL;
 			return;
+		}
 
-		auto &cur_condition = query.SetQueryType<EntityQuery::Distance>(condition_type);
+		auto &cur_condition = query.distance;
 		
 		cur_condition.useConcurrency = cn->GetConcurrency();
 		cur_condition.interpreter = calling_interpreter;
 
-		auto &neighbors = std::get<EntityQuery::Distance::Neighbors>(cur_condition.target);
+		cur_condition.ClearMainParameters();
+		cur_condition.minToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition.numToRetrieveMinIncrementalProbability = 0.0;
+		cur_condition.extraToRetrieve = 0;
+		cur_condition.distanceWeightExponent = 1.0;
+		cur_condition.returnSortedList = false;
+		cur_condition.additionalSortedListLabels.clear();
+		cur_condition.entity = nullptr;
+		cur_condition.radiusLabel = StringInternPool::NOT_A_STRING_ID;
+		cur_condition.weightLabel = StringInternPool::NOT_A_STRING_ID;
+		cur_condition.maxToRetrieve = 0;
+		auto &neighbors = cur_condition.target.emplace<EntityQuery::Distance::Neighbors>();
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition.maxToRetrieve = std::numeric_limits<size_t>::max();
@@ -620,6 +636,7 @@ namespace EntityQueryBuilder
 		}
 
 		//set position labels
+		cur_condition.positionLabels.clear();
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
@@ -762,7 +779,7 @@ namespace EntityQueryBuilder
 
 		//set radius label
 		if(ocn.size() > RADIUS_LABEL)
-			cur_condition.singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
+			cur_condition.radiusLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
 
 		//set numerical precision
 		cur_condition.distEvaluator.recomputeAccurateDistances = true;
@@ -858,7 +875,10 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_BETWEEN: //all double parameter query types
 		case ENT_QUERY_NOT_BETWEEN:
 			if(ocn.size() < 3) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		case ENT_QUERY_LESS_OR_EQUAL_TO:
@@ -866,14 +886,20 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_NOT_EQUALS:
 		case ENT_QUERY_EQUALS:
 			if(ocn.size() < 2) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		case ENT_QUERY_VALUE_MASSES:
 			if(ocn.size() < 1) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 			break;
 
 		default:;
@@ -903,7 +929,10 @@ namespace EntityQueryBuilder
 				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]).second;
 
 			if(!Entity::IsLabelValidAndPublic(label_sid)) [[unlikely]]
+			{
+				query.queryType = ENT_NULL;
 				return;
+			}
 		}
 
 		//basic filters borrow their values; other queries retain only their parsed arguments.
@@ -911,23 +940,23 @@ namespace EntityQueryBuilder
 		{
 		case ENT_QUERY_SELECT:
 		{
-			auto &selection = query.SetQueryType<EntityQuery::Select>(type);
+			auto &selection = query.select;
 			selection.count = ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 0;
 			selection.hasStartOffset = ocn.size() > 1;
 			selection.startOffset = selection.hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
-			selection.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			selection.randomStream = selection.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+			query.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
+			query.randomStream = query.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
 				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
 
 		case ENT_QUERY_SAMPLE:
 		{
-			auto &sample = query.SetQueryType<EntityQuery::Sample>(type);
+			auto &sample = query.sample;
 			sample.count = ocn.size() > 0 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
-			sample.valueLabel = ocn.size() > 1 ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : label_sid;
-			sample.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
-			sample.randomStream = sample.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
+			query.singleLabel = ocn.size() > 1 ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : label_sid;
+			query.hasRandomStream = ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]);
+			query.randomStream = query.hasRandomStream ? RandomStream(EvaluableNode::ToString(ocn[2]))
 				: calling_interpreter->randomStream.CreateOtherStreamViaRand();
 			return;
 		}
@@ -935,17 +964,17 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
-			query.SetQueryType<EntityQuery::Extremum>(type, label_sid,
-				ocn.size() >= 2 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 1,
-				ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]) ? ENIVT_NUMBER : ENIVT_STRING_ID);
+			query.singleLabel = label_sid;
+			query.extremum.count = (ocn.size() >= 2 ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 1);
+			query.extremum.valueType = (ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]) ? ENIVT_NUMBER : ENIVT_STRING_ID);
 			return;
 		}
 
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
-			query.SetQueryType<EntityQuery::Difference>(type, label_sid,
-				ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN(),
-				type == ENT_QUERY_MIN_DIFFERENCE && ocn.size() >= 3 && EvaluableNode::ToBool(ocn[2]));
+			query.singleLabel = label_sid;
+			query.difference.limit = (ocn.size() >= 2 ? EvaluableNode::ToNumber(ocn[1]) : std::numeric_limits<double>::quiet_NaN());
+			query.difference.includeZero = (type == ENT_QUERY_MIN_DIFFERENCE && ocn.size() >= 3 && EvaluableNode::ToBool(ocn[2]));
 			return;
 
 		case ENT_QUERY_SUM:
@@ -961,18 +990,21 @@ namespace EntityQueryBuilder
 				parameter = EvaluableNode::ToNumber(ocn[1]);
 
 			size_t weight_index = has_parameter ? 2 : 1;
-			EntityQuery::Aggregate labels{ label_sid };
+			query.singleLabel = label_sid;
 			if(ocn.size() > weight_index)
-				labels.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
+				query.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[weight_index]).second;
 
 			if(type == ENT_QUERY_QUANTILE)
-				query.SetQueryType<EntityQuery::Quantile>(type, labels, parameter);
+			{
+				query.quantile.percentage = parameter;
+			}
 			else if(type == ENT_QUERY_GENERALIZED_MEAN)
-				query.SetQueryType<EntityQuery::Mean>(type, labels, parameter,
-					ocn.size() >= 4 ? EvaluableNode::ToNumber(ocn[3], 0.0) : 0.0,
-					ocn.size() >= 5 && EvaluableNode::ToBool(ocn[4]), ocn.size() >= 6 && EvaluableNode::ToBool(ocn[5]));
-			else
-				query.SetQueryType<EntityQuery::Aggregate>(type, labels);
+			{
+				query.mean.power = parameter;
+				query.mean.center = ocn.size() >= 4 ? EvaluableNode::ToNumber(ocn[3], 0.0) : 0.0;
+				query.mean.calculateMoment = ocn.size() >= 5 && EvaluableNode::ToBool(ocn[4]);
+				query.mean.absoluteValue = ocn.size() >= 6 && EvaluableNode::ToBool(ocn[5]);
+			}
 
 			return;
 		}
@@ -980,8 +1012,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_EXISTS:
 		case ENT_QUERY_NOT_EXISTS:
 		{
-			auto &existence = query.SetQueryType<EntityQuery::LabelExistence>(type, cn);
-			auto &labels = existence.labels;
+			query.labels.clear();
 			for(auto &cn : ocn)
 			{
 				if(EvaluableNode::IsOrderedArray(cn))
@@ -991,7 +1022,7 @@ namespace EntityQueryBuilder
 						auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn2);
 						if(exists)
 						{
-							labels.emplace_back(sid);
+							query.labels.emplace_back(sid);
 						}
 						else
 						{
@@ -1009,7 +1040,7 @@ namespace EntityQueryBuilder
 					auto [exists, sid] = EvaluableNode::ToStringIDIfExists(cn);
 					if(exists)
 					{
-						labels.emplace_back(sid);
+						query.labels.emplace_back(sid);
 					}
 					else
 					{
@@ -1035,7 +1066,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_AMONG:
 		case ENT_QUERY_NOT_AMONG:
 
-			query.SetQueryType<EntityQuery::ValueFilter>(type, cn, label_sid);
+			query.singleLabel = label_sid;
 			return;
 
 		case ENT_QUERY_IN_ENTITY_LIST:
@@ -1048,7 +1079,8 @@ namespace EntityQueryBuilder
 				return;
 			}
 
-			auto &ids = query.SetQueryType<EntityQuery::EntityIds>(type);
+			auto &ids = query.labels;
+			ids.clear();
 			if(ocn.size() == 0 || !EvaluableNode::IsOrderedArray(ocn[0]))
 				return;
 
@@ -1072,6 +1104,12 @@ namespace EntityQueryBuilder
 	inline void BuildCondition(EvaluableNode *condition_node, EntityQuery &query, Interpreter *calling_interpreter)
 	{
 		EvaluableNodeType t = condition_node->GetType();
+		query.queryType = t;
+		query.queryNode = condition_node;
+		query.singleLabel = StringInternPool::NOT_A_STRING_ID;
+		query.weightLabel = StringInternPool::NOT_A_STRING_ID;
+		query.labels.clear();
+
 		if(t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 				|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
 				|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS

@@ -105,13 +105,15 @@ public:
 
 	//caches labels needed by the current query if they are not in the cache
 #if defined(MULTITHREAD_SUPPORT)
-	template<typename Parameters>
-	void EnsureLabelsAreCached(const Parameters &parameters, Concurrency::ReadLock &lock);
-	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQuery::Distance &dist_params, Concurrency::ReadLock &lock);
+	void EnsureLabelsAreCached(const EntityQuery &query, Concurrency::ReadLock &lock);
+
+	//returns false if any changes were made to the caches
+	//given the multithreading context, this means it should be called again until returns true
+	bool EnsureLabelsAreCachedConcurrently(std::vector<StringInternPool::StringID> &labels_to_add, Concurrency::ReadLock &lock);
 #else
-	template<typename Parameters>
-	void EnsureLabelsAreCached(const Parameters &parameters);
-	void EnsureLabelsAreCached(std::vector<StringInternPool::StringID> &labels_to_add);
+	void EnsureLabelsAreCached(const EntityQuery::Distance &dist_params);
+	void EnsureLabelsAreCached(const EntityQuery &query);
 #endif
 
 	//removes label_sid from the cache
@@ -131,7 +133,7 @@ public:
 
 	void GetMatchingEntities(EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
-	void FindMinMax(const EntityQuery::Extremum &parameters, bool largest, BitArrayIntegerSet &matching_entities, bool is_first);
+	void FindMinMax(const EntityQuery &query, BitArrayIntegerSet &matching_entities, bool is_first);
 
 	double ComputeNumericAggregate(const EntityQuery &query,
 		BitArrayIntegerSet &matching_entities, bool is_first);

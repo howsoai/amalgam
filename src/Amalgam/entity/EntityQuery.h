@@ -12,94 +12,63 @@
 //data structure used for an entity query
 struct EntityQuery
 {
-	//initialize the tag and active alternative without zeroing inactive distance storage.
 	EntityQuery() {}
 
-	template<typename Parameters, typename... Args>
-	EntityQuery(EvaluableNodeType type, std::in_place_type_t<Parameters>, Args &&... args)
-		: queryType(type), payload(std::in_place_type<Parameters>, std::forward<Args>(args)...) {}
+	EvaluableNodeType queryType = ENT_NULL;
+	EvaluableNode *queryNode = nullptr;
 
-	EntityQuery(EntityQuery &&) noexcept = default;
-	EntityQuery &operator=(EntityQuery &&) noexcept = default;
-	EntityQuery(const EntityQuery &) = delete;
-	EntityQuery &operator=(const EntityQuery &) = delete;
+	StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
+	StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
+	std::vector<StringInternPool::StringID> labels;
 
-	//helper function to allow a clean implementation of, for example:
-	//auto &selection = query.SetQueryType<EntityQuery::Select>(type);
-	template <typename T, typename... Args>
-	inline T &SetQueryType(EvaluableNodeType type, Args&&... args)
-	{
-		queryType = type;
-		return payload.emplace<T>(std::forward<Args>(args)...);
-	}
+	bool hasRandomStream = false;
+	RandomStream randomStream;
 
-	struct LabelExistence
-	{
-		EvaluableNode *node;
-		std::vector<StringInternPool::StringID> labels;
-	};
-
-	struct ValueFilter
-	{
-		EvaluableNode *node;
-		StringInternPool::StringID label;
-	};
-
-	using EntityIds = std::vector<StringInternPool::StringID>;
-
-	struct Aggregate
-	{
-		StringInternPool::StringID valueLabel;
-		StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
-	};
-
-	struct Quantile : Aggregate
+	struct
 	{
 		double percentage;
-	};
+	} quantile;
 
-	struct Mean : Aggregate
+	struct
 	{
 		double power;
 		double center;
 		bool calculateMoment;
 		bool absoluteValue;
-	};
+	} mean;
 
-	struct Difference
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		double limit;
 		bool includeZero;
-	};
+	} difference;
 
-	struct Extremum
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		size_t count;
 		EvaluableNodeImmediateValueType valueType;
-	};
+	} extremum;
 
-	struct Select
+	struct
 	{
 		size_t count;
 		size_t startOffset;
 		bool hasStartOffset;
-		bool hasRandomStream;
-		RandomStream randomStream;
-	};
+	} select;
 
-	struct Sample
+	struct
 	{
-		StringInternPool::StringID valueLabel;
 		size_t count;
-		bool hasRandomStream;
-		RandomStream randomStream;
-	};
+	 } sample;
 
 	struct Distance
 	{
 		Distance()
+		{
+			ClearMainParameters();
+		}
+
+		void ClearMainParameters()
 		{
 			distEvaluator.pValue = distEvaluator.inversePValue = 0.0;
 			distEvaluator.computeSurprisal = distEvaluator.transformSurprisalToProb = false;
@@ -119,7 +88,7 @@ struct EntityQuery
 
 		struct Statistics
 		{
-			EntityIds entityIds;
+			std::vector<StringInternPool::StringID> entityIds;
 			bool convictionOfRemoval = false;
 		};
 
@@ -180,7 +149,7 @@ struct EntityQuery
 		bool useConcurrency = false;
 
 		//radius label
-		StringInternPool::StringID singleLabel = StringInternPool::NOT_A_STRING_ID;
+		StringInternPool::StringID radiusLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//a label representing a weight label
 		StringInternPool::StringID weightLabel = StringInternPool::NOT_A_STRING_ID;
@@ -189,25 +158,5 @@ struct EntityQuery
 		size_t maxToRetrieve = 0;
 
 		RandomStream randomStream;
-	};
-
-	//ENT_NULL also marks invalid queries whose parsed payload is still present
-	EvaluableNodeType queryType = ENT_NULL;
-	std::variant<std::monostate, LabelExistence, ValueFilter, EntityIds, Aggregate, Quantile, Mean, Difference,
-		Extremum, Select, Sample, Distance> payload;
-
-	Aggregate GetAggregateLabels() const
-	{
-		return std::visit([](const auto &parameters) {
-			Aggregate labels{StringInternPool::NOT_A_STRING_ID};
-
-			if constexpr(requires { parameters.valueLabel; })
-				labels.valueLabel = parameters.valueLabel;
-
-			if constexpr(requires { parameters.weightLabel; })
-				labels.weightLabel = parameters.weightLabel;
-
-			return labels;
-		}, payload);
-	}
+	} distance;
 };

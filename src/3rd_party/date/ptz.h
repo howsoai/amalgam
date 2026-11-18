@@ -545,8 +545,8 @@ time_zone::get_info(chr::sys_time<Duration> st) const
     }
     else
         r = contant_offset();
-    using seconds = std::chrono::seconds;
-    assert(r.begin <= floor<seconds>(st) && floor<seconds>(st) <= r.end);
+	//Updated from 3rd party library for causing compiler error
+    assert(r.begin <= floor<std::chrono::seconds>(st) && floor<std::chrono::seconds>(st) <= r.end);
     return r;
 }
 

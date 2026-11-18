@@ -153,13 +153,13 @@ public:
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
-		size_t task_index = curNumTasksAdded++;
+		curNumTasksAdded++;
 		auto rand_seed = parentInterpreter->randomStream.CreateOtherStreamViaRand();
 
 		//must keep InterpreterConcurrencyManagerTraits::StackWithoutResults up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, rand_seed, node_to_execute, current_index, current_value]
+			[this, rand_seed, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 

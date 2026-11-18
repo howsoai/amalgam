@@ -540,7 +540,11 @@ protected:
 		if(sid == NOT_A_STRING_ID || sid.IsInlineString())
 			return;
 
+	#if defined(MULTITHREAD_SUPPORT)
 		auto found = stringToID.FindUnderLock(sid.GetPointer()->stringData);
+	#else
+		auto found = stringToID.find(sid.GetPointer()->stringData);
+	#endif
 		if(found == end(stringToID)) [[unlikely]]
 		{
 			AmlgAssert(false);

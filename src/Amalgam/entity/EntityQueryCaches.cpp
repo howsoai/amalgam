@@ -66,7 +66,11 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_params)
 #endif
 {
-	static std::vector<StringInternPool::StringID> labels_to_add;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+#endif
+		static std::vector<StringInternPool::StringID> labels_to_add;
+
 	auto add_label = [&](auto label) {
 		if(Entity::IsLabelValidAndPublic(label))
 			labels_to_add.push_back(label);
@@ -83,7 +87,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery::Distance &dist_
 		for(auto label : dist_params.additionalSortedListLabels)
 			add_label(label);
 
-		add_label(dist_params.weightLabel);
+		add_label(dist_params.radiusLabel);
 
 #if defined(MULTITHREAD_SUPPORT)
 	} while(!EnsureLabelsAreCachedConcurrently(labels_to_add, lock));
@@ -98,7 +102,11 @@ void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query, Concurre
 void EntityQueryCaches::EnsureLabelsAreCached(const EntityQuery &query)
 #endif
 {
-	static std::vector<StringInternPool::StringID> labels_to_add;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+#endif
+		static std::vector<StringInternPool::StringID> labels_to_add;
+
 	auto add_label = [&](auto label) {
 		if(Entity::IsLabelValidAndPublic(label))
 			labels_to_add.push_back(label);

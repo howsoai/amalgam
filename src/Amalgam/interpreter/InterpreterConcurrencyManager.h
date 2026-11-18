@@ -48,8 +48,11 @@ class InterpreterConcurrencyManager
 public:
 
 	//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
+	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
+		EvaluableNode *target_origin_node, EvaluableNodeReference *target_node)
 	{
+		targetOriginNode = target_origin_node;
+		targetNode = target_node;
 		resultsUnique = true;
 		resultsUniqueUnreferencedTopNode = true;
 		resultsNeedCycleCheck = false;
@@ -82,7 +85,6 @@ public:
 		requires std::is_same_v<typename Traits::ModeTag,
 			typename InterpreterConcurrencyManagerTraits::StackWithResults::ModeTag>
 	void AddTaskWithConstructionStackWithResult(EvaluableNode *node_to_execute,
-		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
@@ -90,12 +92,10 @@ public:
 		size_t task_index = curNumTasksAdded++;
 		auto rand_seed = parentInterpreter->randomStream.CreateOtherStreamViaRand();
 
-		//TODO: move target_origin and target to object, so can remove the lambda params
 		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, rand_seed, node_to_execute, target_origin, target, current_index,
-			current_value, &result]
+			[this, task_index, rand_seed, node_to_execute, current_index, current_value, &result]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
@@ -107,7 +107,7 @@ public:
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
-			construction_stack.emplace_back(target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
+			construction_stack.emplace_back(targetOriginNode, targetNode, current_index, current_value, EvaluableNodeReference::Null());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
@@ -297,6 +297,10 @@ protected:
 
 	//concurrent tasks to be completed
 	std::vector<Concurrency::FixedSizeTask<>> tasks;
+
+	EvaluableNode *targetOriginNode;
+
+	EvaluableNodeReference *targetNode;
 
 	//structure to keep track of the stack to prevent results from being garbage collected
 	EvaluableNodeStackStateSaver resultsSaver;

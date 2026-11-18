@@ -140,7 +140,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults> concurrency_manager(this, num_nodes);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults>
+				concurrency_manager(this, num_nodes, nullptr, nullptr);
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.AddTaskWithConstructionStackWithoutResult<EvaluableNode *>(function,
@@ -178,11 +179,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 		result->SetNeedCycleCheck(true);
 
-		InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+		InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+			concurrency_manager(this, num_nodes, nullptr, &result);
 
 		for(size_t node_index = 0; node_index < num_nodes; node_index++)
 			concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(function,
-				nullptr, &result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
+				EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
 				nullptr, result_ocn[node_index]);
 
 		concurrency_manager.EndConcurrency();
@@ -556,7 +558,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				if(immediate_result.NoValueRequested())
 				{
-					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults> concurrency_manager(this, num_nodes);
+					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults>
+						concurrency_manager(this, num_nodes, nullptr, nullptr);
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
 						concurrency_manager.AddTaskWithConstructionStackWithoutResult<EvaluableNode *>(function,
@@ -568,7 +571,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				}
 				else //not immediate
 				{
-					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes, list, &result);
 
 					//create result_list as a copy of the current list, but without child nodes
 					result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
@@ -580,7 +583,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
 						concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(function,
-							list, &result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+							EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 							list_ocn[node_index], result_ocn[node_index]);
 
 					concurrency_manager.EndConcurrency();
@@ -670,7 +673,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				if(immediate_result.NoValueRequested())
 				{
-					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults> concurrency_manager(this, num_nodes);
+					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithoutResults>
+						concurrency_manager(this, num_nodes, nullptr, nullptr);
+
 					for(auto &[list_id, list_node] : list_mcn)
 						concurrency_manager.AddTaskWithConstructionStackWithoutResult<EvaluableNode *>(function,
 							EvaluableNodeImmediateValueWithType(list_id), list_node);
@@ -681,7 +686,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				}
 				else //not immediate
 				{
-					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+					InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+						concurrency_manager(this, num_nodes, list, &result);
 
 					//create result_list as a copy of the current list, but without child nodes
 					result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
@@ -705,8 +711,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 							list_node = list_node_entry->second;
 
 						concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(function,
-							list, &result, EvaluableNodeImmediateValueWithType(result_id),
-							list_node, result_node);
+							EvaluableNodeImmediateValueWithType(result_id), list_node, result_node);
 					}
 
 					concurrency_manager.EndConcurrency();
@@ -1321,11 +1326,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 			std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
-			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+				concurrency_manager(this, num_nodes, list, &result_list);
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNodeReference>(function,
-					list, &result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+					EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 					list_ocn[node_index], evaluations[node_index]);
 
 			concurrency_manager.EndConcurrency();
@@ -1432,13 +1438,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 		std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
-		InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+		InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+			concurrency_manager(this, num_nodes, list, &result_list);
 
 		//kick off interpreters
 		size_t node_index = 0;
 		for(auto &[node_id, node] : list_mcn)
-			concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNodeReference>(function, list,
-				&result_list, EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
+			concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNodeReference>(function,
+				EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
 
 		concurrency_manager.EndConcurrency();
 
@@ -1997,13 +2004,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 			std::vector<EvaluableNodeReference> results(num_nodes / 2);
 
-			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes / 2);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+				concurrency_manager(this, num_nodes / 2, en, &new_assoc);
 
 			//kick off interpreters
 			for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
 				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNodeReference>(ocn[node_index + 1],
-					en, &new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
-					nullptr, results[node_index / 2]);
+					EvaluableNodeImmediateValueWithType(keys[node_index / 2]), nullptr, results[node_index / 2]);
 
 			concurrency_manager.EndConcurrency();
 

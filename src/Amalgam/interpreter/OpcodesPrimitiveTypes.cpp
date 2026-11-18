@@ -202,12 +202,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 			new_list->SetNeedCycleCheck(true);
 
-			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+				concurrency_manager(this, num_nodes, en, &new_list);
 
 			//kick off interpreters
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
-				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(ocn[node_index], en,
-					&new_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
+				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(ocn[node_index],
+					EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
 					new_list_ocn[node_index]);
 
 			concurrency_manager.EndConcurrency();
@@ -289,12 +290,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 			new_assoc->SetNeedCycleCheck(true);
 
-			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults>
+				concurrency_manager(this, num_nodes, en, &new_assoc);
 
 			//kick off interpreters
 			for(auto &[cn_id, cn] : new_mcn)
 				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(cn,
-					en, &new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
+					EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
 
 			concurrency_manager.EndConcurrency();
 

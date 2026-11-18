@@ -551,11 +551,11 @@ namespace EntityQueryBuilder
 	}
 
 	//interpret evaluable node as a distance query
-	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,
+	inline void BuildDistanceCondition(EvaluableNode *condition_node, EvaluableNodeType condition_type,
 		EntityQuery &query, Interpreter *calling_interpreter)
 	{
 		//can just get the reference because already know it's a distance query
-		auto &ocn = cn->GetOrderedChildNodesReference();
+		auto &ocn = condition_node->GetOrderedChildNodesReference();
 
 		//need to at least have position, otherwise not valid query
 		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
@@ -566,7 +566,7 @@ namespace EntityQueryBuilder
 
 		auto &cur_condition = query.distance;
 		
-		cur_condition.useConcurrency = cn->GetConcurrency();
+		cur_condition.useConcurrency = condition_node->GetConcurrency();
 		cur_condition.interpreter = calling_interpreter;
 
 		cur_condition.ClearMainParameters();
@@ -864,10 +864,10 @@ namespace EntityQueryBuilder
 	}
 
 	//builds a query condition from cn
-	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type, EntityQuery &query,
+	inline void BuildNonDistanceCondition(EvaluableNode *condition_node, EvaluableNodeType type, EntityQuery &query,
 		Interpreter *calling_interpreter)
 	{
-		auto &ocn = cn->GetOrderedChildNodes();
+		auto &ocn = condition_node->GetOrderedChildNodes();
 
 		//validate number of parameters
 		switch(type)

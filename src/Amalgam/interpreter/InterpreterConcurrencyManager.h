@@ -48,8 +48,11 @@ class InterpreterConcurrencyManager
 public:
 
 	//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
+	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
+		EvaluableNode *target_origin_node, EvaluableNodeReference *target_node)
 	{
+		targetOriginNode = target_origin_node;
+		targetNode = target_node;
 		resultsUnique = true;
 		resultsUniqueUnreferencedTopNode = true;
 		resultsNeedCycleCheck = false;
@@ -65,10 +68,6 @@ public:
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
 		resultsSaverFirstTaskOffset = resultsSaver.GetIndexOfFirstElement();
 		resultsSaver.ReserveNodes(num_tasks);
-
-		randomSeeds.reserve(numTasks);
-		for(size_t element_index = 0; element_index < numTasks; element_index++)
-			randomSeeds.emplace_back(parentInterpreter->randomStream.CreateOtherStreamViaRand());
 
 		//since each thread has a copy of the constructionStack, it's possible that more than one of the threads
 		//obtains previous_results, so they must all be marked as not unique
@@ -86,22 +85,21 @@ public:
 		requires std::is_same_v<typename Traits::ModeTag,
 			typename InterpreterConcurrencyManagerTraits::StackWithResults::ModeTag>
 	void AddTaskWithConstructionStackWithResult(EvaluableNode *node_to_execute,
-		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
 	{
 		size_t task_index = curNumTasksAdded++;
+		auto rand_seed = parentInterpreter->randomStream.CreateOtherStreamViaRand();
 
 		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, node_to_execute, target_origin, target, current_index,
-			current_value, &result]
+			[this, task_index, rand_seed, node_to_execute, current_index, current_value, &result]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -109,7 +107,7 @@ public:
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
-			construction_stack.emplace_back(target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
+			construction_stack.emplace_back(targetOriginNode, targetNode, current_index, current_value, EvaluableNodeReference::Null());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
@@ -155,16 +153,17 @@ public:
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
-		size_t task_index = curNumTasksAdded++;
+		curNumTasksAdded++;
+		auto rand_seed = parentInterpreter->randomStream.CreateOtherStreamViaRand();
 
 		//must keep InterpreterConcurrencyManagerTraits::StackWithoutResults up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, node_to_execute, current_index, current_value]
+			[this, rand_seed, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -197,15 +196,16 @@ public:
 		EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
 	{
 		size_t task_index = curNumTasksAdded++;
+		auto rand_seed = parentInterpreter->randomStream.CreateOtherStreamViaRand();
 
 		//must keep InterpreterConcurrencyManagerTraits::NoStack up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, node_to_execute, result, immediate_results]
+			[this, task_index, rand_seed, node_to_execute, result, immediate_results]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -295,11 +295,12 @@ protected:
 	Concurrency::SingleMutex scopeStackMutex;
 	Concurrency::SingleMutex *previousScopeStackMutex;
 
-	//random seed for each task, the size of numTasks
-	std::vector<RandomStream> randomSeeds;
-
 	//concurrent tasks to be completed
 	std::vector<Concurrency::FixedSizeTask<>> tasks;
+
+	EvaluableNode *targetOriginNode;
+
+	EvaluableNodeReference *targetNode;
 
 	//structure to keep track of the stack to prevent results from being garbage collected
 	EvaluableNodeStackStateSaver resultsSaver;

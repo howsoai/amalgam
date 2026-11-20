@@ -91,9 +91,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 			auto s = string_intern_pool.GetStringViewFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
 			std::string_view substring = s.substr(0, utf8_char_length);
+			//allocate the result before freeing list, since substring may point into list's string
+			auto result = AllocReturn(substring, immediate_result);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			return AllocReturn(substring, immediate_result);
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -444,8 +445,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
 			std::string_view substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
+			//allocate the result before freeing list, since substring may point into list's string
+			auto result = AllocReturn(substring, immediate_result);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-			return AllocReturn(substring, immediate_result);
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -549,9 +552,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
 			std::string_view substring = s.substr(utf8_char_start_offset, utf8_char_length);
+			//allocate the result before freeing list, since substring may point into list's string
+			auto result = AllocReturn(substring, immediate_result);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			return AllocReturn(substring, immediate_result);
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -900,9 +904,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			//remove everything after after this length
 			size_t utf8_end_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_keep);
 			std::string_view substring = s.substr(0, utf8_end_offset);
+			//allocate the result before freeing list, since substring may point into list's string
+			auto result = AllocReturn(substring, immediate_result);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			return AllocReturn(substring, immediate_result);
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))

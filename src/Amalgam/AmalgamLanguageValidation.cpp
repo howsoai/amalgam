@@ -2779,6 +2779,30 @@ int32_t RunAmalgamLanguageValidation()
 
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 
+	//reclaim adjacent complete slabs, including the last slab, with and without a nullptr suffix
+	for(size_t test_number = 0; test_number < 2; test_number++)
+	{
+		EvaluableNodeManager manager;
+		for(size_t i = 0; i < 128; i++)
+			manager.AllocNode(ENT_NULL);
+		manager.FreeAllNodes();
+
+		if(test_number == 1)
+		{
+			//keep one allocation buffer in use while trimming the suffix to make the table dense
+			manager.AllocNode(ENT_NULL);
+			manager.ShrinkMemoryToCurrentUtilization();
+			manager.FreeAllNodes();
+		}
+
+		manager.ShrinkMemoryToCurrentUtilization();
+		if(manager.GetNumberOfUnusedNodes() != 0)
+		{
+			std::cerr << "Slab reclamation retained " << manager.GetNumberOfUnusedNodes() << " unused nodes" << std::endl;
+			failed_test_names_and_numbers.emplace_back("slab reclamation", test_number);
+		}
+	}
+
 	//run opcode tests
 	for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
 	{

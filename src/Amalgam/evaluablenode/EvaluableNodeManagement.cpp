@@ -434,9 +434,8 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 			break;
 	}
 
-	if(first_null_index == nodes.size())
-		return;
-	nodes.resize(first_null_index);
+	if(first_null_index < nodes.size())
+		nodes.resize(first_null_index);
 
 	//sort the unused portion so slab members are adjacent
 	std::sort(nodes.begin() + firstUnusedNodeIndex, nodes.end());
@@ -446,7 +445,7 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 		EvaluableNode *node = nodes[index];
 
 		//a slab can only be deleted if it's a start node and the subsequent pointers fill the slab
-		if(node->GetIsSlabStart() && index + _num_nodes_per_slab < nodes.size())
+		if(node->GetIsSlabStart() && index + _num_nodes_per_slab <= nodes.size())
 		{
 			bool slab_complete = true;
 
@@ -472,7 +471,7 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 					nodes[clear_index] = nullptr;
 
 				//skip the remainder of the slab
-				index += _num_nodes_per_slab;
+				index += _num_nodes_per_slab - 1;
 				continue;
 			}
 		}

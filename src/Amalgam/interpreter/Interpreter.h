@@ -90,7 +90,8 @@ public:
 	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
 	//if interpret_with_new_scope will push the new scope before interpreting if needed (e.g., ENT_LET),
 	// otherwise it will push after interpreting (e.g., ENT_CALL)
-	void InterpretAndPushNewScopeStackNode(EvaluableNode *new_context_node, bool interpret_with_new_scope);
+	//if scope_break is true, then it will break the scope from all below it and not give access below
+	void InterpretAndPushNewScopeStackNode(EvaluableNode *new_context_node, bool interpret_with_new_scope, bool scope_break);
 
 	//pops the top context off the stack
 	//if returning_unique_value, then can potentially free the whole scope
@@ -351,6 +352,9 @@ public:
 	#endif
 	)
 	{
+	#ifdef MULTITHREAD_SUPPORT
+		bool hit_scope_break = false;
+	#endif
 		//find appropriate context for symbol by walking up the stack
 		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
@@ -396,11 +400,19 @@ public:
 				return ScopeStackSymbolLocation{
 					&found->second, mcn, it == rbegin(scopeStack), is_freeable, is_freeable_top_node};
 			}
+
+			if((*it)->IsScopeBreak())
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				hit_scope_break = true;
+			#endif
+				break;
+			}
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
 		//need to search further down the stack if appropriate
-		if(!bottomOfScopeStack && callingInterpreter != nullptr)
+		if(!hit_scope_break && !bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (scopeStack.size() == 0);
 			auto symbol_location = callingInterpreter->GetScopeStackSymbolLocation(

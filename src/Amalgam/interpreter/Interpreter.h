@@ -78,7 +78,7 @@ public:
 		if(evaluableNodeManager->RecommendGarbageCollection()) [[unlikely]]
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			evaluableNodeManager->CollectGarbageWithConcurrentAccess(memoryModificationLock);
+			evaluableNodeManager->CollectGarbageWithConcurrentAccess(*memoryModificationLock);
 		#else
 			evaluableNodeManager->CollectGarbage();
 		#endif
@@ -1202,8 +1202,9 @@ protected:
 
 #ifdef MULTITHREAD_SUPPORT
 public:
-	//mutex to lock the memory from the EvaluableNodeManager it is using
-	Concurrency::ReadLock memoryModificationLock;
+	//pointer to the mutex (stored in a reusable buffer)
+	// to lock the memory from the EvaluableNodeManager it is using
+	Concurrency::ReadLock *memoryModificationLock;
 
 protected:
 

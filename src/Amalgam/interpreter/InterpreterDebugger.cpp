@@ -656,8 +656,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			std::cout << "Maximum concurrent threads: " << Concurrency::GetMaxNumThreads() << std::endl;
 			std::cout << "Current number of executing threads: " << Concurrency::GetActiveInterpreterThreadCount() << std::endl;
 			std::cout << "All available threads:" << std::endl;
-			EvaluableNodeManager::LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-				[](EvaluableNodeManager::LocalAllocationBuffer *lab)
+			EvaluableNodeManager::ReusableMemoryBuffers::IterateFunctionOverRegisteredReusableMemoryBuffers(
+				[](EvaluableNodeManager::ReusableMemoryBuffers *lab)
 			{
 				std::cout << "  " << lab->threadId << std::endl;
 			});

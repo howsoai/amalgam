@@ -1555,8 +1555,9 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
+	auto calling_interpreter_enm_lock = std::move(*calling_interpreter.memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	Concurrency::ReadLock *enm_lock = ce_enm.AcquireMemoryModificationReadLock();
 	called_entity.lock.unlock();
 #endif
 
@@ -1572,7 +1573,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	calling_interpreter.memoryModificationLock.unlock();
+	calling_interpreter_enm_lock.unlock();
 #endif
 
 	EvaluableNodeReference result;
@@ -1581,14 +1582,14 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
-			, &enm_lock
+			, enm_lock
 	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
-			, &enm_lock
+			, enm_lock
 	#endif
 		);
 

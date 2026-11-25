@@ -34,16 +34,20 @@ namespace InterpreterConcurrencyManagerTraits
 	struct StackWithResults : Default
 	{
 		//must match the parameter size of the tasks.emplace_back lambda in 
-		static constexpr size_t BufferSize = 9 * sizeof(size_t);
+		static constexpr size_t BufferSize = 7 * sizeof(size_t);
 		struct StackWithResultMode
 		{};
 		using ModeTag = StackWithResultMode;
 	};
 }
 
+//use a base class to have pointer for equality comparison; safer than using a void *
+class InterpreterConcurrencyManagerBase
+{};
+
 //class to manage the data for concurrent execution by an interpreter
 template<typename Traits = InterpreterConcurrencyManagerTraits::Default>
-class InterpreterConcurrencyManager
+class InterpreterConcurrencyManager : public InterpreterConcurrencyManagerBase
 {
 public:
 
@@ -99,11 +103,11 @@ public:
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(enm, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
+			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
@@ -138,8 +142,6 @@ public:
 
 			result = result_ref;
 			resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, result);
-
-			interpreter.memoryModificationLock.unlock();
 		}
 		);
 	}
@@ -163,11 +165,11 @@ public:
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(enm, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
+			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
@@ -181,8 +183,6 @@ public:
 
 			interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
 			enm->FreeNodeTreeIfPossible(result);
-
-			interpreter.memoryModificationLock.unlock();
 		}
 		);
 	}
@@ -205,11 +205,11 @@ public:
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(enm, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
+			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
@@ -247,8 +247,6 @@ public:
 				if(!result_ref.IsImmediateValue())
 					resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, *result);
 			}
-
-			interpreter.memoryModificationLock.unlock();
 		}
 		);
 	}
@@ -257,9 +255,17 @@ public:
 	inline void EndConcurrency()
 	{
 		//allow other threads to perform garbage collection
-		parentInterpreter->memoryModificationLock.unlock();
-		Concurrency::RunInterpreterTasks(std::move(tasks));
-		parentInterpreter->memoryModificationLock.lock();
+		auto gclr = std::move(parentInterpreter->evaluableNodeManager->ExtractGarbageCollectionLockResources());
+		gclr.memoryModificationLock.unlock();
+
+		//run the tasks and release locks from child interpreters
+		Concurrency::RunInterpreterTasks(std::move(tasks),
+			[this]() {
+				parentInterpreter->evaluableNodeManager->ReleaseMemoryModificationReadLock(this);
+			});
+
+		gclr.memoryModificationLock.lock();
+		parentInterpreter->evaluableNodeManager->EmplaceGarbageCollectionLockResources(std::move(gclr));
 
 		//release scope stack mutex
 		parentInterpreter->scopeStackMutex = previousScopeStackMutex;

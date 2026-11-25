@@ -774,8 +774,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
+	auto prev_enm_lock = std::move(*memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	Concurrency::ReadLock *enm_lock = ce_enm.AcquireMemoryModificationReadLock();
 	called_entity.lock.unlock();
 #endif
 
@@ -805,7 +806,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	memoryModificationLock.unlock();
+	prev_enm_lock.unlock();
 #endif
 
 	EvaluableNodeReference result;
@@ -814,14 +815,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 			&scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-			, &enm_lock
+			, enm_lock
 #endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-			, &enm_lock
+			, enm_lock
 #endif
 		);
 
@@ -1010,8 +1011,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 			container->evaluableNodeManager.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
+	auto prev_enm_lock = std::move(*memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock = container->evaluableNodeManager.AcquireMemoryModificationReadLock();
+	Concurrency::ReadLock *enm_lock = container->evaluableNodeManager.AcquireMemoryModificationReadLock();
 	container.lock.unlock();
 #endif
 
@@ -1031,13 +1033,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	memoryModificationLock.unlock();
+	prev_enm_lock.unlock();
 #endif
 
 	EvaluableNodeReference result = container->Execute(container_label_sid,
 		&scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-		, &enm_lock
+		, enm_lock
 #endif
 	);
 

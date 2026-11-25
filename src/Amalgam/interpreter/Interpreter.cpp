@@ -27,6 +27,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 	evaluableNodeManager = enm;
 #ifdef MULTITHREAD_SUPPORT
+	memoryModificationLock = nullptr;
 	bottomOfScopeStack = true;
 #endif
 }

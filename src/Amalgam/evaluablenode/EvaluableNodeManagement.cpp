@@ -32,13 +32,13 @@ EvaluableNodeManager::~EvaluableNodeManager()
 	Concurrency::WriteLock lock(managerAttributesMutex);
 
 	//clear from any threads
-	ReusableMemoryBuffers::IterateFunctionOverRegisteredReusableMemoryBuffers(
-		[this](ReusableMemoryBuffers *buffers)
+	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+		[this](LocalAllocationBuffer *lab)
 	{
-		buffers->ClearLocalAllocationBuffer(this);
+		lab->Clear(this);
 	});
 #else
-	reusableMemoryBuffers.ClearLocalAllocationBuffer(this);
+	localAllocationBuffer.Clear(this);
 #endif
 
 	for(auto &n : nodes)
@@ -81,13 +81,13 @@ void EvaluableNodeManager::CollectGarbage()
 	}
 
 	//clear regardless of what's in the buffer
-	reusableMemoryBuffers.ClearLocalAllocationBuffer();
+	localAllocationBuffer.Clear();
 	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
-	ReusableMemoryBuffers::IterateFunctionOverRegisteredReusableMemoryBuffers(
-		[this](ReusableMemoryBuffers *buffers)
+	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+		[this](LocalAllocationBuffer *lab)
 		{
-			buffers->ClearLocalAllocationBuffer(this);
+			lab->Clear(this);
 		});
 #endif
 
@@ -110,7 +110,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	//clear regardless of what's in the buffer
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
-	reusableMemoryBuffers.ClearLocalAllocationBuffer();
+	localAllocationBuffer.Clear();
 
 	//the first thread to set the flag becomes the garbage collector
 	bool gc_on_this_thread = false;
@@ -132,10 +132,10 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
 
 		//clear all threads' local allocation buffers that are using this enm
-		ReusableMemoryBuffers::IterateFunctionOverRegisteredReusableMemoryBuffers(
-			[this](ReusableMemoryBuffers *buffers)
+		LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+			[this](LocalAllocationBuffer *lab)
 		{
-			buffers->ClearLocalAllocationBuffer(this);
+			lab->Clear(this);
 		});
 
 		size_t cur_first_unused_node_index = firstUnusedNodeIndex;
@@ -196,7 +196,7 @@ void EvaluableNodeManager::FreeAllNodes()
 
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 
-	reusableMemoryBuffers.ClearLocalAllocationBuffer(this);
+	localAllocationBuffer.Clear(this);
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
@@ -207,11 +207,11 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		Concurrency::SingleLock lock(labCountMutex);
 	#endif
 
-		labSize += reusableMemoryBuffers.buffer.size();
+		labSize += localAllocationBuffer.buffer.size();
 		labSizeCount++;
 
 		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
-		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * reusableMemoryBuffers.buffer.size();
+		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.buffer.size();
 		if(labSizeCount % 4000 == 0)
 			std::cout << "ave local allocation buffer size: " << rollingAveLABSize << std::endl;
 	}

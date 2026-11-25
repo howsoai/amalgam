@@ -511,10 +511,27 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	if(enm_lock == nullptr)
 		interpreter.memoryModificationLock = evaluableNodeManager.AcquireMemoryModificationReadLock();
 	else //calling the entity from itself or with existing lock, keep the same lock
-		interpreter.memoryModificationLock = enm_lock;
+		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
-	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack, nullptr, nullptr, immediate_result);
+	EvaluableNodeReference retval;
+	try
+	{
+		retval = interpreter.ExecuteNode(code, scope_stack, nullptr, nullptr, immediate_result);
+	}
+	catch(...)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		if(enm_lock != nullptr)
+			*enm_lock = std::move(interpreter.memoryModificationLock);
+	#endif
+		throw;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	if(enm_lock != nullptr)
+		*enm_lock = std::move(interpreter.memoryModificationLock);
+#endif
 
 	return retval;
 }

@@ -774,9 +774,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
-	auto prev_enm_lock = std::move(*memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock *enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	//A self-call must borrow the existing lock: recursively acquiring it can
+	//wait for a collector which is itself waiting for this interpreter.
+	Concurrency::ReadLock enm_lock;
+	if(called_entity != curEntity)
+		enm_lock = AcquireOtherMemoryModificationReadLock(ce_enm);
 	called_entity.lock.unlock();
 #endif
 
@@ -806,7 +809,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	prev_enm_lock.unlock();
+	Concurrency::ReadLockSuspension lock_suspension(memoryModificationLock, called_entity != curEntity, &enm_lock);
 #endif
 
 	EvaluableNodeReference result;
@@ -815,14 +818,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 			&scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-			, enm_lock
+			, called_entity == curEntity ? &memoryModificationLock : &enm_lock
 #endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-			, enm_lock
+			, called_entity == curEntity ? &memoryModificationLock : &enm_lock
 #endif
 		);
 
@@ -832,7 +835,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
-	memoryModificationLock = evaluableNodeManager->AcquireMemoryModificationReadLock();
+	if(called_entity != curEntity)
+		ResumeMemoryModificationReadLock(ce_enm, enm_lock, {result, function});
 #endif
 
 	//call opcodes should consume the outer return opcode if there is one
@@ -997,6 +1001,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(ocn.size() > 1)
 		args = InterpretNodeForImmediateUse(ocn[1]);
 
+	//Acquiring the container's memory lock may temporarily release ours for GC.
+	auto node_stack = CreateOpcodeStackStateSaver(args);
+
 	//obtain a lock on the container
 	EntityReadReference cur_entity(curEntity);
 	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
@@ -1011,14 +1018,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 			container->evaluableNodeManager.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
-	auto prev_enm_lock = std::move(*memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock *enm_lock = container->evaluableNodeManager.AcquireMemoryModificationReadLock();
+	Concurrency::ReadLock enm_lock = AcquireOtherMemoryModificationReadLock(container->evaluableNodeManager);
 	container.lock.unlock();
 #endif
 
 	//copy arguments to container, free args from this entity
 	EvaluableNodeReference called_entity_args = container->evaluableNodeManager.DeepAllocCopy(args);
+	node_stack.PopEvaluableNode();
 	//don't put freed nodes in local allocation buffer, because that will increase memory churn
 	evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
 
@@ -1033,13 +1040,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	prev_enm_lock.unlock();
+	Concurrency::ReadLockSuspension lock_suspension(memoryModificationLock, true, &enm_lock);
 #endif
 
 	EvaluableNodeReference result = container->Execute(container_label_sid,
 		&scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
-		, enm_lock
+		, &enm_lock
 #endif
 	);
 
@@ -1047,7 +1054,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
-	memoryModificationLock = evaluableNodeManager->AcquireMemoryModificationReadLock();
+	ResumeMemoryModificationReadLock(container->evaluableNodeManager, enm_lock, {result});
 #endif
 
 	//call opcodes should consume the outer return opcode if there is one

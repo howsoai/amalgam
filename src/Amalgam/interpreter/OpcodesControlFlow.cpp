@@ -276,7 +276,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 			std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 		#endif
 
-			auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr, immediate_result);
+			EvaluableNodeReference result;
+			try
+			{
+				result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr, immediate_result);
+			}
+			catch(...)
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				std::swap(memoryModificationLock, sandbox.memoryModificationLock);
+			#endif
+				throw;
+			}
 
 		#ifdef MULTITHREAD_SUPPORT
 			//hand lock back to this interpreter

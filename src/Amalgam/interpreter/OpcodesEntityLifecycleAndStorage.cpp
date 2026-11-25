@@ -727,7 +727,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	memoryModificationLock->unlock();
+	Concurrency::ReadLockSuspension lock_suspension(memoryModificationLock);
 #endif
 
 	//don't want to call evaluableNodeManager->PauseLocalAllocationBuffer() here because loading entity may execute code

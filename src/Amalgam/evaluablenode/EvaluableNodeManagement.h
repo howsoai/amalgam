@@ -15,9 +15,6 @@
 
 //forward declaration
 class Interpreter;
-#ifdef MULTITHREAD_SUPPORT
-class InterpreterConcurrencyManagerBase;
-#endif
 
 //used with construction stack to store the index and whether previous_result is unique,
 //as well as whether any opcodes have been executed that have side effects, that could have written memory elsewhere,
@@ -78,18 +75,16 @@ public:
 	#endif
 	};
 
-	//holds buffers for executing threads for efficiency
-	//This includes a local allocation buffer with pointers to EvaluableNode's reserved for allocation by a specific thread
-	//during garbage collection.  These buffers need to be cleared because memory may be rearranged or reassigned.
-	//The garbage collection processes may reuse this buffer as long as it is cleared.
-	//Also contains locks for reuse across batched tasks that execute on the same thread
-	class ReusableMemoryBuffers
+	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
+	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
+	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
+	class LocalAllocationBuffer
 	{
 	public:
-		ReusableMemoryBuffers()
+		LocalAllocationBuffer()
 			: lastEvaluableNodeManager(nullptr)
 		#ifdef MULTITHREAD_SUPPORT
-			, garbageCollectionResources({ nullptr, nullptr }), registry(Registry::instance)
+			, registry(Registry::instance)
 		#endif
 		{
 		#ifdef MULTITHREAD_SUPPORT
@@ -99,7 +94,7 @@ public:
 		#endif
 		}
 
-		~ReusableMemoryBuffers()
+		~LocalAllocationBuffer()
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::Lock lock(registry->mutex);
@@ -113,7 +108,7 @@ public:
 		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
 		//it will clear if only_clear_if_current_enm is nullptr or if
 		// lastEvaluableNodeManager is the same as only_clear_if_current_enm
-		inline void ClearLocalAllocationBuffer(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
+		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
 		{
 			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
 				return;
@@ -158,7 +153,7 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//calls func on all registered local allocation buffers for each thread
 		template<typename Func>
-		static inline void IterateFunctionOverRegisteredReusableMemoryBuffers(Func func)
+		static inline void IterateFunctionOverRegisteredLabs(Func func)
 		{
 			Concurrency::Lock lock(Registry::instance->mutex);
 			for(auto lab : Registry::instance->registry)
@@ -176,19 +171,6 @@ public:
 		std::vector<EvaluableNode *> buffer;
 
 	#ifdef MULTITHREAD_SUPPORT
-
-		struct GarbageCollectionLockResources
-		{
-			//which concurrency manager is currently being used, if any
-			InterpreterConcurrencyManagerBase *interpreterConcurrencyManager;
-
-			//which evaluable node manager is being used, if any
-			EvaluableNodeManager *evaluableNodeManager;
-
-			//concurrency manager lock
-			Concurrency::ReadLock memoryModificationLock;
-		} garbageCollectionResources;
-
 		//thread id of the allocation buffer
 		std::thread::id threadId;
 
@@ -197,7 +179,7 @@ public:
 		struct Registry
 		{
 			//list of all of the LABs
-			std::vector<ReusableMemoryBuffers *> registry;
+			std::vector<LocalAllocationBuffer *> registry;
 			//mutex to protect access to registry
 			Concurrency::SingleMutex mutex;
 			//singleton instance of this object
@@ -721,15 +703,8 @@ public:
 	//acquires a memory modification lock when beginning execution but there isn't a known thread
 	//running already (e.g., not concurrent execution of spawned threads), but need to be careful of
 	//garbage collection
-	inline Concurrency::ReadLock *AcquireMemoryModificationReadLock(InterpreterConcurrencyManagerBase *icmb = nullptr)
+	inline Concurrency::ReadLock AcquireMemoryModificationReadLock()
 	{
-		auto &gc_resources = reusableMemoryBuffers.garbageCollectionResources;
-		//if this thread already has a lock on this concurrency manager, do nothing
-		if(icmb == gc_resources.interpreterConcurrencyManager
-				&& this == gc_resources.evaluableNodeManager
-				&& gc_resources.memoryModificationLock.owns_lock())
-			return &gc_resources.memoryModificationLock;
-
 		//ensure data structures are set up for interpreters
 		auto &mem_mod_mutex = GetMemoryModificationMutex();
 
@@ -743,37 +718,7 @@ public:
 			});
 		}
 
-		gc_resources .interpreterConcurrencyManager = icmb;
-		gc_resources .evaluableNodeManager = this;
-		gc_resources .memoryModificationLock = Concurrency::ReadLock(mem_mod_mutex);
-		return &gc_resources.memoryModificationLock;
-	}
-
-	//releases a lock acquired by AcquireMemoryModificationReadLock if icmb matches
-	inline void ReleaseMemoryModificationReadLock(InterpreterConcurrencyManagerBase *icmb)
-	{
-		auto &gc_resources = reusableMemoryBuffers.garbageCollectionResources;
-		if(gc_resources.interpreterConcurrencyManager == icmb)
-		{
-			gc_resources.interpreterConcurrencyManager = nullptr;
-			gc_resources.evaluableNodeManager = nullptr;
-			gc_resources.memoryModificationLock.unlock();
-		}
-	}
-
-	inline void EmplaceGarbageCollectionLockResources(ReusableMemoryBuffers::GarbageCollectionLockResources &&gclr)
-	{
-		auto &gc_resources = reusableMemoryBuffers.garbageCollectionResources;
-		gc_resources = std::move(gclr);
-	}
-
-	inline ReusableMemoryBuffers::GarbageCollectionLockResources ExtractGarbageCollectionLockResources()
-	{
-		auto &gc_resources = reusableMemoryBuffers.garbageCollectionResources;
-		ReusableMemoryBuffers::GarbageCollectionLockResources gclr = std::move(gc_resources);
-		gc_resources.interpreterConcurrencyManager = nullptr;
-		gc_resources.evaluableNodeManager = nullptr;
-		return gclr;
+		return Concurrency::ReadLock(mem_mod_mutex);
 	}
 #endif
 
@@ -862,7 +807,7 @@ public:
 			paused(false), prevLastEvaluableNodeManager(nullptr)
 		{}
 
-		inline LocalAllocationBufferPause(ReusableMemoryBuffers &lab)
+		inline LocalAllocationBufferPause(LocalAllocationBuffer &lab)
 		{
 			prevLocalAllocationBuffer.clear();
 			std::swap(prevLocalAllocationBuffer, lab.buffer);
@@ -911,7 +856,7 @@ public:
 	//this is intended only for allocations for other entities
 	inline LocalAllocationBufferPause PauseLocalAllocationBuffer()
 	{
-		return LocalAllocationBufferPause(reusableMemoryBuffers);
+		return LocalAllocationBufferPause(localAllocationBuffer);
 	}
 
 protected:
@@ -954,7 +899,7 @@ protected:
 	//nullptr if it cannot
 	__forceinline EvaluableNode *AllocNodeFromLocalAllocationBufferIfAvailable()
 	{
-		return reusableMemoryBuffers.AllocNodeIfAvailable(this);
+		return localAllocationBuffer.AllocNodeIfAvailable(this);
 	}
 
 	//adds en to the local allocation buffer
@@ -963,7 +908,7 @@ protected:
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		AmlgAssert(en->IsNodeDeallocated());
 	#endif
-		reusableMemoryBuffers.AddNodeForReallocation(en, this);
+		localAllocationBuffer.AddNodeForReallocation(en, this);
 	}
 
 public:
@@ -1013,12 +958,12 @@ protected:
 
 	//local memory pool for allocations
 #if defined(MULTITHREAD_SUPPORT)
-	thread_local inline static ReusableMemoryBuffers reusableMemoryBuffers;
+	thread_local inline static LocalAllocationBuffer localAllocationBuffer;
 #else
-	inline static ReusableMemoryBuffers reusableMemoryBuffers;
+	inline static LocalAllocationBuffer localAllocationBuffer;
 #endif
 
-	//debug diagnostic variables for reusableMemoryBuffers
+	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE
 #if defined(MULTITHREAD_SUPPORT)
 	inline static Concurrency::SingleMutex labCountMutex;

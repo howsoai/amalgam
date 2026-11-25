@@ -52,6 +52,46 @@ namespace Concurrency
 	//standard write lock on a read-write shared mutex
 	typedef std::unique_lock<ReadWriteMutex> WriteLock;
 
+	//Temporarily release an interpreter's read lock, restoring ownership on unwind
+	//as well as on explicit resumption. The lock object must outlive this guard.
+	class ReadLockSuspension
+	{
+	public:
+		explicit ReadLockSuspension(ReadLock &lock, bool suspend = true, ReadLock *abandoned_lock = nullptr)
+			: readLock(lock), suspended(suspend), abandonedLock(abandoned_lock)
+		{
+			if(suspended)
+				readLock.unlock();
+		}
+
+		ReadLockSuspension(const ReadLockSuspension &) = delete;
+		ReadLockSuspension &operator=(const ReadLockSuspension &) = delete;
+
+		~ReadLockSuspension()
+		{
+			//On an interrupted entity call, discard the callee lock before waiting
+			//for the caller's collector. No callee nodes are needed after unwinding.
+			if(suspended && !readLock.owns_lock() && abandonedLock != nullptr && abandonedLock->owns_lock())
+				abandonedLock->unlock();
+			Resume();
+		}
+
+		void Resume()
+		{
+			if(suspended)
+			{
+				if(!readLock.owns_lock())
+					readLock.lock();
+				suspended = false;
+			}
+		}
+
+	private:
+		ReadLock &readLock;
+		bool suspended;
+		ReadLock *abandonedLock;
+	};
+
 	//Object to perform scope-based unlocking of a vector of locks of LockType for an existing buffer
 	template<typename LockBufferType>
 	class MultipleLockBufferObject
@@ -322,66 +362,96 @@ namespace Concurrency
 		size_t depth;
 	};
 
-	//group of tasks for a given interpreter
-	template<typename FuncType, typename IdleFuncType>
+	//group of tasks for a given interpreter.  batch_func must invoke its argument
+	//exactly once and release any retained resources before returning, without throwing.
+	template<typename FuncType, typename BatchFuncType>
 	class InterpreterTaskGroup
 	{
 	public:
-		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks, IdleFuncType idle_func)
-			: tasks(std::move(tasks)), remaining(this->tasks.size()), idleCallback(idle_func)
+		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks, BatchFuncType batch_func)
+			: tasks(std::move(tasks)), remaining(this->tasks.size()), batchCallback(batch_func)
 		{}
 
 		inline void Drain()
 		{
-			for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
-				Execute(i);
-			idleCallback();
+			Drain(next.fetch_add(1, std::memory_order_relaxed));
 		}
 
 		inline void Join()
 		{
-			//first element is accounted for by default value of next
-			Execute(0);
-			Drain();
+			//reserve the first task for the caller so nested groups always make progress
+			Drain(0);
 
 			PauseActivity pause;
-
 			for(size_t count = remaining.load(std::memory_order_acquire);
 					count != 0; count = remaining.load(std::memory_order_acquire))
 				remaining.wait(count, std::memory_order_acquire);
+
+			if(exception)
+				std::rethrow_exception(exception);
 		}
 
 	private:
 
-		inline void Execute(size_t i)
+		inline void Drain(size_t i)
 		{
-			tasks[i]();
+			//Late workers must not invoke callbacks that may borrow a finished caller.
+			if(i >= tasks.size())
+				return;
 
-			//mark task as done and if done, notify all that it's all done
-			tasks[i].Reset();
-			if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
+			size_t completed = 0;
+			batchCallback([&]
+			{
+				do
+				{
+					try
+					{
+						tasks[i]();
+					}
+					catch(...)
+					{
+						Lock lock(exceptionMutex);
+						if(!exception)
+							exception = std::current_exception();
+					}
+					tasks[i].Reset();
+					completed++;
+					i = next.fetch_add(1, std::memory_order_relaxed);
+				} while(i < tasks.size());
+			});
+
+			//Publish completion only after this worker has released its batch resources.
+			//Do not wait for queued workers: all pool threads may be in nested joins.
+			if(remaining.fetch_sub(completed, std::memory_order_acq_rel) == completed)
 				remaining.notify_all();
 		}
 
 		std::vector<FuncType> tasks;
-		//default to 1 since the dispatching thread will take the first element
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
-		IdleFuncType idleCallback;
+		BatchFuncType batchCallback;
+		SingleMutex exceptionMutex;
+		std::exception_ptr exception;
 	};
 
 	template<typename FuncType>
 	inline void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
 	{
 		auto previous = std::exchange(interpreter_runtime, &runtime);
-		auto cleanup = [&] { interpreter_runtime = previous; };
-
-		entry();
-		cleanup();
+		try
+		{
+			entry();
+		}
+		catch(...)
+		{
+			interpreter_runtime = previous;
+			throw;
+		}
+		interpreter_runtime = previous;
 	}
 
-	template<typename FuncType, typename IdleFuncType>
-	inline void RunInterpreterTasks(std::vector<FuncType> tasks, IdleFuncType idle_func)
+	template<typename FuncType, typename BatchFuncType>
+	inline void RunInterpreterTasks(std::vector<FuncType> tasks, BatchFuncType batch_func)
 	{
 		if(tasks.empty())
 			return;
@@ -392,9 +462,7 @@ namespace Concurrency
 			task_set.emplace([&](tf::Runtime &runtime)
 			{
 				RunInterpreterRuntime(runtime,
-					[&] {
-						RunInterpreterTasks(std::move(tasks), idle_func);
-					});
+					[&] { RunInterpreterTasks(std::move(tasks), batch_func); });
 			});
 
 			auto exec = AcquireConcurrentExecutor();
@@ -405,28 +473,38 @@ namespace Concurrency
 		const size_t num_workers = std::min(tasks.size(), concurrent_executor->numThreads) - 1;
 		if(num_workers == 0)
 		{
-			InterpreterTaskGroup group(std::move(tasks), idle_func);
+			InterpreterTaskGroup group(std::move(tasks), batch_func);
 			group.Join();
 			return;
 		}
 
-		auto group = std::make_shared<InterpreterTaskGroup<FuncType, IdleFuncType>>(std::move(tasks), idle_func);
-		for(size_t i = 0; i < num_workers; i++)
+		auto group = std::make_shared<InterpreterTaskGroup<FuncType, BatchFuncType>>(std::move(tasks), batch_func);
+		std::exception_ptr submission_exception;
+		try
 		{
-			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+			for(size_t i = 0; i < num_workers; i++)
 			{
-				RunInterpreterRuntime(runtime, [&] { group->Drain(); });
-			});
+				interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+				{
+					RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+				});
+			}
+		}
+		catch(...)
+		{
+			//Already submitted workers may borrow the caller's stack; drain before unwinding.
+			submission_exception = std::current_exception();
 		}
 
 		group->Join();
+		if(submission_exception)
+			std::rethrow_exception(submission_exception);
 	}
 
-	//overload with default no idle function
 	template<typename FuncType>
 	inline void RunInterpreterTasks(std::vector<FuncType> tasks)
 	{
-		RunInterpreterTasks(std::move(tasks), [] {});
+		RunInterpreterTasks(std::move(tasks), [](auto run_batch) { run_batch(); });
 	}
 
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
@@ -463,7 +541,7 @@ namespace Concurrency
 	}
 
 #endif
-};
+}
 #endif
 
 //iterates over every element in container, passing the element along with the index into func, as long as

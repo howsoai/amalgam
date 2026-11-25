@@ -13,6 +13,7 @@
 
 //system headers:
 #include <array>
+#include <initializer_list>
 #include <string>
 #include <vector>
 
@@ -78,7 +79,7 @@ public:
 		if(evaluableNodeManager->RecommendGarbageCollection()) [[unlikely]]
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			evaluableNodeManager->CollectGarbageWithConcurrentAccess(*memoryModificationLock);
+			evaluableNodeManager->CollectGarbageWithConcurrentAccess(memoryModificationLock);
 		#else
 			evaluableNodeManager->CollectGarbage();
 		#endif
@@ -1202,9 +1203,16 @@ protected:
 
 #ifdef MULTITHREAD_SUPPORT
 public:
-	//pointer to the mutex (stored in a reusable buffer)
-	// to lock the memory from the EvaluableNodeManager it is using
-	Concurrency::ReadLock *memoryModificationLock;
+	//Acquire a different manager without waiting for its collector while holding ours.
+	Concurrency::ReadLock AcquireOtherMemoryModificationReadLock(EvaluableNodeManager &other_enm);
+
+	//Resume after an entity call, keeping returned nodes rooted if both managers
+	//must be unlocked to avoid a cycle between their collectors.
+	void ResumeMemoryModificationReadLock(EvaluableNodeManager &other_enm,
+		Concurrency::ReadLock &other_lock, std::initializer_list<EvaluableNodeReference> references);
+
+	//mutex to lock the memory from the EvaluableNodeManager it is using
+	Concurrency::ReadLock memoryModificationLock;
 
 protected:
 

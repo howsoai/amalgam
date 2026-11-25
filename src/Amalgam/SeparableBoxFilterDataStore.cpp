@@ -1555,9 +1555,11 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
-	auto calling_interpreter_enm_lock = std::move(*calling_interpreter.memoryModificationLock);
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock *enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	bool on_self = called_entity == calling_interpreter.curEntity;
+	Concurrency::ReadLock enm_lock;
+	if(!on_self)
+		enm_lock = calling_interpreter.AcquireOtherMemoryModificationReadLock(ce_enm);
 	called_entity.lock.unlock();
 #endif
 
@@ -1573,7 +1575,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
-	calling_interpreter_enm_lock.unlock();
+	Concurrency::ReadLockSuspension lock_suspension(calling_interpreter.memoryModificationLock, !on_self, &enm_lock);
 #endif
 
 	EvaluableNodeReference result;
@@ -1582,21 +1584,21 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
-			, enm_lock
+			, on_self ? &calling_interpreter.memoryModificationLock : &enm_lock
 	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
-			, enm_lock
+			, on_self ? &calling_interpreter.memoryModificationLock : &enm_lock
 	#endif
 		);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
-	calling_interpreter.memoryModificationLock
-		= calling_interpreter.evaluableNodeManager->AcquireMemoryModificationReadLock();
+	if(!on_self)
+		calling_interpreter.ResumeMemoryModificationReadLock(ce_enm, enm_lock, {result, args, function});
 #endif
 
 	//call opcodes should consume the outer return opcode if there is one

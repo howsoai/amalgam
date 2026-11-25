@@ -27,7 +27,6 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 	evaluableNodeManager = enm;
 #ifdef MULTITHREAD_SUPPORT
-	memoryModificationLock = nullptr;
 	bottomOfScopeStack = true;
 #endif
 }
@@ -74,10 +73,17 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack = std::move(*construction_stack);
 
 	evaluableNodeManager->AddActiveInterpreter(this);
-	EvaluableNodeReference retval = InterpretNode(en, immediate_result);
-	evaluableNodeManager->RemoveActiveInterpreter(this);
-
-	return retval;
+	try
+	{
+		EvaluableNodeReference retval = InterpretNode(en, immediate_result);
+		evaluableNodeManager->RemoveActiveInterpreter(this);
+		return retval;
+	}
+	catch(...)
+	{
+		evaluableNodeManager->RemoveActiveInterpreter(this);
+		throw;
+	}
 }
 
 void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool interpret_with_new_scope)
@@ -887,6 +893,46 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 
 
 #ifdef MULTITHREAD_SUPPORT
+
+Concurrency::ReadLock Interpreter::AcquireOtherMemoryModificationReadLock(EvaluableNodeManager &other_enm)
+{
+	Concurrency::ReadLock other_lock(other_enm.GetMemoryModificationMutex(), std::defer_lock);
+	if(other_lock.try_lock())
+		return other_lock;
+
+	//This interpreter's stacks already root the arguments while both locks are released.
+	Concurrency::ReadLockSuspension suspension(memoryModificationLock);
+	std::lock(memoryModificationLock, other_lock);
+	return other_lock;
+}
+
+void Interpreter::ResumeMemoryModificationReadLock(EvaluableNodeManager &other_enm,
+	Concurrency::ReadLock &other_lock, std::initializer_list<EvaluableNodeReference> references)
+{
+	if(memoryModificationLock.try_lock())
+		return;
+
+	//The called interpreter has returned, so its result needs a temporary GC root
+	//before releasing the other manager's lock to acquire both without deadlock.
+	Interpreter roots(&other_enm, RandomStream(), nullptr, nullptr, nullptr, nullptr, nullptr);
+	for(auto reference : references)
+	{
+		if(!reference.IsImmediateValue())
+			roots.opcodeStackNodes.push_back(reference);
+	}
+	other_enm.AddActiveInterpreter(&roots);
+	try
+	{
+		Concurrency::ReadLockSuspension suspension(other_lock);
+		std::lock(memoryModificationLock, other_lock);
+	}
+	catch(...)
+	{
+		other_enm.RemoveActiveInterpreter(&roots);
+		throw;
+	}
+	other_enm.RemoveActiveInterpreter(&roots);
+}
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
 	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,

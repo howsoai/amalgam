@@ -34,20 +34,16 @@ namespace InterpreterConcurrencyManagerTraits
 	struct StackWithResults : Default
 	{
 		//must match the parameter size of the tasks.emplace_back lambda in 
-		static constexpr size_t BufferSize = 7 * sizeof(size_t);
+		static constexpr size_t BufferSize = 9 * sizeof(size_t);
 		struct StackWithResultMode
 		{};
 		using ModeTag = StackWithResultMode;
 	};
 }
 
-//use a base class to have pointer for equality comparison; safer than using a void *
-class InterpreterConcurrencyManagerBase
-{};
-
 //class to manage the data for concurrent execution by an interpreter
 template<typename Traits = InterpreterConcurrencyManagerTraits::Default>
-class InterpreterConcurrencyManager : public InterpreterConcurrencyManagerBase
+class InterpreterConcurrencyManager
 {
 public:
 
@@ -81,6 +77,11 @@ public:
 		previousScopeStackMutex = std::exchange(parentInterpreter->scopeStackMutex, &scopeStackMutex);
 	}
 
+	~InterpreterConcurrencyManager()
+	{
+		parentInterpreter->scopeStackMutex = previousScopeStackMutex;
+	}
+
 	//Adds a child task to the runtime group that needs a construction stack, using the relative interpreter
 	// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 	// will allocate an appropriate node matching the type of current_index
@@ -107,7 +108,10 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
+			//Only this batch can supply a lock, and the interpreter owns it while executing.
+			interpreter.memoryModificationLock = std::move(*batchMemoryModificationLock);
+			if(!interpreter.memoryModificationLock.owns_lock())
+				interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock();
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
@@ -142,6 +146,8 @@ public:
 
 			result = result_ref;
 			resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, result);
+
+			*batchMemoryModificationLock = std::move(interpreter.memoryModificationLock);
 		}
 		);
 	}
@@ -169,7 +175,10 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
+			//Only this batch can supply a lock, and the interpreter owns it while executing.
+			interpreter.memoryModificationLock = std::move(*batchMemoryModificationLock);
+			if(!interpreter.memoryModificationLock.owns_lock())
+				interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock();
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
@@ -183,6 +192,8 @@ public:
 
 			interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
 			enm->FreeNodeTreeIfPossible(result);
+
+			*batchMemoryModificationLock = std::move(interpreter.memoryModificationLock);
 		}
 		);
 	}
@@ -209,7 +220,10 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock(this);
+			//Only this batch can supply a lock, and the interpreter owns it while executing.
+			interpreter.memoryModificationLock = std::move(*batchMemoryModificationLock);
+			if(!interpreter.memoryModificationLock.owns_lock())
+				interpreter.memoryModificationLock = enm->AcquireMemoryModificationReadLock();
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
@@ -247,6 +261,8 @@ public:
 				if(!result_ref.IsImmediateValue())
 					resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, *result);
 			}
+
+			*batchMemoryModificationLock = std::move(interpreter.memoryModificationLock);
 		}
 		);
 	}
@@ -254,18 +270,14 @@ public:
 	//ends concurrency from all interpreters and waits for them to finish
 	inline void EndConcurrency()
 	{
-		//allow other threads to perform garbage collection
-		auto gclr = std::move(parentInterpreter->evaluableNodeManager->ExtractGarbageCollectionLockResources());
-		gclr.memoryModificationLock.unlock();
-
-		//run the tasks and release locks from child interpreters
-		Concurrency::RunInterpreterTasks(std::move(tasks),
-			[this]() {
-				parentInterpreter->evaluableNodeManager->ReleaseMemoryModificationReadLock(this);
-			});
-
-		gclr.memoryModificationLock.lock();
-		parentInterpreter->evaluableNodeManager->EmplaceGarbageCollectionLockResources(std::move(gclr));
+		//The parent stays rooted but must not block GC while waiting for its children.
+		Concurrency::ReadLockSuspension parent_lock_suspension(parentInterpreter->memoryModificationLock);
+		Concurrency::RunInterpreterTasks(std::move(tasks), [](auto run_batch)
+		{
+			BatchMemoryLock batch_lock;
+			run_batch();
+		});
+		parent_lock_suspension.Resume();
 
 		//release scope stack mutex
 		parentInterpreter->scopeStackMutex = previousScopeStackMutex;
@@ -295,6 +307,28 @@ public:
 	{
 		return resultsSideEffect;
 	}
+
+private:
+	//Each drain has its own cache on the executing thread's stack. Nested drains
+	//temporarily replace the pointer; active interpreters keep their own lock objects.
+	inline static thread_local Concurrency::ReadLock *batchMemoryModificationLock = nullptr;
+
+	class BatchMemoryLock
+	{
+	public:
+		BatchMemoryLock()
+			: previous(std::exchange(batchMemoryModificationLock, &lock))
+		{}
+
+		~BatchMemoryLock()
+		{
+			batchMemoryModificationLock = previous;
+		}
+
+	private:
+		Concurrency::ReadLock lock;
+		Concurrency::ReadLock *previous;
+	};
 
 protected:
 	//The parent and children borrow this mutex until the synchronous join.

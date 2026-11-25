@@ -2413,6 +2413,28 @@ AmalgamExample{ R"&(;nested concurrency
 			)
 			(range 1 100)
 		)))&", R"(495000)" },
+AmalgamExample{ R"&(;retained locks across entity calls, nested tasks, and forced collection
+(seq
+	(create_entities "LockRetentionTest" {})
+	(set_entity_permissions "LockRetentionTest" .true)
+	(apply "+" ||(map
+		(lambda
+			(seq
+				(reclaim_resources .null .false .false .true)
+				(apply "+"
+					(call_on_entity "LockRetentionTest"
+						(lambda
+							(seq
+								(reclaim_resources .null .false .false .true)
+								(call_on_entity .null (lambda ||[(+ 1 2) (+ 3 4)]))
+							)
+						)
+					)
+				)
+			)
+		)
+		(range 1 128)
+))))&", R"(1280)", "", R"((destroy_entities "LockRetentionTest"))" },
 AmalgamExample{ R"&(;writing outside of concurrency
 (let
 	{x []}

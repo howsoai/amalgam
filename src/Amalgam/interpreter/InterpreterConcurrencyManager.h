@@ -293,9 +293,12 @@ public:
 		parentInterpreter->memoryModificationLock.unlock();
 		Concurrency::RunInterpreterTasks(std::move(tasks),
 			[this]() {
-				if(Interpreter::reusableReadLock.owns_lock())
-					Interpreter::reusableReadLock.unlock();
-				Interpreter::reusableReadLockConcurrencyManager = nullptr;
+				if(this == Interpreter::reusableReadLockConcurrencyManager)
+				{
+					if(Interpreter::reusableReadLock.owns_lock())
+						Interpreter::reusableReadLock.unlock();
+					Interpreter::reusableReadLockConcurrencyManager = nullptr;
+				}
 			});
 
 		parentInterpreter->memoryModificationLock.lock();

@@ -323,18 +323,19 @@ namespace Concurrency
 	};
 
 	//group of tasks for a given interpreter
-	template<typename FuncType>
+	template<typename FuncType, typename IdleFuncType>
 	class InterpreterTaskGroup
 	{
 	public:
-		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
-			: tasks(std::move(tasks)), remaining(this->tasks.size())
+		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks, IdleFuncType idle_func)
+			: tasks(std::move(tasks)), remaining(this->tasks.size()), idleCallback(idle_func)
 		{}
 
 		inline void Drain()
 		{
 			for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
 				Execute(i);
+			idleCallback();
 		}
 
 		inline void Join()
@@ -366,6 +367,7 @@ namespace Concurrency
 		//default to 1 since the dispatching thread will take the first element
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
+		IdleFuncType idleCallback;
 	};
 
 	template<typename FuncType>
@@ -378,8 +380,8 @@ namespace Concurrency
 		cleanup();
 	}
 
-	template<typename FuncType>
-	inline void RunInterpreterTasks(std::vector<FuncType> tasks)
+	template<typename FuncType, typename IdleFuncType>
+	inline void RunInterpreterTasks(std::vector<FuncType> tasks, IdleFuncType idle_func)
 	{
 		if(tasks.empty())
 			return;
@@ -389,7 +391,10 @@ namespace Concurrency
 			TaskSet task_set;
 			task_set.emplace([&](tf::Runtime &runtime)
 			{
-				RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
+				RunInterpreterRuntime(runtime,
+					[&] {
+						RunInterpreterTasks(std::move(tasks), idle_func);
+					});
 			});
 
 			auto exec = AcquireConcurrentExecutor();
@@ -400,12 +405,12 @@ namespace Concurrency
 		const size_t num_workers = std::min(tasks.size(), concurrent_executor->numThreads) - 1;
 		if(num_workers == 0)
 		{
-			InterpreterTaskGroup group(std::move(tasks));
+			InterpreterTaskGroup group(std::move(tasks), idle_func);
 			group.Join();
 			return;
 		}
 
-		auto group = std::make_shared<InterpreterTaskGroup<FuncType>>(std::move(tasks));
+		auto group = std::make_shared<InterpreterTaskGroup<FuncType, IdleFuncType>>(std::move(tasks), idle_func);
 		for(size_t i = 0; i < num_workers; i++)
 		{
 			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
@@ -415,6 +420,13 @@ namespace Concurrency
 		}
 
 		group->Join();
+	}
+
+	//overload with default no idle function
+	template<typename FuncType>
+	inline void RunInterpreterTasks(std::vector<FuncType> tasks)
+	{
+		RunInterpreterTasks(std::move(tasks), [] {});
 	}
 
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code

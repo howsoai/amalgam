@@ -2946,6 +2946,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 						evaluableNodeManager->FreeNodeTree(get_node(*it));
 				}
 
+				//need to remove string references if removing keys
 				if constexpr(std::is_same_v<decltype(container), EvaluableNode::SmallAssocType &>)
 				{
 					for(auto it = split_it; it != end(container); ++it)
@@ -2970,6 +2971,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 						evaluableNodeManager->FreeNodeTree(get_node(*it));
 				}
 
+				//need to remove string references if removing keys
 				if constexpr(std::is_same_v<decltype(container), EvaluableNode::SmallAssocType &>)
 				{
 					for(auto it = split_it; it != end(container); ++it)

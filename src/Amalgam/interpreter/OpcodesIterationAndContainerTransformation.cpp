@@ -2946,6 +2946,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 						evaluableNodeManager->FreeNodeTree(get_node(*it));
 				}
 
+				if constexpr(std::is_same_v<decltype(container), EvaluableNode::SmallAssocType &>)
+				{
+					for(auto it = split_it; it != end(container); ++it)
+						string_intern_pool.DestroyStringReference(it->first);
+				}
+
 				container.erase(split_it, end(container));
 
 				std::reverse(begin(container), end(container));
@@ -2962,6 +2968,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				{
 					for(auto it = split_it; it != end(container); ++it)
 						evaluableNodeManager->FreeNodeTree(get_node(*it));
+				}
+
+				if constexpr(std::is_same_v<decltype(container), EvaluableNode::SmallAssocType &>)
+				{
+					for(auto it = split_it; it != end(container); ++it)
+						string_intern_pool.DestroyStringReference(it->first);
 				}
 
 				container.erase(split_it, end(container));

@@ -14,14 +14,9 @@ UninitializedArray<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Int
 EvaluableNodeReference Interpreter::_null_reference = EvaluableNodeReference::Null();
 
 #if defined(MULTITHREAD_SUPPORT)
-thread_local
+thread_local Concurrency::ReadLock Interpreter::reusableReadLock;
+thread_local InterpreterConcurrencyManagerBase *Interpreter::reusableReadLockConcurrencyManager;
 #endif
-	Concurrency::ReadLock Interpreter::reusableReadLock;
-
-#if defined(MULTITHREAD_SUPPORT)
-thread_local
-#endif
-	InterpreterConcurrencyManagerBase *Interpreter::reusableReadLockConcurrencyManager;
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,

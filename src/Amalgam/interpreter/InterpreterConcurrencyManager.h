@@ -9,7 +9,7 @@ namespace InterpreterConcurrencyManagerTraits
 	//base traits - can be left empty or used for defaults
 	struct Default
 	{
-		static constexpr size_t BufferSize = 96;
+		static constexpr size_t BufferSize = 80;
 		using ModeTag = void;
 	};
 

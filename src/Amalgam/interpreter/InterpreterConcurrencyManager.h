@@ -130,8 +130,6 @@ public:
 		tasks.emplace_back(
 			[this, task_index, rand_seed, node_to_execute, current_index, current_value, &result]
 		{
-			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
 			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
@@ -194,8 +192,6 @@ public:
 		tasks.emplace_back(
 			[this, rand_seed, node_to_execute, current_index, current_value]
 		{
-			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
 			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
@@ -213,7 +209,7 @@ public:
 				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE, false);
 
 			interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
-			enm->FreeNodeTreeIfPossible(result);
+			parentInterpreter->evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 			ReleaseReusableLock(interpreter);
 		}
@@ -236,8 +232,6 @@ public:
 		tasks.emplace_back(
 			[this, task_index, rand_seed, node_to_execute, result, immediate_results]
 		{
-			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
 			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
@@ -256,7 +250,7 @@ public:
 
 			if(result == nullptr)
 			{
-				enm->FreeNodeTreeIfPossible(result_ref);
+				parentInterpreter->evaluableNodeManager->FreeNodeTreeIfPossible(result_ref);
 			}
 			else //want result
 			{

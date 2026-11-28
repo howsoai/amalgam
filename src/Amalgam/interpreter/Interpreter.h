@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+//forward declaration for pointers
+class InterpreterConcurrencyManagerBase;
+
 class Interpreter
 {
 public:
@@ -1204,6 +1207,18 @@ protected:
 public:
 	//mutex to lock the memory from the EvaluableNodeManager it is using
 	Concurrency::ReadLock memoryModificationLock;
+
+	//a lock reusable across interpreters for a given thread
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+#endif
+		static Concurrency::ReadLock reusableReadLock;
+
+	//the concurrency manager corresponding to reusableReadLock
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local
+#endif
+		static InterpreterConcurrencyManagerBase *reusableReadLockConcurrencyManager;
 
 protected:
 
